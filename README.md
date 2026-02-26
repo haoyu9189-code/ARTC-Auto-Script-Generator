@@ -7,11 +7,14 @@
 
   [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/downloads/)
   [![Abaqus](https://img.shields.io/badge/Abaqus-2020+-red.svg)](https://www.3ds.com/products-services/simulia/products/abaqus/)
-  [![License](https://img.shields.io/badge/License-ARTC-green.svg)](LICENSE)
+  [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+  [![Stars](https://img.shields.io/github/stars/haoyu9189-code/ARTC-Auto-Script-Generator?style=social)](https://github.com/haoyu9189-code/ARTC-Auto-Script-Generator)
 
   **An Integrated Framework for Automated FEA Script Generation, Execution and Post-processing of Lattice Structures**
 
   24 Cell Types | Three-Phase Workflow | Cross-Platform | HPC Integration
+
+  [📥 Download Latest Release](https://github.com/haoyu9189-code/ARTC-Auto-Script-Generator/releases) | [📖 Documentation](#使用说明) | [🐛 Report Issue](https://github.com/haoyu9189-code/ARTC-Auto-Script-Generator/issues)
 
 </div>
 
