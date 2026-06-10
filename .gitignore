@@ -33,11 +33,12 @@ wheels/
 *.swo
 *~
 .DS_Store
-# .claude 默认忽略,仅放行 ATLAS skill(核心交付物,须版本化)
+# .claude 默认忽略,仅放行 ATLAS skill 与 agents(核心交付物,须版本化)
 .claude/*
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/atlas/
+!.claude/agents/
 
 # Abaqus
 *.lck

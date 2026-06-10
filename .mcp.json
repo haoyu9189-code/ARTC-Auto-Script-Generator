@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "atlas-printability": {
+      "command": "python",
+      "args": ["atlas/printability/server.py"]
+    },
+    "atlas-retriever": {
+      "command": "python",
+      "args": ["atlas/retriever/server.py"]
+    }
+  }
+}
