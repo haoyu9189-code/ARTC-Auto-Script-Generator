@@ -1,0 +1,302 @@
+{
+ "_meta": {
+  "version": "1.0",
+  "date": "2026-06-10",
+  "method": "manifold3d.level_set 二分定标(粗 cell/24 终验 cell/36),cell_size=5.0 mm,归一化阈值 t 无量纲",
+  "anchors": "skeletal t=0 时 gyroid/schwarz_p/diamond 解析二分空间,rho=0.5(实测 0.4991/0.4995/0.4993);PA12 TPMS 文献锚 Chen 2023 DOI 10.1039/D2MA00972B",
+  "validity_domain": "skeletal rho 0.1-0.5;sheet rho 0.2-0.5(rho<0.15 sheet 壁厚低于网格可靠分辨率且违反粉末床 0.8mm DfAM 下限,显式拒绝)",
+  "source_type": "internal_computed"
+ },
+ "table": {
+  "gyroid_sheet": [
+   {
+    "rho_target": 0.2,
+    "t": 0.623034,
+    "rho_achieved": 0.20012,
+    "rel_err": 0.000601
+   },
+   {
+    "rho_target": 0.3,
+    "t": 0.93171,
+    "rho_achieved": 0.300623,
+    "rel_err": 0.002076
+   },
+   {
+    "rho_target": 0.4,
+    "t": 1.234183,
+    "rho_achieved": 0.400261,
+    "rel_err": 0.000653
+   },
+   {
+    "rho_target": 0.5,
+    "t": 1.535205,
+    "rho_achieved": 0.500568,
+    "rel_err": 0.001136
+   }
+  ],
+  "gyroid_skeletal": [
+   {
+    "rho_target": 0.1,
+    "t": 1.195313,
+    "rho_achieved": 0.099635,
+    "rel_err": -0.003651
+   },
+   {
+    "rho_target": 0.2,
+    "t": 0.907849,
+    "rho_achieved": 0.199619,
+    "rel_err": -0.001907
+   },
+   {
+    "rho_target": 0.3,
+    "t": 0.609375,
+    "rho_achieved": 0.300877,
+    "rel_err": 0.002925
+   },
+   {
+    "rho_target": 0.4,
+    "t": 0.304688,
+    "rho_achieved": 0.40057,
+    "rel_err": 0.001426
+   },
+   {
+    "rho_target": 0.5,
+    "t": 0.0,
+    "rho_achieved": 0.499093,
+    "rel_err": -0.001814
+   }
+  ],
+  "diamond_sheet": [
+   {
+    "rho_target": 0.2,
+    "t": 0.491743,
+    "rho_achieved": 0.200934,
+    "rel_err": 0.00467
+   },
+   {
+    "rho_target": 0.3,
+    "t": 0.734802,
+    "rho_achieved": 0.301247,
+    "rel_err": 0.004157
+   },
+   {
+    "rho_target": 0.4,
+    "t": 0.972337,
+    "rho_achieved": 0.399902,
+    "rel_err": -0.000246
+   },
+   {
+    "rho_target": 0.5,
+    "t": 1.215397,
+    "rho_achieved": 0.501899,
+    "rel_err": 0.003799
+   }
+  ],
+  "diamond_skeletal": [
+   {
+    "rho_target": 0.1,
+    "t": 0.950175,
+    "rho_achieved": 0.1001,
+    "rel_err": 0.000999
+   },
+   {
+    "rho_target": 0.2,
+    "t": 0.71716,
+    "rho_achieved": 0.200439,
+    "rel_err": 0.002197
+   },
+   {
+    "rho_target": 0.3,
+    "t": 0.481315,
+    "rho_achieved": 0.300283,
+    "rel_err": 0.000945
+   },
+   {
+    "rho_target": 0.4,
+    "t": 0.237544,
+    "rho_achieved": 0.401063,
+    "rel_err": 0.002657
+   },
+   {
+    "rho_target": 0.5,
+    "t": 0.0,
+    "rho_achieved": 0.49927,
+    "rel_err": -0.001459
+   }
+  ],
+  "schwarz_p_sheet": [
+   {
+    "rho_target": 0.2,
+    "t": 0.70005,
+    "rho_achieved": 0.19941,
+    "rel_err": -0.00295
+   },
+   {
+    "rho_target": 0.3,
+    "t": 1.05477,
+    "rho_achieved": 0.301078,
+    "rel_err": 0.003592
+   },
+   {
+    "rho_target": 0.4,
+    "t": 1.394608,
+    "rho_achieved": 0.398663,
+    "rel_err": -0.003341
+   },
+   {
+    "rho_target": 0.5,
+    "t": 1.746165,
+    "rho_achieved": 0.500017,
+    "rel_err": 3.4e-05
+   }
+  ],
+  "schwarz_p_skeletal": [
+   {
+    "rho_target": 0.1,
+    "t": 1.617188,
+    "rho_achieved": 0.10004,
+    "rel_err": 0.000397
+   },
+   {
+    "rho_target": 0.2,
+    "t": 1.042969,
+    "rho_achieved": 0.20087,
+    "rel_err": 0.004349
+   },
+   {
+    "rho_target": 0.3,
+    "t": 0.691406,
+    "rho_achieved": 0.301187,
+    "rel_err": 0.003956
+   },
+   {
+    "rho_target": 0.4,
+    "t": 0.351562,
+    "rho_achieved": 0.39886,
+    "rel_err": -0.002849
+   },
+   {
+    "rho_target": 0.5,
+    "t": 0.0,
+    "rho_achieved": 0.49949,
+    "rel_err": -0.00102
+   }
+  ],
+  "iwp_sheet": [
+   {
+    "rho_target": 0.2,
+    "t": 1.523264,
+    "rho_achieved": 0.200619,
+    "rel_err": 0.003094
+   },
+   {
+    "rho_target": 0.3,
+    "t": 2.265702,
+    "rho_achieved": 0.300496,
+    "rel_err": 0.001653
+   },
+   {
+    "rho_target": 0.4,
+    "t": 2.988351,
+    "rho_achieved": 0.39989,
+    "rel_err": -0.000275
+   },
+   {
+    "rho_target": 0.5,
+    "t": 3.691469,
+    "rho_achieved": 0.499324,
+    "rel_err": -0.001351
+   }
+  ],
+  "iwp_skeletal": [
+   {
+    "rho_target": 0.1,
+    "t": 2.683594,
+    "rho_achieved": 0.099923,
+    "rel_err": -0.000766
+   },
+   {
+    "rho_target": 0.2,
+    "t": 2.192539,
+    "rho_achieved": 0.199874,
+    "rel_err": -0.000628
+   },
+   {
+    "rho_target": 0.3,
+    "t": 1.604108,
+    "rho_achieved": 0.300012,
+    "rel_err": 3.9e-05
+   },
+   {
+    "rho_target": 0.4,
+    "t": 0.9375,
+    "rho_achieved": 0.400804,
+    "rel_err": 0.002011
+   },
+   {
+    "rho_target": 0.5,
+    "t": 0.21875,
+    "rho_achieved": 0.500665,
+    "rel_err": 0.00133
+   }
+  ],
+  "neovius_sheet": [
+   {
+    "rho_target": 0.2,
+    "t": 0.914159,
+    "rho_achieved": 0.199038,
+    "rel_err": -0.004812
+   },
+   {
+    "rho_target": 0.3,
+    "t": 1.371188,
+    "rho_achieved": 0.300142,
+    "rel_err": 0.000473
+   },
+   {
+    "rho_target": 0.4,
+    "t": 1.955171,
+    "rho_achieved": 0.400398,
+    "rel_err": 0.000996
+   },
+   {
+    "rho_target": 0.5,
+    "t": 3.097744,
+    "rho_achieved": 0.502063,
+    "rel_err": 0.004126
+   }
+  ],
+  "neovius_skeletal": [
+   {
+    "rho_target": 0.1,
+    "t": 4.849609,
+    "rho_achieved": 0.09978,
+    "rel_err": -0.002197
+   },
+   {
+    "rho_target": 0.2,
+    "t": 2.285156,
+    "rho_achieved": 0.200019,
+    "rel_err": 9.5e-05
+   },
+   {
+    "rho_target": 0.3,
+    "t": 0.964844,
+    "rho_achieved": 0.299694,
+    "rel_err": -0.00102
+   },
+   {
+    "rho_target": 0.4,
+    "t": 0.457031,
+    "rho_achieved": 0.398674,
+    "rel_err": -0.003314
+   },
+   {
+    "rho_target": 0.5,
+    "t": 0.0,
+    "rho_achieved": 0.499364,
+    "rel_err": -0.001272
+   }
+  ]
+ }
+}
