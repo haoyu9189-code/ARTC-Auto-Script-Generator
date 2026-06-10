@@ -61,3 +61,7 @@ dist/
 # Data
 data_package/
 *.jsonl
+
+# ATLAS derived artifacts (rebuild via atlas/data/ingest_cell_db.py)
+atlas/data/cell_db.sqlite
+.pytest_cache/
