@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATLAS · 验证台 / Verification Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0d10; --panel:#10151b; --panel2:#0d1116; --line:#1d2832;
+  --line2:#16202a; --amber:#ffb000; --amber-dim:#8a6200;
+  --green:#3ddc97; --red:#ff5d5d; --ink:#cfd8df; --ink-dim:#6b7a85;
+  --ink-faint:#3c4a55; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+  --disp:'Big Shoulders Display',var(--sans);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:14px;line-height:1.55;overflow-x:hidden;
+}
+/* 网格底纹 + 暗角 */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    repeating-linear-gradient(0deg,transparent 0 47px,rgba(255,176,0,.022) 47px 48px),
+    repeating-linear-gradient(90deg,transparent 0 47px,rgba(255,176,0,.022) 47px 48px),
+    radial-gradient(120% 90% at 50% 0%,transparent 55%,rgba(0,0,0,.55));
+}
+::selection{background:var(--amber);color:#0a0d10}
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 28px 90px}
+
+/* ───────── 顶栏 ───────── */
+header{display:flex;align-items:baseline;gap:18px;padding:26px 0 14px;
+  border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-family:var(--disp);font-weight:900;font-size:46px;letter-spacing:.04em;
+  color:var(--amber);line-height:.9}
+.brand small{display:block;font-family:var(--mono);font-weight:400;font-size:10.5px;
+  letter-spacing:.32em;color:var(--ink-dim);margin-top:6px}
+.statusline{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);
+  display:flex;gap:22px;align-items:center}
+.lamp{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px var(--green);margin-right:7px;animation:pulse 2.4s infinite}
+@keyframes pulse{50%{opacity:.45}}
+
+/* ───────── 统计带 ───────── */
+.stats{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid var(--line);
+  border-top:none;background:var(--panel2)}
+.stat{padding:14px 16px;border-right:1px solid var(--line2);position:relative}
+.stat:last-child{border-right:none}
+.stat b{display:block;font-family:var(--disp);font-weight:700;font-size:30px;
+  color:var(--ink);letter-spacing:.02em}
+.stat span{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--ink-dim)}
+.stat em{position:absolute;top:8px;right:10px;font-style:normal;font-family:var(--mono);
+  font-size:9px;color:var(--ink-faint)}
+
+/* ───────── 主区:阶梯 + 画布 ───────── */
+.hero{display:grid;grid-template-columns:5fr 7fr;gap:22px;margin-top:26px;align-items:stretch}
+.panel{background:var(--panel);border:1px solid var(--line);position:relative}
+.panel::before,.panel::after{content:'';position:absolute;width:9px;height:9px;
+  border:1px solid var(--amber-dim);pointer-events:none}
+.panel::before{top:-1px;left:-1px;border-right:none;border-bottom:none}
+.panel::after{bottom:-1px;right:-1px;border-left:none;border-top:none}
+.panel h2{font-family:var(--mono);font-weight:600;font-size:11px;letter-spacing:.26em;
+  color:var(--amber);padding:13px 16px;border-bottom:1px solid var(--line2)}
+.panel h2 i{font-style:normal;color:var(--ink-faint);float:right;letter-spacing:.1em}
+
+.ladder{padding:10px 16px 16px;font-family:var(--mono)}
+.rung{display:flex;align-items:center;gap:12px;padding:9px 0;
+  border-bottom:1px dashed var(--line2);opacity:0;animation:rise .5s forwards}
+.rung:last-child{border-bottom:none}
+.rung .no{width:34px;font-size:10px;color:var(--ink-faint)}
+.rung .nm{font-size:12.5px;color:var(--ink);flex:1}
+.rung .nm small{display:block;font-size:10px;color:var(--ink-dim);margin-top:1px;
+  font-family:var(--sans);letter-spacing:0}
+.rung .ok{font-size:10px;letter-spacing:.12em;color:var(--green)}
+.rung .ms{font-size:10px;color:var(--ink-faint);width:64px;text-align:right}
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+.viz{display:flex;flex-direction:column}
+.viz .cv{flex:1;min-height:380px;position:relative}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.viz .hud{position:absolute;left:14px;top:12px;font-family:var(--mono);font-size:10px;
+  color:var(--ink-dim);letter-spacing:.14em;line-height:1.9;pointer-events:none}
+.viz .hud b{color:var(--amber);font-weight:500}
+.lat-tabs{display:flex;border-top:1px solid var(--line2)}
+.lat-tabs button{flex:1;background:none;border:none;border-right:1px solid var(--line2);
+  color:var(--ink-dim);font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  padding:11px 6px;cursor:pointer;transition:all .18s}
+.lat-tabs button:last-child{border-right:none}
+.lat-tabs button:hover{color:var(--ink)}
+.lat-tabs button.on{color:#0a0d10;background:var(--amber);font-weight:600}
+
+/* ───────── 案例 ───────── */
+.sec-title{margin:42px 0 14px;display:flex;align-items:baseline;gap:14px}
+.sec-title h3{font-family:var(--disp);font-weight:700;font-size:26px;letter-spacing:.05em}
+.sec-title span{font-family:var(--mono);font-size:10px;color:var(--ink-dim);letter-spacing:.22em}
+.sec-title::after{content:'';flex:1;border-top:1px dashed var(--line)}
+.cases{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.case{padding-bottom:6px}
+.case h4{font-family:var(--sans);font-weight:500;font-size:14.5px;color:var(--ink);
+  padding:13px 16px 3px}
+.case .meta{font-family:var(--mono);font-size:10px;color:var(--ink-dim);
+  letter-spacing:.08em;padding:0 16px 11px;border-bottom:1px solid var(--line2)}
+.risk{display:inline-block;font-family:var(--mono);font-size:9px;color:var(--red);
+  border:1px solid rgba(255,93,93,.4);padding:2px 7px;letter-spacing:.14em;margin-left:8px}
+.crow{padding:10px 16px;border-bottom:1px dashed var(--line2);font-family:var(--mono)}
+.crow:last-child{border-bottom:none}
+.crow .l1{display:flex;align-items:baseline;gap:8px;font-size:12px}
+.crow .l1 .topo{color:var(--ink);flex:1}
+.crow .l1 .tier{font-size:9px;color:var(--ink-faint);letter-spacing:.1em}
+.verdict{font-size:9.5px;letter-spacing:.14em;padding:2.5px 8px;border:1px solid}
+.v-PASS{color:var(--green);border-color:rgba(61,220,151,.45)}
+.v-FAIL{color:var(--red);border-color:rgba(255,93,93,.45)}
+.v-SCREENING_PASS{color:var(--amber);border-color:rgba(255,176,0,.45)}
+.mbar{margin-top:8px;height:5px;background:var(--line2);position:relative;overflow:visible}
+.mbar .fill{height:100%;width:0;transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
+.mbar .gate{position:absolute;top:-3.5px;bottom:-3.5px;width:1.5px;background:var(--ink-dim)}
+.mnote{display:flex;justify-content:space-between;font-size:9.5px;color:var(--ink-dim);
+  margin-top:5px}
+.reason{font-family:var(--sans);font-size:10.5px;color:var(--ink-dim);margin-top:6px;
+  line-height:1.45}
+
+/* ───────── 红线 / 来源 ───────── */
+.bottom{display:grid;grid-template-columns:7fr 5fr;gap:18px;margin-top:18px}
+.redlines{padding:6px 16px 14px;font-family:var(--mono)}
+.rl{display:flex;gap:12px;padding:8.5px 0;border-bottom:1px dashed var(--line2);
+  font-size:11.5px;align-items:baseline}
+.rl:last-child{border-bottom:none}
+.rl .mk{color:var(--green);font-size:10px;letter-spacing:.1em;white-space:nowrap}
+.rl .tx{color:var(--ink-dim)}
+.rl .tx b{color:var(--ink);font-weight:500}
+.srcs{padding:8px 16px 16px;font-family:var(--mono)}
+.src{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:11px}
+.src .k{width:170px;color:var(--ink-dim);font-size:10px;letter-spacing:.06em}
+.src .bar{flex:1;height:7px;background:var(--line2);position:relative}
+.src .bar i{position:absolute;inset:0 auto 0 0;background:var(--amber);opacity:.85}
+.src .n{width:36px;text-align:right;color:var(--ink)}
+.src.inf .bar i{background:var(--red);opacity:.7}
+
+footer{margin-top:46px;border-top:1px solid var(--line);padding-top:16px;
+  font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);line-height:2;
+  letter-spacing:.04em}
+footer b{color:var(--amber);font-weight:500}
+@media(max-width:980px){.hero,.bottom,.cases{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand">ATLAS<small>AGENTIC TOOLKIT FOR LATTICE ARCHITECTURE SYNTHESIS</small></div>
+  <div class="statusline">
+    <span><span class="lamp"></span>PHASE 1 · ACCEPTED</span>
+    <span>NTU SC3DP × A*STAR ARTC</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</header>
+
+<div class="stats" id="stats"></div>
+
+<div class="hero">
+  <div class="panel">
+    <h2>验证阶梯 <i>GENERATE → VERIFY</i></h2>
+    <div class="ladder" id="ladder"></div>
+  </div>
+  <div class="panel viz">
+    <h2>几何监视器 <i>LIVE GEOMETRY · 管线真实数据</i></h2>
+    <div class="cv">
+      <canvas id="cv"></canvas>
+      <div class="hud" id="hud"></div>
+    </div>
+    <div class="lat-tabs" id="tabs"></div>
+  </div>
+</div>
+
+<div class="sec-title"><h3>D1 验收 · 三案例</h3><span>MARGIN = PRED / DESIGN(已含 FoS,不二次乘)· GATE = 1.0</span></div>
+<div class="cases" id="cases"></div>
+
+<div class="bottom">
+  <div class="panel">
+    <h2>红线审计 <i>AUDIT · 0 VIOLATIONS</i></h2>
+    <div class="redlines" id="redlines"></div>
+  </div>
+  <div class="panel">
+    <h2>证据来源分布 <i>__NCHECKS__ CHECKS</i></h2>
+    <div class="srcs" id="srcs"></div>
+  </div>
+</div>
+
+<footer>
+  <b>免责声明</b> 本报告为计算与数据库辅助选型,最终设计须经实物压缩测试验证。
+  推荐为 <b>database-wide(数据库范围内)</b>最优,不主张绝对全局最优;
+  Tier-2 库外生成结论为 screening only,待物理计算裁判(Phase 2 beam-FEM / Tier-D FEA)。
+  数据:cell DB 5,304 结构 · Lumpe-Stanković 目录 17,262(CC BY-NC)· 勘误登记 atlas/references/errata.md
+</footer>
+</div>
+
+<script>
+const DATA = {"lattices": {"Octet_truss": {"tier": "TIER-1", "segments": [[-2.5, 2.5, 2.5, 0.0, 1.5, 0.0], [0.0, 1.5, 0.0, 2.5, 2.5, -2.5], [2.5, 2.5, -2.5, 1.5, 0.0, 0.0], [1.5, 0.0, 0.0, 2.5, -2.5, 2.5], [2.5, -2.5, 2.5, 0.0, -1.5, 0.0], [0.0, -1.5, 0.0, -2.5, -2.5, -2.5], [-2.5, -2.5, -2.5, -1.5, 0.0, 0.0], [-1.5, 0.0, 0.0, -2.5, 2.5, 2.5], [-2.5, 2.5, 2.5, 0.0, 0.0, 1.5], [0.0, 0.0, 1.5, 2.5, -2.5, 2.5], [2.5, 2.5, 2.5, 0.0, 0.0, 1.5], [0.0, 0.0, 1.5, -2.5, -2.5, 2.5], [-2.5, 2.5, -2.5, 0.0, 0.0, -1.5], [0.0, 0.0, -1.5, 2.5, -2.5, -2.5], [2.5, 2.5, -2.5, 0.0, 0.0, -1.5], [0.0, 0.0, -1.5, -2.5, -2.5, -2.5], [-2.5, 2.5, -2.5, 0.0, 1.5, 0.0], [0.0, 1.5, 0.0, 2.5, 2.5, 2.5], [2.5, 2.5, 2.5, 1.5, 0.0, 0.0], [1.5, 0.0, 0.0, 2.5, -2.5, -2.5], [2.5, -2.5, -2.5, 0.0, -1.5, 0.0], [0.0, -1.5, 0.0, -2.5, -2.5, 2.5], [-2.5, -2.5, 2.5, -1.5, 0.0, 0.0], [-1.5, 0.0, 0.0, -2.5, 2.5, -2.5], [0.0, 1.5, 0.0, 1.5, 0.0, 0.0], [0.0, 1.5, 0.0, -1.5, 0.0, 0.0], [0.0, 1.5, 0.0, 0.0, 0.0, 1.5], [0.0, 1.5, 0.0, 0.0, 0.0, -1.5], [1.5, 0.0, 0.0, 0.0, -1.5, 0.0], [1.5, 0.0, 0.0, 0.0, 0.0, 1.5], [1.5, 0.0, 0.0, 0.0, 0.0, -1.5], [0.0, -1.5, 0.0, -1.5, 0.0, 0.0], [0.0, -1.5, 0.0, 0.0, 0.0, 1.5], [0.0, -1.5, 0.0, 0.0, 0.0, -1.5], [-1.5, 0.0, 0.0, 0.0, 0.0, 1.5], [-1.5, 0.0, 0.0, 0.0, 0.0, -1.5]]}, "Auxetic": {"tier": "TIER-1", "segments": [[-1.64, 2.5, 2.5, 1.64, 2.5, 2.5], [-1.64, -2.5, 2.5, 1.64, -2.5, 2.5], [-1.64, 2.5, 2.5, -0.86, 0.0, 2.5], [1.64, 2.5, 2.5, 0.86, 0.0, 2.5], [-1.64, -2.5, 2.5, -0.86, 0.0, 2.5], [1.64, -2.5, 2.5, 0.86, 0.0, 2.5], [-1.64, 2.5, -2.5, 1.64, 2.5, -2.5], [-1.64, -2.5, -2.5, 1.64, -2.5, -2.5], [-1.64, 2.5, -2.5, -0.86, 0.0, -2.5], [1.64, 2.5, -2.5, 0.86, 0.0, -2.5], [-1.64, -2.5, -2.5, -0.86, 0.0, -2.5], [1.64, -2.5, -2.5, 0.86, 0.0, -2.5], [-1.64, 2.5, 2.5, 1.64, 2.5, 2.5], [-1.64, 2.5, -2.5, 1.64, 2.5, -2.5], [-1.64, 2.5, 2.5, -0.86, 2.5, 0.0], [1.64, 2.5, 2.5, 0.86, 2.5, 0.0], [-1.64, 2.5, -2.5, -0.86, 2.5, 0.0], [1.64, 2.5, -2.5, 0.86, 2.5, 0.0], [-1.64, -2.5, 2.5, 1.64, -2.5, 2.5], [-1.64, -2.5, -2.5, 1.64, -2.5, -2.5], [-1.64, -2.5, 2.5, -0.86, -2.5, 0.0], [1.64, -2.5, 2.5, 0.86, -2.5, 0.0], [-1.64, -2.5, -2.5, -0.86, -2.5, 0.0], [1.64, -2.5, -2.5, 0.86, -2.5, 0.0], [2.5, 0.0, 0.0, 0.86, 2.5, 0.0], [2.5, 0.0, 0.0, 0.86, 0.0, 2.5], [2.5, 0.0, 0.0, 0.86, 0.0, -2.5], [2.5, 0.0, 0.0, 0.86, -2.5, 0.0], [-2.5, 0.0, 0.0, -0.86, 2.5, 0.0], [-2.5, 0.0, 0.0, -0.86, 0.0, 2.5], [-2.5, 0.0, 0.0, -0.86, 0.0, -2.5], [-2.5, 0.0, 0.0, -0.86, -2.5, 0.0], [-0.86, 0.0, 2.5, -2.5, 0.0, 2.5], [0.86, 0.0, 2.5, 2.5, 0.0, 2.5], [0.86, 0.0, -2.5, 2.5, 0.0, -2.5], [-0.86, 0.0, -2.5, -2.5, 0.0, -2.5], [-0.86, 2.5, 0.0, -2.5, 2.5, 0.0], [0.86, 2.5, 0.0, 2.5, 2.5, 0.0], [0.86, -2.5, 0.0, 2.5, -2.5, 0.0], [-0.86, -2.5, 0.0, -2.5, -2.5, 0.0]]}, "Kelvin": {"tier": "TIER-1", "segments": [[0.0, 1.35, 2.5, 1.35, 0.0, 2.5], [1.35, 0.0, 2.5, 0.0, -1.35, 2.5], [0.0, -1.35, 2.5, -1.35, 0.0, 2.5], [-1.35, 0.0, 2.5, 0.0, 1.35, 2.5], [0.0, 1.35, -2.5, 1.35, 0.0, -2.5], [1.35, 0.0, -2.5, 0.0, -1.35, -2.5], [0.0, -1.35, -2.5, -1.35, 0.0, -2.5], [-1.35, 0.0, -2.5, 0.0, 1.35, -2.5], [0.0, 2.5, 1.35, 1.35, 2.5, 0.0], [1.35, 2.5, 0.0, 0.0, 2.5, -1.35], [0.0, 2.5, -1.35, -1.35, 2.5, 0.0], [-1.35, 2.5, 0.0, 0.0, 2.5, 1.35], [0.0, -2.5, 1.35, 1.35, -2.5, 0.0], [1.35, -2.5, 0.0, 0.0, -2.5, -1.35], [0.0, -2.5, -1.35, -1.35, -2.5, 0.0], [-1.35, -2.5, 0.0, 0.0, -2.5, 1.35], [2.5, 0.0, 1.35, 2.5, 1.35, 0.0], [2.5, 1.35, 0.0, 2.5, 0.0, -1.35], [2.5, 0.0, -1.35, 2.5, -1.35, 0.0], [2.5, -1.35, 0.0, 2.5, 0.0, 1.35], [-2.5, 0.0, 1.35, -2.5, 1.35, 0.0], [-2.5, 1.35, 0.0, -2.5, 0.0, -1.35], [-2.5, 0.0, -1.35, -2.5, -1.35, 0.0], [-2.5, -1.35, 0.0, -2.5, 0.0, 1.35], [0.0, 1.35, 2.5, 0.0, 2.5, 1.35], [1.35, 0.0, 2.5, 2.5, 0.0, 1.35], [0.0, -1.35, 2.5, 0.0, -2.5, 1.35], [-1.35, 0.0, 2.5, -2.5, 0.0, 1.35], [0.0, 1.35, -2.5, 0.0, 2.5, -1.35], [1.35, 0.0, -2.5, 2.5, 0.0, -1.35], [0.0, -1.35, -2.5, 0.0, -2.5, -1.35], [-1.35, 0.0, -2.5, -2.5, 0.0, -1.35], [1.35, 2.5, 0.0, 2.5, 1.35, 0.0], [-1.35, 2.5, 0.0, -2.5, 1.35, 0.0], [1.35, -2.5, 0.0, 2.5, -1.35, 0.0], [-1.35, -2.5, 0.0, -2.5, -1.35, 0.0]]}, "cubic_plus_diagonal": {"tier": "TIER-2 · 库外生成", "segments": [[-2.5, -2.5, -2.5, -2.5, -2.5, 2.5], [-2.5, -2.5, -2.5, -2.5, 2.5, -2.5], [-2.5, -2.5, -2.5, 0.0, 0.0, 0.0], [-2.5, -2.5, -2.5, 2.5, -2.5, -2.5], [-2.5, -2.5, 2.5, -2.5, 2.5, 2.5], [-2.5, -2.5, 2.5, 2.5, -2.5, 2.5], [-2.5, 2.5, -2.5, -2.5, 2.5, 2.5], [-2.5, 2.5, -2.5, 2.5, 2.5, -2.5], [-2.5, 2.5, 2.5, 2.5, 2.5, 2.5], [0.0, 0.0, 0.0, 2.5, 2.5, 2.5], [2.5, -2.5, -2.5, 2.5, -2.5, 2.5], [2.5, -2.5, -2.5, 2.5, 2.5, -2.5], [2.5, -2.5, 2.5, 2.5, 2.5, 2.5], [2.5, 2.5, -2.5, 2.5, 2.5, 2.5]]}}, "cases": [{"key": "lpbf_bracket", "title": "LPBF AlSi10Mg 航空支架点阵填充", "process": "LPBF", "material": "AlSi10Mg", "design": 60.0, "fos": 1.5, "high_risk": true, "rows": [{"id": "lp1", "tier": "1", "topo": "Octet_truss", "rho": 0.60518, "margin": null, "verdict": "FAIL", "reasons": ["硬性检查未过: printability/printability.check_overhangs", "硬性检查未过: printability/printability.check_powder_escape"]}, {"id": "lp2", "tier": "1", "topo": "FCCZ", "rho": 0.49139, "margin": null, "verdict": "FAIL", "reasons": ["硬性检查未过: printability/printability.check_overhangs"]}, {"id": "lp3", "tier": "1", "topo": "Kelvin", "rho": 0.41188, "margin": null, "verdict": "FAIL", "reasons": ["硬性检查未过: printability/printability.check_overhangs"]}]}, {"key": "sls_absorber", "title": "SLS PA12 吸能缓冲块", "process": "SLS", "material": "PA12", "design": 55.0, "fos": 1.3, "high_risk": false, "rows": [{"id": "sa1", "tier": "1", "topo": "BCC", "rho": 0.21729, "margin": 4.157, "verdict": "PASS", "reasons": ["全维度通过,margin 4.157 >= 1.0"]}, {"id": "sa2", "tier": "1", "topo": "Diamond", "rho": 0.20598, "margin": 4.473, "verdict": "PASS", "reasons": ["全维度通过,margin 4.473 >= 1.0"]}, {"id": "sa3", "tier": "1", "topo": "G7", "rho": 0.41438, "margin": 4.716, "verdict": "PASS", "reasons": ["全维度通过,margin 4.716 >= 1.0"]}]}, {"key": "mjf_auxetic_pad", "title": "MJF PA12 auxetic 缓冲垫", "process": "MJF", "material": "PA12", "design": 40.0, "fos": 1.3, "high_risk": false, "rows": [{"id": "ax1", "tier": "1", "topo": "Auxetic", "rho": 0.49553, "margin": 12.09, "verdict": "PASS", "reasons": ["全维度通过,margin 12.090 >= 1.0"]}, {"id": "ax2", "tier": "1", "topo": "CBCC", "rho": 0.51216, "margin": 7.857, "verdict": "PASS", "reasons": ["全维度通过,margin 7.857 >= 1.0"]}, {"id": "ax3", "tier": "2", "topo": "cubic_plus_diagonal", "rho": 0.13948, "margin": null, "verdict": "FAIL", "reasons": ["R2: 无可用 margin 证据(pred/design 缺失)"]}]}], "stats": {"tasks": "18/18", "tests": 257, "structures": 5304, "catalog": 17262, "checks": 98, "errata": 19}, "sources": {"internal_computed": 78, "internal_fea": 8, "vendor": 9, "inference": 3}};
+
+/* ── 统计带 ── */
+const S = DATA.stats;
+document.getElementById('stats').innerHTML = [
+ ['PHASE 1 任务', S.tasks, 'A1–D1'],
+ ['测试全绿', S.tests, 'PYTEST'],
+ ['库内结构', S.structures.toLocaleString(), 'CELL DB'],
+ ['晶体网目录', S.catalog.toLocaleString(), 'TIER-1.75'],
+ ['验收工具调用', S.checks, 'D1 TRACE'],
+ ['勘误登记', S.errata, 'ERRATA'],
+].map(([k,v,e])=>`<div class="stat"><em>${e}</em><b>${v}</b><span>${k}</span></div>`).join('');
+
+/* ── 验证阶梯 ── */
+const LADDER = [
+ ['C1–C8','生成期硬门','schema·连通性(Smith)·密度·DfAM','~95ms'],
+ ['C9','水密实现器','manifold3d 双轨判据,失败入 trace','~0.1s'],
+ ['B1','可打印五检','射线测厚·悬垂·困粉·间隙','<5s'],
+ ['R1–R7','确定性判决','多模态一致·margin·OOD 禁最近邻','<1ms'],
+ ['K=3','重生回路','参数修补→重生成→增强;耗尽出 Pareto','—'],
+ ['TIER-D','ABAQUS 终审','≤3 finalist/查询(Phase 2 接通)','1–6h'],
+];
+document.getElementById('ladder').innerHTML = LADDER.map(([no,nm,sub,ms],i)=>
+ `<div class="rung" style="animation-delay:${.12*i+.2}s">
+   <span class="no">${no}</span>
+   <span class="nm">${nm}<small>${sub}</small></span>
+   <span class="ms">${ms}</span><span class="ok">●&nbsp;ARMED</span></div>`).join('');
+
+/* ── 案例卡 ── */
+const vLabel = v => v==='SCREENING_PASS' ? 'SCREEN' : v;
+document.getElementById('cases').innerHTML = DATA.cases.map(c=>{
+ const rows = c.rows.map(r=>{
+  const m = r.margin, pct = m==null?0:Math.min(m/2*100,100);
+  const col = r.verdict==='PASS'?'var(--green)':(m!=null&&m>=1?'var(--amber)':'var(--red)');
+  return `<div class="crow">
+   <div class="l1"><span class="topo">${r.topo}</span>
+    <span class="tier">T${r.tier}</span>
+    <span class="verdict v-${r.verdict}">${vLabel(r.verdict)}</span></div>
+   <div class="mbar"><div class="gate" style="left:50%"></div>
+    <div class="fill" data-w="${pct}" style="background:${col}"></div></div>
+   <div class="mnote"><span>ρ̄ ${r.rho??'—'}</span>
+    <span>margin ${m==null?'无证据':m.toFixed(2)}</span></div>
+   ${r.verdict!=='PASS'?`<div class="reason">${r.reasons.join(';')}</div>`:''}
+  </div>`}).join('');
+ return `<div class="panel case">
+  <h4>${c.title}${c.high_risk?'<span class="risk">仅作筛选</span>':''}</h4>
+  <div class="meta">${c.process} / ${c.material} · FoS ${c.fos}(已含)· design ${c.design}</div>
+  ${rows}</div>`;}).join('');
+requestAnimationFrame(()=>setTimeout(()=>
+ document.querySelectorAll('.mbar .fill').forEach(f=>f.style.width=f.dataset.w+'%'),150));
+
+/* ── 红线 ── */
+const RL = [
+ ['R-1','「全局最优」必须带 <b>database-wide</b> 限定'],
+ ['R-2','margin 已含 FoS,<b>任何环节不得二次乘</b>'],
+ ['R-3','Maxwell 只说<b>倾向</b>,不说判定'],
+ ['R-4','无源数字标 <b>inference</b> 并自动降级'],
+ ['R-5','OOD 候选<b>禁用最近邻</b>(检索层显式拒绝)'],
+ ['R-6','可信度四层(检索/插值/枚举/生成)<b>永不混叙</b>'],
+ ['R-7','报告保留<b>实物压测免责</b>;高风险标「仅作筛选」'],
+];
+document.getElementById('redlines').innerHTML = RL.map(([k,t])=>
+ `<div class="rl"><span class="mk">✓ ${k}</span><span class="tx">${t}</span></div>`).join('');
+
+/* ── 来源分布 ── */
+const SRC_LABEL = {academic_doi:'学术文献 (DOI)',vendor:'厂商标准/数据表',
+ internal_fea:'内部 FEA 数据库',internal_computed:'内部确定性计算',
+ inference:'标记推测 (降级)'};
+const srcs = Object.entries(DATA.sources).sort((a,b)=>b[1]-a[1]);
+const mx = Math.max(...srcs.map(s=>s[1]));
+document.getElementById('srcs').innerHTML = srcs.map(([k,n])=>
+ `<div class="src ${k==='inference'?'inf':''}"><span class="k">${SRC_LABEL[k]||k}</span>
+  <span class="bar"><i style="width:${n/mx*100}%"></i></span>
+  <span class="n">${n}</span></div>`).join('');
+document.querySelector('.bottom .panel:last-child h2 i').textContent =
+ S.checks + ' CHECKS · D1';
+
+/* ── 时钟 ── */
+setInterval(()=>{document.getElementById('clock').textContent =
+ new Date().toTimeString().slice(0,8)},1000);
+
+/* ── 点阵画布(真实管线几何) ── */
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+const names = Object.keys(DATA.lattices);
+let cur = names[0], rotY = .6, rotX = .42, auto = true;
+const tabs = document.getElementById('tabs');
+tabs.innerHTML = names.map(n=>
+ `<button data-n="${n}" class="${n===cur?'on':''}">${n}</button>`).join('');
+tabs.onclick = e=>{const b=e.target.closest('button');if(!b)return;
+ cur=b.dataset.n;tabs.querySelectorAll('button').forEach(x=>
+  x.classList.toggle('on',x===b));setHud();};
+function setHud(){
+ const L=DATA.lattices[cur];
+ document.getElementById('hud').innerHTML =
+  `<b>${cur}</b><br>${L.tier}<br>STRUTS ${L.segments.length} · CELL 5.0 mm`
+  +`<br>SRC atlas.geometry / abaqus_adapter`;}
+setHud();
+function resize(){const r=cv.parentElement.getBoundingClientRect();
+ cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;}
+addEventListener('resize',resize);resize();
+cv.parentElement.addEventListener('mousemove',e=>{
+ const r=cv.parentElement.getBoundingClientRect();
+ rotY=((e.clientX-r.left)/r.width-.5)*3.4;
+ rotX=.42+((e.clientY-r.top)/r.height-.5)*1.1;auto=false;});
+cv.parentElement.addEventListener('mouseleave',()=>auto=true);
+function frame(t){
+ if(auto)rotY=t*.00035;
+ const W=cv.width,H=cv.height,sc=Math.min(W,H)/14.5;
+ ctx.clearRect(0,0,W,H);
+ const cy=Math.cos(rotY),sy=Math.sin(rotY),cx=Math.cos(rotX),sx=Math.sin(rotX);
+ const segs=DATA.lattices[cur].segments.map(s=>{
+  const P=[[s[0],s[1],s[2]],[s[3],s[4],s[5]]].map(([x,y,z])=>{
+   let X=x*cy+z*sy, Z=-x*sy+z*cy, Y=y*cx-Z*sx; Z=y*sx+Z*cx;
+   return [W/2+X*sc, H/2-Y*sc, Z];});
+  return {p:P, z:(P[0][2]+P[1][2])/2};
+ }).sort((a,b)=>a.z-b.z);
+ const zs=segs.map(s=>s.z),zmin=Math.min(...zs),zmax=Math.max(...zs)+1e-9;
+ for(const s of segs){
+  const d=(s.z-zmin)/(zmax-zmin);          // 0 远 → 1 近
+  ctx.strokeStyle=`rgba(255,${166+Math.round(50*d)},${Math.round(40*d)},${.22+.66*d})`;
+  ctx.lineWidth=(0.9+2.6*d)*devicePixelRatio;
+  ctx.beginPath();ctx.moveTo(s.p[0][0],s.p[0][1]);
+  ctx.lineTo(s.p[1][0],s.p[1][1]);ctx.stroke();
+  for(const p of s.p){const r=(0.9+1.8*d)*devicePixelRatio;
+   ctx.fillStyle=`rgba(255,209,102,${.25+.55*d})`;
+   ctx.fillRect(p[0]-r,p[1]-r,2*r,2*r);}
+ }
+ requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
