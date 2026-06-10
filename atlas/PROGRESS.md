@@ -24,9 +24,11 @@
 | C2 | Evaluator + 证据强制 | done | R1–R7 确定性引擎逐条正反用例;241 项全绿 |
 | C3 | K=3 重生回路 skill | done | CAX 阶梯顺序/必败→Pareto 有测试;246 项全绿 |
 | C4 | 4 并行验证 agent 接线 | done | 6 候选四维扇出 2.4s;OOD 零最近邻请求;251 项全绿 |
-| D1 | 三 case 端到端验收 | todo | Phase 1 完成判据 |
+| D1 | 三 case 端到端验收 | done | 三报告红线零违例;257 项全绿。**Phase 1 完成** |
 
 ## 日志
+
+- **2026-06-11 D1 done —— PHASE 1 完成(18/18)**:`atlas/orchestration/acceptance.py` 三案例端到端(候选→verify_batch 四维扇出→C2 judge→中文报告),报告含裕度列/逐数字 trace/三类来源分列/免责页脚,`audit_report` 红线自动审计零违例。验收光谱:**SLS 吸能块 3 PASS**(库内 comp_EA 白名单证据支撑 margin≥1)/ **MJF auxetic 垫 2 PASS + Tier-2 新图诚实 FAIL**(OOD 无白名单 margin 证据,R1/R6 纪律,报告分层呈现)/ **LPBF 支架诚实零通过**(节点球底面+45° 杆下表面在自支撑准则下需支撑——拓扑内禀,系统如实说不行并给三条出路,高风险标「仅作筛选」)。margin 单位代理诚实标注(comp_EA 绝对单位映射待 P2-5)。测试 +6(报告完备/红线/可溯源/审计器正反),套件 257 全绿。报告样张提交于 `atlas/reports/D1/`。**loop 按协议停止;Phase 2 待用户启动**(P2-1 beam 裁判为首选,Lumpe-Stanković 目录+Bastek 数据已就位)。
 
 - **2026-06-10**:两轮多智能体调研完成(22 agents,对抗核查全过):`RESEARCH.md` + `RESEARCH_NOVEL_TOPO.md` 落盘;HANDOFF §11 增补(新拓扑主攻);PLAN v1.0 建立;loop 启动。关键勘误已固化:Zhong 2023 出处、TPMS 指数适用域、PA12 SEA 带 0.3–8、cell DB 实况 999 总计/无 provenance/23-24 watertight、C3 连通性 Smith 标准形条件。
 - **2026-06-11 C4 done**:`atlas/orchestration/verify.py`:verify_batch 并行扇出(ThreadPoolExecutor,6 候选四维度实测 2.4s ≪30s 预算),verify_candidate 单候选产出:printability 四检(B1)+ mechanics(rel_density.mesh 实算 + gibson_ashby 解析筛标 internal_computed 供 R7 + maxwell 倾向 + **Tier-1/1.5 才发最近邻请求,OOD 连请求都不发**(get_structure 直取 comp_EA 带 applicability_distance,internal_fea 白名单可支撑 PASS))+ material(阈值表带 source_type,LPBF 自动附 ×0.92 inference 演示 R4)+ size_effect(n<3 警示位,修正引擎接线归 P2)+ 动态/剪切数据可用性(informational pass=None + 不吹成熟度 caveat)。修复:最近邻配对查询被 limit 截断(BCC 221 行>200)→ 改 get_structure 直取。checks 直接喂 C2 judge 出合 schema trace。测试 +5,套件 251 全绿。**C 系列收口,仅剩 D1 端到端验收。**
