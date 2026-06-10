@@ -11,7 +11,7 @@
 | A2 | cell DB → SQLite + provenance | done | 5304 结构物理键归并;41 项测试全过 |
 | A3 | skill 文件结构(修正后数值) | done | .claude/skills/atlas/;52 项套件全过 |
 | A4 | 双轨 schema + 24 种子转换 | done | 商图规范化;锚点 Cubic(1,3)/BCC(2,8);82 项全过 |
-| A5 | 勘误写回 + Lumpe-Stanković 目录准备 | todo | |
+| A5 | 勘误写回 + Lumpe-Stanković 目录准备 | done | errata.md 18 条;目录 58.7MB 已下载,CC BY-NC |
 | B1 | Printability MCP v1 | todo | 收编 atlas/bench_printability{,2,3}.py |
 | B2 | TPMS 生成模块 | todo | |
 | B3 | 硬门 C1–C8 | todo | |
@@ -29,6 +29,7 @@
 ## 日志
 
 - **2026-06-10**:两轮多智能体调研完成(22 agents,对抗核查全过):`RESEARCH.md` + `RESEARCH_NOVEL_TOPO.md` 落盘;HANDOFF §11 增补(新拓扑主攻);PLAN v1.0 建立;loop 启动。关键勘误已固化:Zhong 2023 出处、TPMS 指数适用域、PA12 SEA 带 0.3–8、cell DB 实况 999 总计/无 provenance/23-24 watertight、C3 连通性 Smith 标准形条件。
+- **2026-06-10 A5 done(A 系列收口)**:① HANDOFF §9.4 改写为零向量库 + 五条 LanceDB 升级触发条件;② `atlas/references/errata.md` 落地:文献勘误 E1–E9 + 数据实况 D1–D6 + 工具选型 T1–T3 + **许可登记表**(Lumpe-Stanković CC BY-NC 4.0 非商用边界 / microgen GPL / GIBBON AGPL 禁链);③ Lumpe-Stanković Unit Cell Catalog 经 ETH DSpace REST API 下载(58.7 MB → atlas/data/external/,SHA256=D4E7A754…,不入 git),格式确认:**17,262 条**(论文口径 17,087,差额=135 重复+40 数值问题标*条目,新勘误 E9),每条含分数坐标节点+杆连接表(与 atlas-cell-graph 同构,可走 seeds.py 商图规范化)+均质化 E/G/ν+标度 C,n(可作 P2-1 beam 裁判金标准);参考笔记 `lumpe_stankovic_catalog.md` 带 YAML front-matter(为 B7 立格式标准)。注意:非立方胞需 schema lattice_vectors 扩展(P2-3)。套件 82 全绿。
 - **2026-06-10 A4 done**:双轨 schema 定稿(`atlas/schema/atlas-cell-graph-1.0.json` labeled quotient graph:frac∈[0,1)+整数 shift+free_params+lineage+novelty 预留;`atlas-implicit-1.0.json`:tpms_combo 基组合 + spinodoid 4 参数族,oneOf 分族校验)。`seeds.py` 把 24 个装饰单胞规范化为商图:节点 wrap 归并(aliases 留痕)、shift=o(n2)−o(n1)、定向规范化去重、零长自环剔除、**内置边长复现检查**(商图边长必须等于原始杆 mm 长,wrap/shift 算错立刻断言)。数学锚点命中:Cubic 商图=1 节点 3 边(shift 恰为三个单位向量)、BCC=2 节点 8 边;FBCCXYZ 的 23 条重复杆正确去重且 lineage 留痕。24 实例提交至 `atlas/schema/seeds/` 构成永久回归(重生成==已提交)。测试 +30(锚点/不变量/拒收非法文档/implicit 正反例),套件 82 全过。遗留:无。
 - **2026-06-10 A3 done**:skill 落地 `.claude/skills/atlas/`(Claude Code 技能发现路径,已确认出现在技能列表):SKILL.md(红线 8 条/Phase 0 三题/生成分层/验证表/判决规则/报告格式/资源清单)+ scripts/(physics_common 信封合同 {value,status,inputs_echo,source,caveats} + gibson_ashby[DFA octet (1/9)(1/3) + G-A bending ρ̄²/0.3ρ̄^1.5 + hybrid 保守下包络] + maxwell_check[只说倾向] + rel_density[analytic估算/mesh地面真值双档] + sea_sanity[勘误带 0.3–8] + sea_backcalc[Q2a 反推+缺输入必追问])+ references/thresholds/(dfam_rules/material_props/scaling_laws,逐条 source+source_type;×0.92 与聚合物 ±10–30% 标 inference;TPMS 指数限定 SLM Ti-6Al-4V + PA12 锚 Chen 2023;Raz 排粉表仅 3 锚点,完整七点表待 B7 核录)+ fos_guide.md。测试 11 项新增(已知解析值回归/信封合同/勘误值核验/陈旧数值排查),套件 52 全过。遗留:Raz 七点表补全归 B7。
 - **2026-06-10 A2 done**:`atlas/data/ingest_cell_db.py` → `cell_db.sqlite`(structures 5304 / curves 3946 / features 47736,全表 source 非空 CHECK + 枚举 CHECK,可复跑确定性)。**数据实况修正(供 A5 errata)**:① 调研报告"93 条缺曲线"为误,实为 **43 条**(18 缺 DynaShear / 18 缺 DynaCompre / 7 双缺,全部是动态工况);② CSV 样本名带浮点累积伪影(0p30000000000000004),按名合并会身份分裂——已按物理键 (topology,size,round(r,6),slider) 归并,**999 个 JSON 结构全部物理存在于 CSV**(JSON ⊂ CSV,5304 = 24×13×17 整格);③ JSON FEA 密度与 CSV smoothed 密度是两种量(中位差 1.5%、最大 22%),双列并存(density_fea/density_smoothed),canonical 取 FEA 优先;④ 442 行 CSV density 为空,其中 432 结构完全无密度值;⑤ classify_topology 对全名(Octet_truss)会误判,ingest 内做前缀适配(Octet→stretch 等)。测试 41 项全过(约束强制/计数独立重算/已知值抽查/曲线往返/可复跑)。遗留:无。

@@ -69,3 +69,4 @@ data_package/
 # ATLAS derived artifacts (rebuild via atlas/data/ingest_cell_db.py)
 atlas/data/cell_db.sqlite
 .pytest_cache/
+atlas/data/external/

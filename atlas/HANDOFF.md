@@ -86,7 +86,7 @@
 1. 落地 skill 文件结构:`atlas/SKILL.md` + `references/`(fos-guide / dfam-rules-{sls,mjf,lpbf} / scaling-laws-by-topology / size-effect-tables)+ `scripts/`(gibson_ashby.py / maxwell_check.py / rel_density.py / check_overhang.py / check_min_feature.py)。
 2. Printability Checker:trimesh+Open3D 封装 MCP server(watertight / manifold / min-feature / overhang / 排粉深度查表)。
 3. Evaluator 判决规则表 + verification trace 模板(只认工具证据)。
-4. 向量库选型落地(Qdrant 或 pgvector),seed 文献:G-A 1997、DFA 2001、Raz 2025、Abdulhadi 2023、Zhong 2023。
+4. ~~向量库选型落地(Qdrant 或 pgvector)~~ **改写(2026-06-10 调研否决,见 RESEARCH.md)**:Phase 1 **零向量库**——references/*.md(YAML front-matter 带 doi/source_type)+ thresholds/*.json + cell_db.sqlite,统一经 MCP 检索,Grep 可命中。Qdrant local 官方定位 dev/test-only(Windows 锁问题),pgvector 需常驻 PostgreSQL,均不适合本地单用户。**五条升级触发条件**(任一满足才上嵌入式 LanceDB ≥0.33,BM25+向量 hybrid + RRFReranker):① 语料 >100 篇文档或 >5,000 chunks;② verification-trace 审计中出现关键词检索 miss(已知在库内容找不到);③ 中英混检/同义语义检索的关键词失败率 >10%;④ 单次检索成为瓶颈(>5 s);⑤ 库外生成的文献核实需要 hybrid rank fusion。seed 文献:G-A 1997、DFA 2001、Raz 2025、Abdulhadi 2023、Zhong 2023(COSSMS 勘误版)+ 尺寸效应 6 篇(含 Kirchhof 2024)。
 
 **Phase 2(4–8 周)**
 5. 24 cell DB 封装为 MCP function-call(SQLite/Parquet,`query_cell_db(topology, rel_density, load_mode)`),每条记录带 source 字段。
