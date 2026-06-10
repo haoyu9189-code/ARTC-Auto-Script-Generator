@@ -1,0 +1,71 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "date": "2026-06-10",
+    "note": "DfAM 几何阈值,Printability Checker(B1)与生成期硬门共用;每条带 source/source_type;source_type=inference 的条目输出时必须降级标注",
+    "source_types": ["academic_doi", "vendor", "inference"]
+  },
+  "SLS": {
+    "min_strut_diameter_mm": {
+      "value": 0.8,
+      "source": "EOS PA12 (PA 2200) design guidelines, min wall/feature ~0.8 mm",
+      "source_type": "vendor"
+    },
+    "min_gap_mm": {
+      "value": 1.0,
+      "source": "EOS/HP powder-bed polymer design guidelines, min clearance 1.0 mm for powder removal",
+      "source_type": "vendor"
+    },
+    "overhang_check": {
+      "value": null,
+      "source": "粉末床聚合物无需支撑,悬垂检查不适用(skip)",
+      "source_type": "vendor"
+    }
+  },
+  "MJF": {
+    "min_strut_diameter_mm": {
+      "value": 0.8,
+      "source": "HP Multi Jet Fusion PA12 design guidelines, min feature ~0.8 mm",
+      "source_type": "vendor"
+    },
+    "min_gap_mm": {
+      "value": 1.0,
+      "source": "HP MJF design guidelines, min gap 1.0 mm",
+      "source_type": "vendor"
+    },
+    "overhang_check": {
+      "value": null,
+      "source": "粉末床聚合物无需支撑,悬垂检查不适用(skip)",
+      "source_type": "vendor"
+    },
+    "powder_removal_depth_vs_density": {
+      "points_rho_rel_to_cleanable_cell_layers": [
+        [0.07, 5.0],
+        [0.39, 1.7],
+        [0.47, 1.5]
+      ],
+      "interpolation": "linear, clip at ends",
+      "validity_domain": "BCC / 5 mm 胞 / HP MJF 4200 / 喷砂后;跨拓扑或跨工艺使用必须附 inference 标注",
+      "source": "Raz et al., Polymers 17(20):2804, 2025, DOI 10.3390/polym17202804",
+      "source_type": "academic_doi",
+      "note": "完整七点表待 B7 文献笔记从原文核录补全;当前为锚点子集,插值结果一律附 caveat"
+    }
+  },
+  "LPBF": {
+    "min_strut_diameter_mm": {
+      "value": 1.0,
+      "source": "内部保守取值;文献设计指南给 0.4-0.6 mm(约保守 2 倍),记录在案后续可论证放宽",
+      "source_type": "inference"
+    },
+    "min_gap_mm": {
+      "value": 1.0,
+      "source": "金属粉末床排粉与去支撑间隙工程惯例",
+      "source_type": "inference"
+    },
+    "self_supporting_overhang_deg": {
+      "value": [35, 45],
+      "source": "LPBF 自支撑角行业共识区间(EOS/SLM Solutions 设计指南)",
+      "source_type": "vendor"
+    }
+  }
+}

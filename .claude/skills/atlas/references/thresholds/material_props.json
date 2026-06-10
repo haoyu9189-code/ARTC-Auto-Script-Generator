@@ -1,0 +1,50 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "date": "2026-06-10",
+    "note": "材性基准(勘误后);source_type=inference 条目输出必须降级标注",
+    "source_types": ["academic_doi", "vendor", "inference"]
+  },
+  "PA12_MJF": {
+    "Es_MPa": {
+      "value": 1700,
+      "source": "HP 3D HR PA12 datasheet, tensile modulus ~1700-1800 MPa",
+      "source_type": "vendor"
+    },
+    "sigma_ys_MPa": {
+      "value": 45,
+      "source": "HP PA12 datasheet 拉伸强度 48 MPa 的保守代理(数据表给的是强度非屈服值)",
+      "source_type": "vendor",
+      "caveat": "代理值;屈服定义差异须在报告 caveats 中说明"
+    },
+    "rho_s_kg_m3": {
+      "value": 1010,
+      "source": "HP PA12 datasheet, solid density 1.01 g/cm3",
+      "source_type": "vendor"
+    }
+  },
+  "AlSi10Mg_LPBF": {
+    "Es_GPa": {
+      "value": 75,
+      "source": "EOS AlSi10Mg datasheet, as-built E ~75 GPa",
+      "source_type": "vendor"
+    },
+    "sigma_ys_MPa": {
+      "value": 230,
+      "source": "保守 Z 向取值;EOS: Rp0.2 XY ~270 / Z ~240 MPa, M290 表 230±20;XY/Z 各向异性必须显式记录",
+      "source_type": "vendor",
+      "caveat": "各向异性:XY 270 / Z 240;取 230 为保守下界"
+    },
+    "rho_s_kg_m3": {
+      "value": 2670,
+      "source": "EOS AlSi10Mg datasheet, density 2.67 g/cm3",
+      "source_type": "vendor"
+    },
+    "surface_defect_knockdown": {
+      "value": 0.92,
+      "source": "内部工程假设,查无文献出处(2026-06-10 调研);中期应以 Zhong 2023 effective-strut-diameter 框架替代, DOI 10.1016/j.cossms.2023.101081",
+      "source_type": "inference",
+      "caveat": "输出时必须标'内部工程假设(无文献支撑)'并降级"
+    }
+  }
+}

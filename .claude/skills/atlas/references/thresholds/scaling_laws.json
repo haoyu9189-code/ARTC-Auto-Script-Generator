@@ -1,0 +1,61 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "date": "2026-06-10",
+    "note": "解析标度律与 TPMS 指数(勘误后);适用域(validity_domain)是硬约束,越域使用必须降级"
+  },
+  "gibson_ashby_bending": {
+    "E_rel": "rho^2 (C1≈1)",
+    "sigma_y_rel": "0.3 * rho^1.5",
+    "validity_domain": "bending-dominated 开孔点阵, rho_rel 0.01-0.5, 理想节点",
+    "source": "Gibson & Ashby, Cellular Solids, 2nd ed., Cambridge UP, 1997",
+    "source_type": "academic_doi"
+  },
+  "dfa_octet_stretch": {
+    "E_rel": "(1/9) * rho",
+    "sigma_y_rel": "(1/3) * rho",
+    "validity_domain": "octet-truss, pin-jointed 假设, 立方轴向加载, rho_rel 0.01-0.5",
+    "source": "Deshpande, Fleck & Ashby, JMPS 49(8):1747-1769, 2001, DOI 10.1016/S0022-5096(01)00010-2",
+    "source_type": "academic_doi"
+  },
+  "am_asbuilt_deviation": {
+    "metal_lattices": {
+      "value": "l/d < 5 时解析律偏差可达 300%",
+      "source": "Zhong et al., Curr. Opin. Solid State Mater. Sci. 27:101081, 2023, DOI 10.1016/j.cossms.2023.101081",
+      "source_type": "academic_doi",
+      "note": "勘误:期刊为 COSSMS 非 Composite Structures;该数字仅限金属"
+    },
+    "polymer_lattices": {
+      "value": "±10-30%(无文献来源)",
+      "source": "内部工程估计,查无文献出处(2026-06-10 调研);可从 Nasim 2021 / Chen 2023 拟合残差重推导",
+      "source_type": "inference",
+      "note": "输出必须标 inference 并降级"
+    }
+  },
+  "tpms_stiffness_exponents": {
+    "gyroid_n": 1.31,
+    "diamond_n": 1.39,
+    "validity_domain": "仅 SLM Ti-6Al-4V(Abdulhadi 2023 综述转引,疑似一手 Yan 2015);**不适用 PA12**",
+    "source": "Abdulhadi et al., Engineering Reports 5(2):e12566, 2023, DOI 10.1002/eng2.12566(转引);一手疑似 Yan et al. 2015, DOI 10.1016/j.jmbbm.2015.06.024(待核对原文)",
+    "source_type": "academic_doi",
+    "pa12_anchor": {
+      "value": "m ≈ 1.17-1.29",
+      "source": "Chen et al. 2023, Materials Advances, DOI 10.1039/D2MA00972B(PA12 TPMS)",
+      "source_type": "academic_doi"
+    }
+  },
+  "pa12_sea_band": {
+    "value_kj_per_kg": [0.3, 8.0],
+    "typical_kj_per_kg": [0.5, 4.0],
+    "validity_domain": "PA12 准静态压缩;>8 标 implausible;>10 文献值属金属点阵",
+    "source": "内部工程界(组成依据:实测 MJF PA12 octet @rho=0.30 SEA 0.63-0.92 kJ/kg;G-A 能量估算上限 ~6-8;原 HANDOFF 2-15 过乐观已勘误)",
+    "source_type": "inference"
+  },
+  "maxwell_rule": {
+    "formula": "M = b - 3j + 6",
+    "interpretation": "M>=0 stretch 倾向, M<0 bending 倾向;必要非充分,只说倾向不说判定",
+    "counterexample": "FCCZ/FBCCZ 含定向 strut(Nasim & Galvanetto 2021, MJF PA12)",
+    "source": "Maxwell 1864; Deshpande, Ashby & Fleck, Acta Mater. 49(6):1035-1040, 2001, DOI 10.1016/S1359-6454(00)00379-7",
+    "source_type": "academic_doi"
+  }
+}
