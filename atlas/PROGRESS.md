@@ -26,7 +26,22 @@
 | C4 | 4 并行验证 agent 接线 | done | 6 候选四维扇出 2.4s;OOD 零最近邻请求;251 项全绿 |
 | D1 | 三 case 端到端验收 | done | 三报告红线零违例;257 项全绿。**Phase 1 完成** |
 
+## Phase 2 任务状态
+
+| ID | 任务 | 状态 | 备注 |
+|----|------|------|------|
+| P2-1a | beam_homog 核心(Timoshenko PBC) | done | 竖柱锚 1e-9 精确;Octet=0.9×DFA;271 项全绿 |
+| P2-1b | Lumpe-Stanković 抽样验证 | todo | |
+| P2-1c | 节点刚化标定 + 误差条入 Evaluator | todo | |
+| P2-2 | FunSearch 回路 | todo | |
+| P2-3 | Tier-1.75 目录三级筛 | todo | |
+| P2-4 | 修正系数矩阵 | todo | |
+| P2-5 | 动态/剪切特征扩展 | todo | |
+| P2-6 | LanceDB(条件触发) | todo | 每迭代检查触发条件 |
+
 ## 日志
+
+- **2026-06-12 P2-1a done(Phase 2 启动)**:`atlas/mechanics/beam_homog.py`:Timoshenko 空间梁周期均质化。核心洞察:**商图节点自由度恰好就是周期涨落场 ũ 的自由度**(周期像共享 DOF,周期性内建,零主从约束),affine 部分 ε̄·x 化为单元载荷,能量法 6+15 解提完整 6×6 C*。解析锚:竖柱族 E_z=ρ̄_z·E_s 误差 1e-9、横向零刚度;Cubic 三轴精确等模量。**两个物理发现**:① slider=4 变形沿 y 轴 → BCC E_y/E_x=1.10、FCC=1.38 是真实各向异性(structure_set 为 y 压设计),真不变量为 E_x=E_z 横向对称(精确成立);② C5 一阶密度对密集拓扑高估 ~2×(Octet 0.714 vs 商图真值 0.36)——用真密度后 beam E_z=0.9×DFA 铰接值,Timoshenko 剪切柔化(l/d=3.5,φ≈0.17)解释余差,吻合优秀。l/d<5 → certified=False 红线入信封有测试;速度 ~10ms/胞(预算 100ms)。测试 +10,套件 271 全绿。遗留:工程常数在 C 奇异时(纯柱族横向)不输出——如实而非编数。
 
 - **2026-06-11 D1 done —— PHASE 1 完成(18/18)**:`atlas/orchestration/acceptance.py` 三案例端到端(候选→verify_batch 四维扇出→C2 judge→中文报告),报告含裕度列/逐数字 trace/三类来源分列/免责页脚,`audit_report` 红线自动审计零违例。验收光谱:**SLS 吸能块 3 PASS**(库内 comp_EA 白名单证据支撑 margin≥1)/ **MJF auxetic 垫 2 PASS + Tier-2 新图诚实 FAIL**(OOD 无白名单 margin 证据,R1/R6 纪律,报告分层呈现)/ **LPBF 支架诚实零通过**(节点球底面+45° 杆下表面在自支撑准则下需支撑——拓扑内禀,系统如实说不行并给三条出路,高风险标「仅作筛选」)。margin 单位代理诚实标注(comp_EA 绝对单位映射待 P2-5)。测试 +6(报告完备/红线/可溯源/审计器正反),套件 257 全绿。报告样张提交于 `atlas/reports/D1/`。**loop 按协议停止;Phase 2 待用户启动**(P2-1 beam 裁判为首选,Lumpe-Stanković 目录+Bastek 数据已就位)。
 

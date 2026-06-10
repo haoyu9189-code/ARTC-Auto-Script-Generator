@@ -76,14 +76,20 @@
 |----|------|--------------------|------|
 | D1 | 三 case 端到端验收 | LPBF 支架 / SLS 吸能块 / MJF auxetic 垫三案例中文报告齐(裕度列 / trace / 三类来源 / 免责页脚);每个数字可溯源到工具调用或带 inference 标注;红线零违例 | C3, C4 |
 
-### Phase 2 预告(Phase 1 验收后启动,届时细化 DoD)
+### Phase 2 任务清单(2026-06-12 启动,loop 按此执行)
 
-- **P2-1** 自研 `beam_homog.py`(Timoshenko PBC 均质化,~300–500 行 scipy)+ 三重回归验证(自家 DB / Bastek PNAS 2022 / Lumpe-Stanković 抽样)+ 节点刚化修正标定 + 每拓扑类误差条进 Evaluator;审计仓内既有 `compare_*frame*.py`
-- **P2-2** FunSearch 模式回路:Claude 离散提案 × pycma CMA-ES 抛光 × beam 裁判,≤3 轮对齐 K=3;SPD / Voigt-Reuss-HS / 跨档 20% 三道绝对门
-- **P2-3** Tier-1.75 目录三级筛(Maxwell→G-A→beam)→ ABAQUS 终审
-- **P2-4** Material/Process 修正系数矩阵(SLS-PA12 / MJF-PA12 / LPBF-AlSi10Mg)
-- **P2-5** 动态/剪切特征提取扩展(feature_extract.py,解除动态验证 agent 断粮)
-- **P2-6** LanceDB(仅当五条升级触发条件满足)
+| ID | 任务 | Definition of Done | 依赖 |
+|----|------|--------------------|------|
+| P2-1a | beam_homog.py 核心(Timoshenko PBC 均质化) | 商图直接做周期均质化(u=ε̄x+ũ,ũ 周期=商图 DOF,affine 部分作载荷):6+15 次解提取完整 6×6 C*;Timoshenko 剪切项(φ=12EI/GAsL²);解析锚:竖柱族 E_z=ρ̄_z·E_s 精确、立方拓扑 Ex=Ey=Ez、C* SPD;Octet 与 DFA (1/9)ρ̄Es 同量级(刚接偏硬有界);单胞 <100ms;信封含 caveat | — |
+| P2-1b | Lumpe-Stanković 抽样金标准验证 | 解析 Unit_Cell_Catalog.txt 条目(节点+杆+E/G/ν+C,n);抽 ≥20 个立方对称条目(排除 * 与重复),beam_homog(归一 Es=1,ν=0.3)vs 目录 Ex/Ez:中位偏差与分布记录入 `atlas/references/beam_homog_validation.md`;偏差>30% 的条目逐个归因(l/d?非立方?) | P2-1a |
+| P2-1c | 节点刚化修正 + 误差条入 Evaluator | 用自家 DB(24 拓扑 comp_stiffness)标定:beam_homog E_z vs DB 实测,按拓扑类(stretch/bending/hybrid)拟合修正系数与残差带;`atlas/references/beam_error_bars.json`(每类:correction, p50/p90 误差,l/d 域);Evaluator R7 margin 白名单加入 'beam_fem_calibrated'(带误差带折减);l/d<5 拒绝认证写入信封并有测试 | P2-1a |
+| P2-2 | FunSearch 回路(LLM 提案 × CMA-ES × beam 裁判) | pycma 安装;回路:提案器(协议:输入 spec+失败史 → 输出 graph 编辑 JSON;实现 Claude-驱动接口 + 变异 fallback)→ 硬门 → WL 查重 → CMA-ES 抛光连续参数(radius/free_params,目标=beam 裁判分)→ 三道绝对门(C* SPD / Voigt-Reuss 界 / beam vs frame-block 跨档 ≤20% 差);产出 ≥3 个新拓扑比刚度超种子最优 ≥10% 且全链留痕;demo 更新 | P2-1a |
+| P2-3 | Tier-1.75 目录三级筛 | 17,262 条目入 `catalog.sqlite`(provenance=DOI+CC BY-NC 标记,135 重复+40 星标 quality flag);三级筛管线:Maxwell/连通(毫秒)→ G-A 类预估(毫秒)→ beam_homog(top 切片);对一个 spec 演示:目录→top-10 → 与 24 种子同台比较;红线:称"枚举"不称"生成" | P2-1a |
+| P2-4 | Material/Process 修正矩阵 | `thresholds/process_matrix.json`:SLS-PA12/MJF-PA12/LPBF-AlSi10Mg 三档(E_s,σ_ys,ρ_s,各向异性,表面/工艺折扣),逐条 source+source_type(无源标 inference);Mapper agent 提示词更新指向矩阵;测试断言全条目带源 | — |
+| P2-5 | 动态/剪切特征提取扩展 | 从 cell_db curves(DynaCompre/DynaShear 3,946 条中的动态曲线)提取 dyna_stiffness/dyna_yield/dyna_peak + shear_peak 入 features 表(带 source);ingest 可复跑;动态验证维度从 informational 升级为真特征(verify.py 更新);缺曲线 43 条如实跳过 | — |
+| P2-6 | LanceDB(条件触发) | 仅当 HANDOFF §9.4 五条件之一满足;每次 loop 迭代检查 retriever_log 的 miss 率,未触发则 skip 并留痕 | — |
+
+执行顺序:P2-1a → (P2-1b ∥ P2-1c ∥ P2-4 ∥ P2-5) → P2-2 → P2-3;P2-6 条件检查每迭代捎带。
 
 ### Phase 3 预告
 
