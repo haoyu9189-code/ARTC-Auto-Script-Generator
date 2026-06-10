@@ -29,7 +29,8 @@
           "status": {"enum": ["computed", "estimate", "default",
                               "out_of_domain", "needs_input"]},
           "source_type": {"enum": ["academic_doi", "vendor", "inference",
-                                   "internal_fea", "internal_computed"]},
+                                   "internal_fea", "internal_computed",
+                                   "beam_fem_calibrated"]},
           "caveats": {"type": "array", "items": {"type": "string"}},
           "applicability_distance": {"type": ["number", "null"]},
           "margin_eligible": {"type": "boolean"}

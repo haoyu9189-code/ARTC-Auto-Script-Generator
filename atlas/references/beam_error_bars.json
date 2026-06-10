@@ -1,0 +1,423 @@
+{
+ "_meta": {
+  "date": "2026-06-12",
+  "basis": "E_s=1010 MPa, nu=0.3(FEA 模板实值);载荷轴 y(轴置换);参照=原始 StaCompre 曲线 0-2% 应变窗斜率;模型=frame_fem n=1 块(底固/顶压/横向锁,与 FEA 同 BC)",
+  "scope": "修正吸收节点刚化+单元理想化;尺寸效应(n=1→bulk)归 Size-Effect Corrector;周期 bulk 值另见 beam_homog(Lumpe 细长区中位 0.9%)",
+  "hierarchy": "per_topology(p50≈14%)优先;OOD 落 per_class 兜底(p90 折减,弯曲类≈0 → 强制 Tier-D)",
+  "source_type": "internal_computed",
+  "volatile_topologies": [
+   "AFCC",
+   "BCC",
+   "CubicRosette",
+   "Diamond",
+   "FCC",
+   "G7"
+  ]
+ },
+ "per_topology": {
+  "AFCC": {
+   "n_samples": 15,
+   "correction": 3.3222,
+   "p50_resid": 0.4263,
+   "p90_resid": 1.8875,
+   "raw_ratio_range": [
+    1.576,
+    14.325
+   ],
+   "class": "stretch",
+   "ld_range": [
+    3.54,
+    6.77
+   ]
+  },
+  "Auxetic": {
+   "n_samples": 15,
+   "correction": 1.8893,
+   "p50_resid": 0.1706,
+   "p90_resid": 0.3069,
+   "raw_ratio_range": [
+    1.101,
+    2.38
+   ],
+   "class": "hybrid",
+   "ld_range": [
+    2.54,
+    4.55
+   ]
+  },
+  "BCC": {
+   "n_samples": 15,
+   "correction": 1.9887,
+   "p50_resid": 0.2807,
+   "p90_resid": 3.5349,
+   "raw_ratio_range": [
+    1.313,
+    13.06
+   ],
+   "class": "bending",
+   "ld_range": [
+    3.54,
+    7.68
+   ]
+  },
+  "BCCZ": {
+   "n_samples": 15,
+   "correction": 1.7336,
+   "p50_resid": 0.1528,
+   "p90_resid": 0.5548,
+   "raw_ratio_range": [
+    1.227,
+    3.485
+   ],
+   "class": "stretch",
+   "ld_range": [
+    4.27,
+    8.33
+   ]
+  },
+  "CBCC": {
+   "n_samples": 15,
+   "correction": 1.7775,
+   "p50_resid": 0.1475,
+   "p90_resid": 0.5498,
+   "raw_ratio_range": [
+    1.347,
+    3.671
+   ],
+   "class": "bending",
+   "ld_range": [
+    5.0,
+    8.33
+   ]
+  },
+  "Cubic": {
+   "n_samples": 3,
+   "correction": 1.5447,
+   "p50_resid": 0.0524,
+   "p90_resid": 0.2097,
+   "raw_ratio_range": [
+    1.16,
+    1.626
+   ],
+   "class": "bending",
+   "ld_range": [
+    5.0,
+    8.33
+   ]
+  },
+  "CubicRosette": {
+   "n_samples": 15,
+   "correction": 2.3505,
+   "p50_resid": 0.2129,
+   "p90_resid": 2.3167,
+   "raw_ratio_range": [
+    1.671,
+    9.973
+   ],
+   "class": "bending",
+   "ld_range": [
+    1.77,
+    2.99
+   ]
+  },
+  "Cuboctahedron_Z": {
+   "n_samples": 15,
+   "correction": 2.8694,
+   "p50_resid": 0.1348,
+   "p90_resid": 0.3775,
+   "raw_ratio_range": [
+    2.137,
+    4.202
+   ],
+   "class": "stretch",
+   "ld_range": [
+    3.54,
+    5.89
+   ]
+  },
+  "Diamond": {
+   "n_samples": 15,
+   "correction": 1.861,
+   "p50_resid": 0.1422,
+   "p90_resid": 1.2432,
+   "raw_ratio_range": [
+    0.739,
+    4.722
+   ],
+   "class": "bending",
+   "ld_range": [
+    2.06,
+    11.79
+   ]
+  },
+  "DiamondPlus": {
+   "n_samples": 15,
+   "correction": 1.1469,
+   "p50_resid": 0.1136,
+   "p90_resid": 0.6296,
+   "raw_ratio_range": [
+    0.959,
+    2.5
+   ],
+   "class": "bending",
+   "ld_range": [
+    2.42,
+    4.97
+   ]
+  },
+  "FBCCXYZ": {
+   "n_samples": 15,
+   "correction": 1.8679,
+   "p50_resid": 0.164,
+   "p90_resid": 0.4073,
+   "raw_ratio_range": [
+    1.422,
+    2.879
+   ],
+   "class": "stretch",
+   "ld_range": [
+    5.0,
+    8.85
+   ]
+  },
+  "FBCCZ": {
+   "n_samples": 15,
+   "correction": 1.6953,
+   "p50_resid": 0.131,
+   "p90_resid": 0.542,
+   "raw_ratio_range": [
+    1.298,
+    3.368
+   ],
+   "class": "stretch",
+   "ld_range": [
+    4.33,
+    10.21
+   ]
+  },
+  "FCC": {
+   "n_samples": 15,
+   "correction": 2.9462,
+   "p50_resid": 0.3916,
+   "p90_resid": 1.9134,
+   "raw_ratio_range": [
+    1.513,
+    13.976
+   ],
+   "class": "bending",
+   "ld_range": [
+    3.54,
+    6.77
+   ]
+  },
+  "FCCZ": {
+   "n_samples": 15,
+   "correction": 2.0001,
+   "p50_resid": 0.1666,
+   "p90_resid": 0.512,
+   "raw_ratio_range": [
+    1.371,
+    3.169
+   ],
+   "class": "stretch",
+   "ld_range": [
+    3.54,
+    6.77
+   ]
+  },
+  "G7": {
+   "n_samples": 15,
+   "correction": 2.1243,
+   "p50_resid": 0.2674,
+   "p90_resid": 3.2215,
+   "raw_ratio_range": [
+    1.445,
+    13.119
+   ],
+   "class": "stretch",
+   "ld_range": [
+    4.67,
+    8.33
+   ]
+  },
+  "Iso_truss": {
+   "n_samples": 15,
+   "correction": 3.0573,
+   "p50_resid": 0.1727,
+   "p90_resid": 0.5385,
+   "raw_ratio_range": [
+    1.894,
+    5.276
+   ],
+   "class": "bending",
+   "ld_range": [
+    5.0,
+    8.33
+   ]
+  },
+  "Kelvin": {
+   "n_samples": 15,
+   "correction": 2.6384,
+   "p50_resid": 0.1181,
+   "p90_resid": 0.2313,
+   "raw_ratio_range": [
+    1.933,
+    3.256
+   ],
+   "class": "bending",
+   "ld_range": [
+    1.06,
+    4.6
+   ]
+  },
+  "Octahedron": {
+   "n_samples": 3,
+   "correction": 1.9417,
+   "p50_resid": 0.0937,
+   "p90_resid": 0.1101,
+   "raw_ratio_range": [
+    1.76,
+    2.163
+   ],
+   "class": "stretch",
+   "ld_range": [
+    3.54,
+    5.89
+   ]
+  },
+  "Octet_truss": {
+   "n_samples": 15,
+   "correction": 1.9955,
+   "p50_resid": 0.142,
+   "p90_resid": 0.3949,
+   "raw_ratio_range": [
+    1.244,
+    2.941
+   ],
+   "class": "stretch",
+   "ld_range": [
+    3.54,
+    6.77
+   ]
+  },
+  "Rhombic": {
+   "n_samples": 15,
+   "correction": 2.5369,
+   "p50_resid": 0.1579,
+   "p90_resid": 0.3074,
+   "raw_ratio_range": [
+    1.628,
+    3.343
+   ],
+   "class": "bending",
+   "ld_range": [
+    2.06,
+    5.89
+   ]
+  },
+  "Tetrahedron_base": {
+   "n_samples": 15,
+   "correction": 1.5186,
+   "p50_resid": 0.1505,
+   "p90_resid": 0.6364,
+   "raw_ratio_range": [
+    1.205,
+    2.69
+   ],
+   "class": "bending",
+   "ld_range": [
+    5.0,
+    8.33
+   ]
+  },
+  "Truncated_Octoctahedron": {
+   "n_samples": 15,
+   "correction": 2.5304,
+   "p50_resid": 0.0277,
+   "p90_resid": 0.0556,
+   "raw_ratio_range": [
+    2.281,
+    2.624
+   ],
+   "class": "hybrid",
+   "ld_range": [
+    1.04,
+    2.4
+   ]
+  },
+  "Truncated_cube": {
+   "n_samples": 15,
+   "correction": 3.1963,
+   "p50_resid": 0.1045,
+   "p90_resid": 0.1887,
+   "raw_ratio_range": [
+    2.42,
+    3.718
+   ],
+   "class": "hybrid",
+   "ld_range": [
+    1.98,
+    4.48
+   ]
+  },
+  "WeairePhelan": {
+   "n_samples": 15,
+   "correction": 2.1299,
+   "p50_resid": 0.0575,
+   "p90_resid": 0.128,
+   "raw_ratio_range": [
+    1.924,
+    2.454
+   ],
+   "class": "hybrid",
+   "ld_range": [
+    1.06,
+    2.07
+   ]
+  }
+ },
+ "per_class": {
+  "stretch": {
+   "n_samples": 123,
+   "correction": 2.092,
+   "p50_resid": 0.2281,
+   "p90_resid": 0.6763,
+   "raw_ratio_range": [
+    1.227,
+    14.325
+   ],
+   "ld_range": [
+    3.54,
+    10.21
+   ]
+  },
+  "bending": {
+   "n_samples": 153,
+   "correction": 2.1028,
+   "p50_resid": 0.2794,
+   "p90_resid": 1.0877,
+   "raw_ratio_range": [
+    0.739,
+    13.976
+   ],
+   "ld_range": [
+    1.06,
+    11.79
+   ]
+  },
+  "hybrid": {
+   "n_samples": 60,
+   "correction": 2.3909,
+   "p50_resid": 0.1059,
+   "p90_resid": 0.4766,
+   "raw_ratio_range": [
+    1.101,
+    3.718
+   ],
+   "ld_range": [
+    1.04,
+    4.55
+   ]
+  }
+ }
+}

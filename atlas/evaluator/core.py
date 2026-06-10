@@ -31,7 +31,10 @@ RULES = ('R1 多模态一致', 'R2 margin 含 FoS 不二次乘', 'R3 n<3 强警�
          'R6 OOD 禁最近邻', 'R7 margin 证据来源白名单')
 
 _CONF_ORDER = ['screening', 'design_reference', 'near_final']
-MARGIN_EVIDENCE_WHITELIST = ('internal_fea',)  # + Tier-D FEA(P2 接入)
+# beam_fem_calibrated:P2-1c 标定的 frame_fem,margin 值须为
+# E_y_margin_safe(已按 p90 残差折减,弯曲类 OOD 折减后≈0 → 实质
+# 强制 Tier-D)。Tier-D FEA 接入后加入 'abaqus_fea'。
+MARGIN_EVIDENCE_WHITELIST = ('internal_fea', 'beam_fem_calibrated')
 
 
 def validate_trace(trace):
