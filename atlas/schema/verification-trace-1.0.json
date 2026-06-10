@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "atlas-verification-trace/1.0",
+  "title": "ATLAS verification trace(可审计验证链记录)",
+  "type": "object",
+  "required": ["candidate_id", "tier", "checks", "verdict"],
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": {"type": "string", "minLength": 1},
+    "tier": {"enum": ["1", "1.5", "1.75", "2"]},
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["dimension", "tool", "value", "pass", "source",
+                     "status"],
+        "additionalProperties": true,
+        "properties": {
+          "dimension": {"enum": ["printability", "mechanics",
+                                 "topology_tendency", "density",
+                                 "sea_sanity", "size_effect",
+                                 "material", "gates", "novelty"]},
+          "tool": {"type": "string", "minLength": 1},
+          "value": {},
+          "threshold": {},
+          "pass": {"type": ["boolean", "null"]},
+          "source": {"type": "string", "minLength": 1},
+          "status": {"enum": ["computed", "estimate", "default",
+                              "out_of_domain", "needs_input"]},
+          "source_type": {"enum": ["academic_doi", "vendor", "inference",
+                                   "internal_fea", "internal_computed"]},
+          "caveats": {"type": "array", "items": {"type": "string"}},
+          "applicability_distance": {"type": ["number", "null"]},
+          "margin_eligible": {"type": "boolean"}
+        }
+      }
+    },
+    "margin": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "metric": {"type": "string"},
+        "predicted": {"type": "number"},
+        "design_value_with_fos": {"type": "number"},
+        "ratio": {"type": "number"},
+        "evidence_source": {"type": "string"}
+      }
+    },
+    "verdict": {"enum": ["PASS", "FAIL", "SCREENING_PASS", "PARETO"]},
+    "verdict_reasons": {"type": "array", "items": {"type": "string"}},
+    "downgrades": {"type": "array", "items": {"type": "string"}},
+    "confidence_level": {"enum": ["screening", "design_reference",
+                                  "near_final", null]},
+    "n_cells": {"type": ["integer", "null"]},
+    "regeneration_round": {"type": "integer", "minimum": 0}
+  }
+}

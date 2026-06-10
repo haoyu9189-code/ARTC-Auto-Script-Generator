@@ -18,6 +18,7 @@ EXPECTED = {
     'atlas-surrogate': {'Bash', 'Read', 'Grep'},
     'atlas-mapper': {'Read', 'Grep', 'Glob'},
     'atlas-corrector': {'Bash', 'Read', 'Grep'},
+    'atlas-evaluator': {'Bash', 'Read', 'Grep'},
 }
 # 任何 worker 都不得拥有的工具(证据纪律/外联控制)
 FORBIDDEN = {'Write', 'Edit', 'WebFetch', 'WebSearch', 'AskUserQuestion',

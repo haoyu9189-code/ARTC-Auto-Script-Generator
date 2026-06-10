@@ -21,7 +21,7 @@
 | B7 | 种子文献库(≥10+6) | done | 18 篇笔记全核实 DOI;新勘误 E10;219 项全绿 |
 | B8 | Retriever + cell_db MCP | done | 四工具;OOD 拒绝红线进代码;225 项全绿 |
 | C1 | 6 worker subagents | done | 白名单+合同+红线入提示词;MCP 注册;230 项全绿 |
-| C2 | Evaluator + 证据强制 | todo | |
+| C2 | Evaluator + 证据强制 | done | R1–R7 确定性引擎逐条正反用例;241 项全绿 |
 | C3 | K=3 重生回路 skill | todo | |
 | C4 | 4 并行验证 agent 接线 | todo | |
 | D1 | 三 case 端到端验收 | todo | Phase 1 完成判据 |
@@ -29,6 +29,7 @@
 ## 日志
 
 - **2026-06-10**:两轮多智能体调研完成(22 agents,对抗核查全过):`RESEARCH.md` + `RESEARCH_NOVEL_TOPO.md` 落盘;HANDOFF §11 增补(新拓扑主攻);PLAN v1.0 建立;loop 启动。关键勘误已固化:Zhong 2023 出处、TPMS 指数适用域、PA12 SEA 带 0.3–8、cell DB 实况 999 总计/无 provenance/23-24 watertight、C3 连通性 Smith 标准形条件。
+- **2026-06-11 C2 done**:Evaluator 三层证据强制:① `atlas/evaluator/core.py` **确定性判决引擎**(规则不靠 LLM 自觉——ChemCrow/A-Lab/FEABench 教训):R1 多模态一致(单项检查不得 PASS)/R2 margin≥1.0 且 spec 必须确认 fos_already_applied(防二次乘)/R3 n<3 强警示+定稿级 FAIL/R4 inference 自动降级留痕/R5 最近邻必带 applicability_distance/R6 OOD(Tier-2/1.75) 最近邻证据作废/R7 margin 证据来源白名单(解析筛最高 SCREENING_PASS),逐条正反用例;② `verification-trace-1.0.json` schema,引擎产物强制合 schema,不合即拒(PostToolUse 角色);③ PreToolUse hook 脚本(`atlas/evaluator/hooks/`,ATLAS_EVALUATOR_HOOK=1 启用,白名单外 exit 2 阻断,WebFetch/Write 拒、Bash/mcp__atlas* 放行,未启用放行不影响其它会话)+ 注册 README(不擅改用户 settings.json,注册需用户批准)。`.claude/agents/atlas-evaluator.md`(白名单 Bash/Read/Grep,数字抄录不转述,FAIL reasons 完整回传供 K=3)。测试 +11(规则正反/schema 收拒/hook 阻断放行),套件 241 全绿。遗留:Tier-D FEA 加入 margin 白名单归 P2。
 - **2026-06-11 C1 done**:6 worker 落 `.claude/agents/`(interpreter / generator / printability / surrogate / mapper / corrector),各带严格 tools 白名单(全员禁 Write/Edit/Web/AskUserQuestion/Skill/Agent——证据纪律)+ JSON 输入输出合同 + 任务专属红线写进系统提示词(Surrogate:OOD 禁最近邻+screening only;Corrector:n<3 强警示+spinodoid 查表不适用;Mapper:inference 降级+XY/Z 各向异性;Printability:数字抄录不转述;Generator:失败提案留痕 killed 字段;Interpreter:追问经主会话回环+默认值标 inference)。两个 MCP server 注册进项目级 `.mcp.json`。`.gitignore` 放行 `.claude/agents/`。静态配置验证测试 +5(白名单严格相等/合同文句/红线文句/MCP 文件存在);运行期白名单强制由 harness 执行(已注)。套件 230 全绿。遗留:Generator 的 Tier-1.75 目录检索待 P2-3。
 - **2026-06-11 B8 done(B 系列收口)**:`atlas/retriever/`(core 纯函数 + FastMCP STDIO 薄壳),四工具:query_cell_db(过滤查表,数值与 source 列原样返回)/ get_structure(单结构全档:身份+双密度+质量旗标+曲线/特征带源)/ nearest_by_density(库内同拓扑密度最近邻 + applicability 距离;**OOD 拓扑显式拒绝并指引物理裁判——红线进代码不靠提示词**)/ retrieve_reference(文献 front-matter 加权关键词检索,零向量库,miss 标志即 LanceDB 升级触发条件②的统计源)。RANK_FUSION_RULE 写入 server instructions(数值永不参与 rank fusion)且有测试;全调用 JSONL 留痕(tool/query/n_hits/sources,gitignore)。测试 +6,套件 225 全绿。遗留:MCP 注册归 C1 接线。
 - **2026-06-11 B7 done**:文献库 18 篇笔记入 `atlas/references/`(12 核心:G-A 1997 / DFA octet 2001 / DAF Maxwell 2001 / Zhong 2023 / Raz 2025 / Abdulhadi 2023 / Chen 2023 / Yan 2015(标待核)/ Lumpe-Stanković 2021 / Kumar 2020 spinodoid / Bastek 2022 truss / Bastek 2023 diffusion;6 尺寸效应:Nasim 2021 / Li&Guo 2024 / Onck 2001-I / Andrews 2001-II / Tekoğlu 2008 / Tekoğlu 2005),全部 YAML front-matter(doi/source_type/validated_claims/validity_domain/verified),DOI 经 Crossref API 逐条核对。**新勘误 E10**:调研报告引"Kirchhof 2024 J Elasticity"查无此文,实为 **Li & Guo 2024 JMBBM 10.1016/j.jmbbm.2024.106532**(Cosserat 弹性的尺寸依赖 Poisson 比——恰是 Poisson↔尺寸效应假说最近邻文献,引文张冠李戴已留痕)。新增 Kumar 2020 数据补充:Bastek 2022 训练数据在 ETHZ 10.3929/ethz-b-000520254(P2-1 可用)。测试 +4(front-matter 完备/Grep 命中/勘误固化),套件 219 全绿。遗留:Yan 2015 原文指数核对、Raz 七点表核录(原文获取)。
