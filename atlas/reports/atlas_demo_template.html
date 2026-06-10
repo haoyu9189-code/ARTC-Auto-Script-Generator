@@ -91,6 +91,44 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .lat-tabs button:last-child{border-right:none}
 .lat-tabs button:hover{color:var(--ink)}
 .lat-tabs button.on{color:#0a0d10;background:var(--amber);font-weight:600}
+.viz-ctl{display:flex;align-items:center;gap:12px;padding:9px 14px;
+  border-top:1px solid var(--line2);font-family:var(--mono);font-size:10px;
+  color:var(--ink-dim);letter-spacing:.1em}
+.viz-ctl .mode{display:flex;border:1px solid var(--line)}
+.viz-ctl .mode button{background:none;border:none;color:var(--ink-dim);
+  font:inherit;padding:5px 12px;cursor:pointer;letter-spacing:.12em}
+.viz-ctl .mode button.on{background:var(--amber);color:#0a0d10;font-weight:600}
+.viz-ctl input[type=range]{flex:1;accent-color:var(--amber);height:3px}
+.viz-ctl .legend{display:flex;gap:10px}
+.viz-ctl .legend i{font-style:normal}
+.viz-ctl .legend .c1{color:#ff7b4f}.viz-ctl .legend .c2{color:#59d2ff}
+
+/* ───────── 工况分析 ───────── */
+.mech{display:grid;grid-template-columns:5fr 4fr 3fr;gap:18px;margin-top:18px}
+.mech .body{padding:12px 16px 16px;font-family:var(--mono);font-size:12px}
+.formula{border-left:2px solid var(--amber-dim);padding:8px 12px;margin:10px 0;
+  background:rgba(255,176,0,.03)}
+.formula .eq{font-size:13.5px;color:var(--ink);letter-spacing:.02em}
+.formula .eq sub,.formula .eq sup{font-size:9px}
+.formula .val{margin-top:5px;font-size:11px;color:var(--amber)}
+.formula .src{margin-top:3px;font-size:9.5px;color:var(--ink-faint);
+  font-family:var(--sans)}
+.ang-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:10.5px}
+.ang-row .k{width:64px;color:var(--ink-dim)}
+.ang-row .bar{flex:1;height:9px;background:var(--line2);position:relative}
+.ang-row .bar i{position:absolute;inset:0 auto 0 0;background:var(--amber);opacity:.8}
+.ang-row .n{width:30px;text-align:right;color:var(--ink)}
+.kv{display:flex;justify-content:space-between;padding:6.5px 0;
+  border-bottom:1px dashed var(--line2);font-size:11.5px}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--ink-dim)}
+.kv .v{color:var(--ink)}
+.kv .v.hot{color:var(--amber)}
+.chip{display:inline-block;font-size:9px;letter-spacing:.12em;padding:2px 7px;
+  border:1px solid rgba(255,176,0,.4);color:var(--amber)}
+.mech .caveat{margin-top:10px;font-family:var(--sans);font-size:10px;
+  color:var(--ink-dim);line-height:1.5;border-top:1px dashed var(--line2);
+  padding-top:8px}
 
 /* ───────── 案例 ───────── */
 .sec-title{margin:42px 0 14px;display:flex;align-items:baseline;gap:14px}
@@ -172,8 +210,28 @@ footer b{color:var(--amber);font-weight:500}
       <canvas id="cv"></canvas>
       <div class="hud" id="hud"></div>
     </div>
+    <div class="viz-ctl">
+      <div class="mode" id="mode">
+        <button data-m="orig" class="on">原始</button>
+        <button data-m="def">变形 ε=5%</button>
+      </div>
+      <span>夸大</span>
+      <input type="range" id="exag" min="1" max="20" value="6">
+      <span id="exagv">×6</span>
+      <div class="legend"><i class="c1">— 压</i><i class="c2">— 拉</i></div>
+    </div>
     <div class="lat-tabs" id="tabs"></div>
   </div>
+</div>
+
+<div class="sec-title"><h3>工况分析 · 单轴压缩</h3><span>FRAME FEM(EULER–BERNOULLI)· 底面固支 / 顶面位移加载 · SCREENING ONLY</span></div>
+<div class="mech">
+  <div class="panel"><h2>力学立论与实算 <i id="mech-name"></i></h2>
+    <div class="body" id="mech-formulas"></div></div>
+  <div class="panel"><h2>杆件角度分布 <i>θ vs 载荷轴</i></h2>
+    <div class="body" id="mech-angles"></div></div>
+  <div class="panel"><h2>材料与判级 <i>PA12 / MJF</i></h2>
+    <div class="body" id="mech-kv"></div></div>
 </div>
 
 <div class="sec-title"><h3>D1 验收 · 三案例</h3><span>MARGIN = PRED / DESIGN(已含 FoS,不二次乘)· GATE = 1.0</span></div>
@@ -280,22 +338,57 @@ document.querySelector('.bottom .panel:last-child h2 i').textContent =
 setInterval(()=>{document.getElementById('clock').textContent =
  new Date().toTimeString().slice(0,8)},1000);
 
-/* ── 点阵画布(真实管线几何) ── */
+/* ── 点阵画布(真实管线几何 + frame-FEM 变形场) ── */
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const names = Object.keys(DATA.lattices);
 let cur = names[0], rotY = .6, rotX = .42, auto = true;
+let mode = 'orig', exag = 6;
 const tabs = document.getElementById('tabs');
 tabs.innerHTML = names.map(n=>
  `<button data-n="${n}" class="${n===cur?'on':''}">${n}</button>`).join('');
 tabs.onclick = e=>{const b=e.target.closest('button');if(!b)return;
  cur=b.dataset.n;tabs.querySelectorAll('button').forEach(x=>
+  x.classList.toggle('on',x===b));setHud();renderMech();};
+document.getElementById('mode').onclick = e=>{
+ const b=e.target.closest('button');if(!b)return;
+ mode=b.dataset.m;
+ document.querySelectorAll('#mode button').forEach(x=>
   x.classList.toggle('on',x===b));setHud();};
+const exagEl=document.getElementById('exag');
+exagEl.oninput=()=>{exag=+exagEl.value;
+ document.getElementById('exagv').textContent='×'+exag;};
 function setHud(){
  const L=DATA.lattices[cur];
+ const extra = mode==='def'
+  ? `<br>FEM 2×2×2 · ${L.fem.elems.length} 单元 · E*=${L.fem.E_star} MPa`
+  : `<br>SRC atlas.geometry / abaqus_adapter`;
  document.getElementById('hud').innerHTML =
   `<b>${cur}</b><br>${L.tier}<br>STRUTS ${L.segments.length} · CELL 5.0 mm`
-  +`<br>SRC atlas.geometry / abaqus_adapter`;}
+  + extra;}
 setHud();
+
+/* 每个 lattice 的 FEM 几何预处理:中心 + 最大应力(着色归一) */
+for(const n of names){
+ const F=DATA.lattices[n].fem; if(!F)continue;
+ const xs=F.nodes.map(p=>p[0]),ys=F.nodes.map(p=>p[1]),zs=F.nodes.map(p=>p[2]);
+ F._c=[(Math.min(...xs)+Math.max(...xs))/2,(Math.min(...ys)+Math.max(...ys))/2,
+       (Math.min(...zs)+Math.max(...zs))/2];
+ F._smax=Math.max(...F.elems.map(e=>Math.abs(e[2])),1e-9);
+}
+function drawList(){
+ const L=DATA.lattices[cur];
+ if(mode==='orig'||!L.fem){
+  return {segs:L.segments.map(s=>({a:[s[0],s[1],s[2]],b:[s[3],s[4],s[5]],
+                                   st:null})), span:14.5};
+ }
+ const F=L.fem,C=F._c;
+ return {segs:F.elems.map(e=>{
+   const i=e[0],j=e[1];
+   const a=[0,1,2].map(k=>F.nodes[i][k]-C[k]+exag*F.u[i][k]);
+   const b=[0,1,2].map(k=>F.nodes[j][k]-C[k]+exag*F.u[j][k]);
+   return {a,b,st:e[2]/F._smax};
+  }), span:17.5};
+}
 function resize(){const r=cv.parentElement.getBoundingClientRect();
  cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;}
 addEventListener('resize',resize);resize();
@@ -306,29 +399,92 @@ cv.parentElement.addEventListener('mousemove',e=>{
 cv.parentElement.addEventListener('mouseleave',()=>auto=true);
 function frame(t){
  if(auto)rotY=t*.00035;
- const W=cv.width,H=cv.height,sc=Math.min(W,H)/14.5;
+ const {segs:raw,span}=drawList();
+ const W=cv.width,H=cv.height,sc=Math.min(W,H)/span;
  ctx.clearRect(0,0,W,H);
  const cy=Math.cos(rotY),sy=Math.sin(rotY),cx=Math.cos(rotX),sx=Math.sin(rotX);
- const segs=DATA.lattices[cur].segments.map(s=>{
-  const P=[[s[0],s[1],s[2]],[s[3],s[4],s[5]]].map(([x,y,z])=>{
-   let X=x*cy+z*sy, Z=-x*sy+z*cy, Y=y*cx-Z*sx; Z=y*sx+Z*cx;
-   return [W/2+X*sc, H/2-Y*sc, Z];});
-  return {p:P, z:(P[0][2]+P[1][2])/2};
+ // 投影:先绕模型 z 轴(载荷轴)旋转,再俯仰;屏幕竖直 ≈ 模型 z(压缩方向直观)
+ const proj=([x,y,z])=>{
+  const X=x*cy+y*sy, Yd=-x*sy+y*cy;
+  const Ys=z*cx-Yd*sx, D=z*sx+Yd*cx;
+  return [W/2+X*sc, H/2-Ys*sc, D];};
+ const list=raw.map(s=>{
+  const p1=proj(s.a),p2=proj(s.b);
+  return {p:[p1,p2], z:(p1[2]+p2[2])/2, st:s.st};
  }).sort((a,b)=>a.z-b.z);
- const zs=segs.map(s=>s.z),zmin=Math.min(...zs),zmax=Math.max(...zs)+1e-9;
- for(const s of segs){
-  const d=(s.z-zmin)/(zmax-zmin);          // 0 远 → 1 近
-  ctx.strokeStyle=`rgba(255,${166+Math.round(50*d)},${Math.round(40*d)},${.22+.66*d})`;
+ const zs=list.map(s=>s.z),zmin=Math.min(...zs),zmax=Math.max(...zs)+1e-9;
+ for(const s of list){
+  const d=(s.z-zmin)/(zmax-zmin);
+  if(s.st==null){
+   ctx.strokeStyle=`rgba(255,${166+Math.round(50*d)},${Math.round(40*d)},${.22+.66*d})`;
+  }else{
+   const m=Math.min(1,Math.abs(s.st));
+   ctx.strokeStyle = s.st<0
+    ? `rgba(255,${150-Math.round(70*m)},${70-Math.round(40*m)},${.3+.6*d})`   // 压:橙→红
+    : `rgba(${90+Math.round(40*m)},210,255,${.3+.6*d})`;                       // 拉:青
+  }
   ctx.lineWidth=(0.9+2.6*d)*devicePixelRatio;
   ctx.beginPath();ctx.moveTo(s.p[0][0],s.p[0][1]);
   ctx.lineTo(s.p[1][0],s.p[1][1]);ctx.stroke();
-  for(const p of s.p){const r=(0.9+1.8*d)*devicePixelRatio;
-   ctx.fillStyle=`rgba(255,209,102,${.25+.55*d})`;
+  for(const p of s.p){const r=(0.8+1.6*d)*devicePixelRatio;
+   ctx.fillStyle=`rgba(255,209,102,${.2+.5*d})`;
    ctx.fillRect(p[0]-r,p[1]-r,2*r,2*r);}
  }
  requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+
+/* ── 工况分析面板 ── */
+function renderMech(){
+ const L=DATA.lattices[cur], F=L.fem;
+ document.getElementById('mech-name').textContent=cur;
+ const ratio=(F.E_star/F.E_GA).toFixed(2);
+ let formulas=`
+  <div class="formula"><div class="eq">K·u = f,&nbsp; u<sub>f</sub> = −K<sub>ff</sub><sup>−1</sup>K<sub>fk</sub>u<sub>k</sub></div>
+   <div class="val">直接刚度法分块求解:${F.nodes.length} 节点 × 6 DOF,${F.elems.length} 单元(2×2×2 块,边界共享权 1/2<sup>k</sup>)</div>
+   <div class="src">单元刚度:轴 EA/L · 弯 12EI/L³ · 扭 GJ/L(Euler–Bernoulli 12×12,圆截面 r=0.5 mm)</div></div>
+  <div class="formula"><div class="eq">E* = σ/ε = (ΣF<sub>z,top</sub>/A)/(δ/H)</div>
+   <div class="val">σ = ${F.sigma} MPa @ ε = ${F.strain} &nbsp;→&nbsp; E* = ${F.E_star} MPa</div>
+   <div class="src">底面固支,顶面 u<sub>z</sub> = −0.05H,横向锁定(平台摩擦)</div></div>
+  <div class="formula"><div class="eq">${F.klass==='stretch'?'E*/E<sub>s</sub> = (1/9)·ρ̄':'E*/E<sub>s</sub> ≈ ρ̄²'}&nbsp;(Gibson–Ashby/DFA)</div>
+   <div class="val">E*<sub>GA</sub> = ${F.E_GA} MPa &nbsp;→&nbsp; FEM/GA = ${ratio}×(刚接 + 节点材料 vs 铰接理想化)</div>
+   <div class="src">${F.klass==='stretch'?'Deshpande–Fleck–Ashby 2001, DOI 10.1016/S0022-5096(01)00010-2':'Gibson &amp; Ashby, Cellular Solids 2nd ed., 1997'}</div></div>
+  <div class="formula"><div class="eq">M = b − 3j + 6 = ${F.maxwell_M}</div>
+   <div class="val">${F.tendency}(倾向,必要非充分)· 实算平均弯曲能量占比 = ${F.bend_mean}</div>
+   <div class="src">Maxwell 1864;Deshpande–Ashby–Fleck 2001, DOI 10.1016/S1359-6454(00)00379-7</div></div>`;
+ document.getElementById('mech-formulas').innerHTML=formulas;
+
+ const bins=['0–15°','15–30°','30–45°','45–60°','60–75°','75–90°'];
+ const mxh=Math.max(...F.angle_hist,1);
+ document.getElementById('mech-angles').innerHTML =
+  F.angle_hist.map((n,i)=>`<div class="ang-row"><span class="k">${bins[i]}</span>
+   <span class="bar"><i style="width:${n/mxh*100}%"></i></span>
+   <span class="n">${n}</span></div>`).join('')
+  +`<div class="caveat">θ = 杆轴与载荷轴夹角。θ 小 → 轴向传力(拉压);
+    θ 大 → 横杆,受弯为主。${cur} 平均弯曲能量占比 ${F.bend_mean}
+    与角度分布相互印证。</div>`;
+
+ let kv=`
+  <div class="kv"><span class="k">基材 E_s(HP PA12 数据表)</span><span class="v">1700 MPa</span></div>
+  <div class="kv"><span class="k">σ_ys(48 MPa 拉伸强度保守代理)</span><span class="v">45 MPa</span></div>
+  <div class="kv"><span class="k">相对密度 ρ̄(一阶估)</span><span class="v">${F.rho}</span></div>
+  <div class="kv"><span class="k">E* (frame FEM)</span><span class="v hot">${F.E_star} MPa</span></div>
+  <div class="kv"><span class="k">E* (G–A 解析)</span><span class="v">${F.E_GA} MPa</span></div>
+  <div class="kv"><span class="k">中位 l/d</span><span class="v">${F.ld}${F.ld<5?' ⚠ 失效区':''}</span></div>
+  <div class="kv"><span class="k">判级</span><span class="v"><span class="chip">${F.tendency}</span></span></div>`;
+ if(L.gen){
+  kv+=`
+  <div class="kv"><span class="k">生成谱系</span><span class="v">变异自 ${L.gen.parent}</span></div>
+  <div class="kv"><span class="k">比刚度 E*/ρ̄</span><span class="v hot">${L.gen.score}(种子最优 ${L.gen.best_seed_score})</span></div>
+  <div class="kv"><span class="k">搜索统计</span><span class="v">${L.gen.proposed} 提案 / ${L.gen.survivors} 幸存 / ${L.gen.dup_killed} 查重杀</span></div>
+  <div class="kv"><span class="k">WL 哈希</span><span class="v">${L.gen.wl_hash}…</span></div>`;
+ }
+ kv+=`<div class="caveat">${F.caveat};金属 l/d&lt;5 偏差可达 300%
+  (Zhong 2023, DOI 10.1016/j.cossms.2023.101081)。
+  ${L.gen?'Tier-2 产物:新颖性限定「ATLAS 索引范围内未发现重复」,数值为 screening 级。':''}</div>`;
+ document.getElementById('mech-kv').innerHTML=kv;
+}
+renderMech();
 </script>
 </body>
 </html>
