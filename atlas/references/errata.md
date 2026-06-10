@@ -17,6 +17,7 @@
 | E7 | AlSi10Mg σys = 230 MPa(单值) | 保守 Z 向取值;EOS 给 XY 270 / Z 240(M290 表 230±20);**XY/Z 各向异性必须显式记录** | 数据表核对 |
 | E8 | LPBF 最小杆 1.0 mm(当作文献标准) | 较文献设计指南(0.4–0.6 mm)**保守约 2 倍**;记录在案,后续可论证放宽 | 文献对照 |
 | E9 | Lumpe-Stanković 目录 = 17,087 条 | 论文**分析**了 17,087 个 unit cells;ETH 存档目录实际含 **17,262** 个结构(基于 RCSR + EPINET);引用时区分"分析数"与"目录数" | ETH 存档元数据 |
+| E10 | 调研报告引"Kirchhof et al., J Elasticity 2024"(尺寸效应-Poisson 文献) | **查无此文**(Crossref 检索无果);实际相关文献为 **Li & Guo 2024, JMBBM, DOI 10.1016/j.jmbbm.2024.106532**("Size effect in polymeric lattice materials with size-dependent Poisson's ratio caused by Cosserat elasticity")——调研 agent 引文张冠李戴 | Crossref API 核对(B7) |
 
 ## 数据实况勘误(盘面 vs 文档)
 
