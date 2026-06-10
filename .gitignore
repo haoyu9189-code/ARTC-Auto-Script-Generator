@@ -72,3 +72,4 @@ atlas/data/cell_db.sqlite
 .pytest_cache/
 atlas/data/external/
 atlas/data/retriever_log.jsonl
+atlas/data/catalog.sqlite

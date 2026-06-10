@@ -18,6 +18,7 @@
 | E8 | LPBF 最小杆 1.0 mm(当作文献标准) | 较文献设计指南(0.4–0.6 mm)**保守约 2 倍**;记录在案,后续可论证放宽 | 文献对照 |
 | E9 | Lumpe-Stanković 目录 = 17,087 条 | 论文**分析**了 17,087 个 unit cells;ETH 存档目录实际含 **17,262** 个结构(基于 RCSR + EPINET);引用时区分"分析数"与"目录数" | ETH 存档元数据 |
 | E10 | 调研报告引"Kirchhof et al., J Elasticity 2024"(尺寸效应-Poisson 文献) | **查无此文**(Crossref 检索无果);实际相关文献为 **Li & Guo 2024, JMBBM, DOI 10.1016/j.jmbbm.2024.106532**("Size effect in polymeric lattice materials with size-dependent Poisson's ratio caused by Cosserat elasticity")——调研 agent 引文张冠李戴 | Crossref API 核对(B7) |
+| E11 | Lumpe-Stanković 目录头部声明"数值问题结构以星号(*)标记"(40 条) | 存档文件 **全文无任何星号**,该标记实际缺失,40 条问题结构无法按文件识别;另 WL 结构查重得 103 条重复(头部按名对声明 135)。缓解:ATLAS 硬门+绝对门在筛选时兜底捕获数值退化网 | P2-3 摄入实测 |
 
 ## 数据实况勘误(盘面 vs 文档)
 

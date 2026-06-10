@@ -1,0 +1,131 @@
+{
+ "spec": "MJF PA12 · r=0.4(DfAM 下限) · 最大化 E_y/ρ̄ · 与 P2-2 同口径",
+ "s1_pool": 150,
+ "s2s3_killed": 56,
+ "survivors": 94,
+ "top10_catalog": [
+  {
+   "name": "cub_Z03.4_E13408",
+   "score": 906.8,
+   "rho_mesh": 0.1691,
+   "E_y_bulk": 153.3,
+   "catalog_Cy": 0.27,
+   "catalog_ny": 1.01,
+   "tier": "1.75(枚举)",
+   "source": "Lumpe & Stankovic 2021, PNAS 10.1073/pnas.2003504118; catalog DOI 10.3929/ethz-b-000457598; license CC BY-NC 4.0(非商用,见 errata 许可表)"
+  },
+  {
+   "name": "cub_Z05.2_R1455",
+   "score": 800.2,
+   "rho_mesh": 0.598,
+   "E_y_bulk": 478.53,
+   "catalog_Cy": 0.33,
+   "catalog_ny": 1.0,
+   "tier": "1.75(枚举)",
+   "source": "Lumpe & Stankovic 2021, PNAS 10.1073/pnas.2003504118; catalog DOI 10.3929/ethz-b-000457598; license CC BY-NC 4.0(非商用,见 errata 许可表)"
+  },
+  {
+   "name": "cub_Z03.2_R2402",
+   "score": 796.2,
+   "rho_mesh": 0.1706,
+   "E_y_bulk": 135.84,
+   "catalog_Cy": 0.26,
+   "catalog_ny": 1.01,
+   "tier": "1.75(枚举)",
+   "source": "Lumpe & Stankovic 2021, PNAS 10.1073/pnas.2003504118; catalog DOI 10.3929/ethz-b-000457598; license CC BY-NC 4.0(非商用,见 errata 许可表)"
+  },
+  {
+   "name": "cub_Z03.2_R2400",
+   "score": 759.1,
+   "rho_mesh": 0.1772,
+   "E_y_bulk": 134.5,
+   "catalog_Cy": 0.25,
+   "catalog_ny": 1.0,
+   "tier": "1.75(枚举)",
+   "source": "Lumpe & Stankovic 2021, PNAS 10.1073/pnas.2003504118; catalog DOI 10.3929/ethz-b-000457598; license CC BY-NC 4.0(非商用,见 errata 许可表)"
+  },
+  {
+   "name": "cub_Z07.0_R1191",
+   "score": 732.7,
+   "rho_mesh": 0.5606,
+   "E_y_bulk": 410.73,
+   "catalog_Cy": 0.24,
+   "catalog_ny": 0.99,
+   "tier": "1.75(枚举)",
+   "source": "Lumpe & Stankovic 2021, PNAS 10.1073/pnas.2003504118; catalog DOI 10.3929/ethz-b-000457598; license CC BY-NC 4.0(非商用,见 errata 许可表)"
+  },
+  {
+   "name": "cub_Z04.0_R194",
+   "score": 731.5,
+   "rho_mesh": 0.3738,
+   "E_y_bulk": 273.44,
+   "catalog_Cy": 0.35,
+   "catalog_ny": 1.01,
+   "tier": "1.75(枚举)",
+   "source": "Lumpe & Stankovic 2021, PNAS 10.1073/pnas.2003504118; catalog DOI 10.3929/ethz-b-000457598; license CC BY-NC 4.0(非商用,见 errata 许可表)"
+  },
+  {
+   "name": "cub_Z03.6_E13353",
+   "score": 698.8,
+   "rho_mesh": 0.1879,
+   "E_y_bulk": 131.33,
+   "catalog_Cy": 1.71,
+   "catalog_ny": 1.74,
+   "tier": "1.75(枚举)",
+   "source": "Lumpe & Stankovic 2021, PNAS 10.1073/pnas.2003504118; catalog DOI 10.3929/ethz-b-000457598; license CC BY-NC 4.0(非商用,见 errata 许可表)"
+  },
+  {
+   "name": "cub_Z03.3_R2399",
+   "score": 694.6,
+   "rho_mesh": 0.1897,
+   "E_y_bulk": 131.75,
+   "catalog_Cy": 0.26,
+   "catalog_ny": 1.01,
+   "tier": "1.75(枚举)",
+   "source": "Lumpe & Stankovic 2021, PNAS 10.1073/pnas.2003504118; catalog DOI 10.3929/ethz-b-000457598; license CC BY-NC 4.0(非商用,见 errata 许可表)"
+  },
+  {
+   "name": "cub_Z03.3_E13998",
+   "score": 694.5,
+   "rho_mesh": 0.1897,
+   "E_y_bulk": 131.75,
+   "catalog_Cy": 0.25,
+   "catalog_ny": 1.0,
+   "tier": "1.75(枚举)",
+   "source": "Lumpe & Stankovic 2021, PNAS 10.1073/pnas.2003504118; catalog DOI 10.3929/ethz-b-000457598; license CC BY-NC 4.0(非商用,见 errata 许可表)"
+  },
+  {
+   "name": "cub_Z04.4_E11669",
+   "score": 690.7,
+   "rho_mesh": 0.1659,
+   "E_y_bulk": 114.6,
+   "catalog_Cy": 0.25,
+   "catalog_ny": 1.0,
+   "tier": "1.75(枚举)",
+   "source": "Lumpe & Stankovic 2021, PNAS 10.1073/pnas.2003504118; catalog DOI 10.3929/ethz-b-000457598; license CC BY-NC 4.0(非商用,见 errata 许可表)"
+  }
+ ],
+ "seed_top3": {
+  "Cubic": 591.2,
+  "Auxetic": 420.3,
+  "Truncated_cube": 348.1
+ },
+ "funsearch_top3": [
+  {
+   "name": "dual_column_web",
+   "score": 1046.5,
+   "tier": "2(生成)"
+  },
+  {
+   "name": "mid_braced_column",
+   "score": 850.3,
+   "tier": "2(生成)"
+  },
+  {
+   "name": "twin_offset_web",
+   "score": 849.3,
+   "tier": "2(生成)"
+  }
+ ],
+ "wording": "Tier-1.75 为**枚举**(已编目晶体网)非生成;同台分数均为 screening 级(线弹性 bulk)"
+}
