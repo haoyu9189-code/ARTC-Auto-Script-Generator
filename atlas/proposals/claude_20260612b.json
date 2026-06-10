@@ -1,0 +1,96 @@
+{
+  "_meta": {
+    "proposer": "Claude (Fable 5) — 第二批提案(吸收第一批击杀教训)",
+    "date": "2026-06-12",
+    "lessons": "①梯度半径不改拓扑=Tier-1.5,被 WL 正确击杀→新批全部改变商图组合结构;②柱族屈曲半波长是真约束→撑板位置成为拓扑设计变量"
+  },
+  "proposals": [
+    {
+      "name": "mid_braced_column",
+      "rationale": "撑板放在柱半波长处(y=0.5):屈曲有效长度减半(Euler P_cr×4),横撑⊥载荷轴几乎不吃 E_y 预算。商图 2 节点 4 边,与 Cubic(1 节点)拓扑不同——撑板高度从参数升格为拓扑特征。预期 score≈E_col/(ρ_col+ρ_brace)≈800+。",
+      "doc": {
+        "schema": "atlas-cell-graph/1.0", "name": "mid_braced_column",
+        "cell": {"size_mm": 5.0},
+        "nodes": [{"id": "A", "frac": [0.0, 0.0, 0.0]},
+                  {"id": "M", "frac": [0.0, 0.5, 0.0]}],
+        "edges": [
+          {"n1": "A", "n2": "M", "shift": [0, 0, 0], "radius_mm": 0.55},
+          {"n1": "M", "n2": "A", "shift": [0, 1, 0], "radius_mm": 0.55},
+          {"n1": "M", "n2": "M", "shift": [1, 0, 0], "radius_mm": 0.4},
+          {"n1": "M", "n2": "M", "shift": [0, 0, 1], "radius_mm": 0.4}
+        ],
+        "default_radius_mm": 0.5,
+        "free_params": {},
+        "lineage": {"tier": "tier2", "generator": "claude-proposer",
+                    "source": "屈曲半波长支撑:撑板高度=拓扑特征"}
+      },
+      "polish": {"radii_groups": [[0, 1], [2, 3]]}
+    },
+    {
+      "name": "diag_strut_column",
+      "rationale": "柱+下斜杆三角化:斜杆 M→邻柱底(Δ=(±2.5,−2.5,0)/(0,−2.5,±2.5)),cos²θ_y=0.5,既稳定柱又贡献轴向刚度(平行传力路径);全三角化消柱摆动机构。",
+      "doc": {
+        "schema": "atlas-cell-graph/1.0", "name": "diag_strut_column",
+        "cell": {"size_mm": 5.0},
+        "nodes": [{"id": "A", "frac": [0.0, 0.0, 0.0]},
+                  {"id": "M", "frac": [0.0, 0.5, 0.0]}],
+        "edges": [
+          {"n1": "A", "n2": "M", "shift": [0, 0, 0], "radius_mm": 0.55},
+          {"n1": "M", "n2": "A", "shift": [0, 1, 0], "radius_mm": 0.55},
+          {"n1": "M", "n2": "A", "shift": [1, 0, 0], "radius_mm": 0.4},
+          {"n1": "M", "n2": "A", "shift": [-1, 1, 0], "radius_mm": 0.4},
+          {"n1": "M", "n2": "A", "shift": [0, 0, 1], "radius_mm": 0.4},
+          {"n1": "M", "n2": "A", "shift": [0, 1, -1], "radius_mm": 0.4}
+        ],
+        "default_radius_mm": 0.5,
+        "free_params": {},
+        "lineage": {"tier": "tier2", "generator": "claude-proposer",
+                    "source": "柱-斜杆三角化:稳定化兼平行轴向通道"}
+      },
+      "polish": {"radii_groups": [[0, 1], [2, 3, 4, 5]]}
+    },
+    {
+      "name": "dual_column_web",
+      "rationale": "撑板成本摊薄:两族竖柱(角柱 A + 体心柱 B)共享一套斜撑——web 密度税按柱数摊薄,score≈2E_col/(2ρ_col+ρ_web)。斜撑同时三角化两族柱的失稳模态。诚实注:E_y/ρ̄ 度量天然奖励柱密集化(Voigt 方向),多轴/SEA 规格下结论不同,报告须限定单轴刚度场景。",
+      "doc": {
+        "schema": "atlas-cell-graph/1.0", "name": "dual_column_web",
+        "cell": {"size_mm": 5.0},
+        "nodes": [{"id": "A", "frac": [0.0, 0.0, 0.0]},
+                  {"id": "B", "frac": [0.5, 0.5, 0.5]}],
+        "edges": [
+          {"n1": "A", "n2": "A", "shift": [0, 1, 0], "radius_mm": 0.55},
+          {"n1": "B", "n2": "B", "shift": [0, 1, 0], "radius_mm": 0.55},
+          {"n1": "A", "n2": "B", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "B", "n2": "A", "shift": [1, 0, 0], "radius_mm": 0.4},
+          {"n1": "B", "n2": "A", "shift": [0, 0, 1], "radius_mm": 0.4}
+        ],
+        "default_radius_mm": 0.5,
+        "free_params": {},
+        "lineage": {"tier": "tier2", "generator": "claude-proposer",
+                    "source": "双柱族 web 成本摊薄 + 斜撑三角化"}
+      },
+      "polish": {"radii_groups": [[0, 1], [2, 3, 4]]}
+    },
+    {
+      "name": "twin_offset_web",
+      "rationale": "交错撑板:x 向撑在 y=0(节点 A 层),z 向撑在 y=0.5(M 层)——两正交方向的柱失稳模态被不同高度撑板打断,商图与 mid_braced 不同(撑板分层),屈曲各向异性更均衡。",
+      "doc": {
+        "schema": "atlas-cell-graph/1.0", "name": "twin_offset_web",
+        "cell": {"size_mm": 5.0},
+        "nodes": [{"id": "A", "frac": [0.0, 0.0, 0.0]},
+                  {"id": "M", "frac": [0.0, 0.5, 0.0]}],
+        "edges": [
+          {"n1": "A", "n2": "M", "shift": [0, 0, 0], "radius_mm": 0.55},
+          {"n1": "M", "n2": "A", "shift": [0, 1, 0], "radius_mm": 0.55},
+          {"n1": "A", "n2": "A", "shift": [1, 0, 0], "radius_mm": 0.4},
+          {"n1": "M", "n2": "M", "shift": [0, 0, 1], "radius_mm": 0.4}
+        ],
+        "default_radius_mm": 0.5,
+        "free_params": {},
+        "lineage": {"tier": "tier2", "generator": "claude-proposer",
+                    "source": "正交失稳模态分层打断(交错撑板)"}
+      },
+      "polish": {"radii_groups": [[0, 1], [2, 3]]}
+    }
+  ]
+}

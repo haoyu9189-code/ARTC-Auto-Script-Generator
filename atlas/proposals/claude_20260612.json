@@ -1,0 +1,180 @@
+{
+  "_meta": {
+    "proposer": "Claude (Fable 5) — ATLAS FunSearch LLM 提案器",
+    "date": "2026-06-12",
+    "spec": "最大化 y 向比刚度 E_y/ρ̄(MJF PA12,杆径域 [0.25,0.55],DfAM min d=0.8 → r≥0.4)",
+    "protocol": "每提案带力学论证(rationale,入 lineage 可审计);连续参数(per-edge radius / polish 节点坐标)交 CMA-ES 抛光;全部经 C1–C8 硬门 + WL 查重 + 三道绝对门"
+  },
+  "proposals": [
+    {
+      "name": "graded_column_frame",
+      "rationale": "Voigt 极限逼近:E_y/ρ̄ 上界 = E_s(纯轴向传力)。纯柱阵被 C3 杀(格 rank 1),故 y 向粗柱(r→0.55 承载)+ x/z 细横梁(r→0.4 仅保连通,DfAM 下限)。预期分数 ≈ E_s·A_col/(A_col+2A_brace) ≈ 0.6·E_s,远超种子最优。",
+      "doc": {
+        "schema": "atlas-cell-graph/1.0", "name": "graded_column_frame",
+        "cell": {"size_mm": 5.0},
+        "nodes": [{"id": "A", "frac": [0.0, 0.0, 0.0]}],
+        "edges": [
+          {"n1": "A", "n2": "A", "shift": [0, 1, 0], "radius_mm": 0.55},
+          {"n1": "A", "n2": "A", "shift": [1, 0, 0], "radius_mm": 0.4},
+          {"n1": "A", "n2": "A", "shift": [0, 0, 1], "radius_mm": 0.4}
+        ],
+        "default_radius_mm": 0.5,
+        "free_params": {},
+        "lineage": {"tier": "tier2", "generator": "claude-proposer",
+                    "source": "Voigt 上界逼近 + C3/DfAM 约束下的功能梯度化"}
+      },
+      "polish": {"radii_groups": [[0], [1, 2]]}
+    },
+    {
+      "name": "braced_column_bcc",
+      "rationale": "粗柱承轴压 + BCC 式斜杆抗剪稳定:柱单独受压易屈曲(线弹性裁判看不见,但 Tier-D 会),斜杆给侧向支撑同时贡献少量轴向刚度。比 graded_column_frame 牺牲少量分数换稳健性。",
+      "doc": {
+        "schema": "atlas-cell-graph/1.0", "name": "braced_column_bcc",
+        "cell": {"size_mm": 5.0},
+        "nodes": [{"id": "A", "frac": [0.0, 0.0, 0.0]},
+                  {"id": "B", "frac": [0.5, 0.5, 0.5]}],
+        "edges": [
+          {"n1": "A", "n2": "A", "shift": [0, 1, 0], "radius_mm": 0.55},
+          {"n1": "A", "n2": "B", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "B", "n2": "A", "shift": [1, 1, 1], "radius_mm": 0.4},
+          {"n1": "B", "n2": "A", "shift": [0, 1, 1], "radius_mm": 0.4},
+          {"n1": "B", "n2": "A", "shift": [1, 1, 0], "radius_mm": 0.4}
+        ],
+        "default_radius_mm": 0.5,
+        "free_params": {},
+        "lineage": {"tier": "tier2", "generator": "claude-proposer",
+                    "source": "轴向主通道 + 斜撑稳定化(屈曲意识设计)"}
+      },
+      "polish": {"radii_groups": [[0], [1, 2, 3, 4]]}
+    },
+    {
+      "name": "octet_y_reinforced",
+      "rationale": "已知最优种子族(octet,stretch)定向强化:y 向附加贯通柱把 (1/9)ρ̄ 标度的各向同性 octet 变成 y 偏置;柱与 octet 节点共享,传力路径直接。",
+      "doc": {
+        "schema": "atlas-cell-graph/1.0", "name": "octet_y_reinforced",
+        "cell": {"size_mm": 5.0},
+        "nodes": [{"id": "C", "frac": [0.0, 0.0, 0.0]},
+                  {"id": "FX", "frac": [0.0, 0.5, 0.5]},
+                  {"id": "FY", "frac": [0.5, 0.0, 0.5]},
+                  {"id": "FZ", "frac": [0.5, 0.5, 0.0]}],
+        "edges": [
+          {"n1": "C", "n2": "FX", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "C", "n2": "FY", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "C", "n2": "FZ", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "FX", "n2": "C", "shift": [0, 1, 1], "radius_mm": 0.4},
+          {"n1": "FY", "n2": "C", "shift": [1, 0, 1], "radius_mm": 0.4},
+          {"n1": "FZ", "n2": "C", "shift": [1, 1, 0], "radius_mm": 0.4},
+          {"n1": "FX", "n2": "FY", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "FY", "n2": "FZ", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "FZ", "n2": "FX", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "FX", "n2": "FY", "shift": [-1, 0, 0], "radius_mm": 0.4},
+          {"n1": "FY", "n2": "FZ", "shift": [0, -1, 0], "radius_mm": 0.4},
+          {"n1": "FZ", "n2": "FX", "shift": [0, 0, -1], "radius_mm": 0.4},
+          {"n1": "C", "n2": "C", "shift": [0, 1, 0], "radius_mm": 0.55},
+          {"n1": "FZ", "n2": "FZ", "shift": [0, 1, 0], "radius_mm": 0.55}
+        ],
+        "default_radius_mm": 0.4,
+        "free_params": {},
+        "lineage": {"tier": "tier2", "generator": "claude-proposer",
+                    "source": "octet(DFA stretch 标度)+ y 贯通柱定向强化"}
+      },
+      "polish": {"radii_groups": [[12, 13], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]}
+    },
+    {
+      "name": "diamond_column_hybrid",
+      "rationale": "弯曲主导族(diamond,韧性/吸能好)注入轴向通道:保留 diamond 的四面体配位(变形均匀)同时用 y 柱托底刚度——刚度-韧性折中设计,预期分数中游但形态独特。",
+      "doc": {
+        "schema": "atlas-cell-graph/1.0", "name": "diamond_column_hybrid",
+        "cell": {"size_mm": 5.0},
+        "nodes": [{"id": "D1", "frac": [0.0, 0.0, 0.0]},
+                  {"id": "D2", "frac": [0.25, 0.25, 0.25]},
+                  {"id": "D3", "frac": [0.5, 0.5, 0.0]},
+                  {"id": "D4", "frac": [0.75, 0.75, 0.25]},
+                  {"id": "D5", "frac": [0.5, 0.0, 0.5]},
+                  {"id": "D6", "frac": [0.75, 0.25, 0.75]},
+                  {"id": "D7", "frac": [0.0, 0.5, 0.5]},
+                  {"id": "D8", "frac": [0.25, 0.75, 0.75]}],
+        "edges": [
+          {"n1": "D1", "n2": "D2", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "D3", "n2": "D2", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "D5", "n2": "D2", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "D7", "n2": "D2", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "D3", "n2": "D4", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "D5", "n2": "D6", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "D7", "n2": "D8", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "D4", "n2": "D1", "shift": [1, 1, 0], "radius_mm": 0.4},
+          {"n1": "D4", "n2": "D5", "shift": [0, 1, 0], "radius_mm": 0.4},
+          {"n1": "D4", "n2": "D7", "shift": [1, 0, 0], "radius_mm": 0.4},
+          {"n1": "D6", "n2": "D1", "shift": [1, 0, 1], "radius_mm": 0.4},
+          {"n1": "D6", "n2": "D3", "shift": [0, 0, 1], "radius_mm": 0.4},
+          {"n1": "D6", "n2": "D7", "shift": [1, 0, 0], "radius_mm": 0.4},
+          {"n1": "D8", "n2": "D1", "shift": [0, 1, 1], "radius_mm": 0.4},
+          {"n1": "D8", "n2": "D3", "shift": [0, 0, 1], "radius_mm": 0.4},
+          {"n1": "D8", "n2": "D5", "shift": [0, 1, 0], "radius_mm": 0.4},
+          {"n1": "D1", "n2": "D1", "shift": [0, 1, 0], "radius_mm": 0.5}
+        ],
+        "default_radius_mm": 0.4,
+        "free_params": {},
+        "lineage": {"tier": "tier2", "generator": "claude-proposer",
+                    "source": "diamond 四面体配位 + y 柱:刚度-韧性折中"}
+      },
+      "polish": {"radii_groups": [[16], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]}
+    },
+    {
+      "name": "shear_web_column",
+      "rationale": "工字梁原理的点阵化:y 柱当翼缘,x-y 面内 45° 腹板杆把剪力传给柱;z 向最少连通。面内斜杆角度 45° 在 LPBF 自支撑边界,MJF 无碍。",
+      "doc": {
+        "schema": "atlas-cell-graph/1.0", "name": "shear_web_column",
+        "cell": {"size_mm": 5.0},
+        "nodes": [{"id": "A", "frac": [0.0, 0.0, 0.0]},
+                  {"id": "M", "frac": [0.5, 0.5, 0.0]}],
+        "edges": [
+          {"n1": "A", "n2": "A", "shift": [0, 1, 0], "radius_mm": 0.55},
+          {"n1": "A", "n2": "M", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "M", "n2": "A", "shift": [1, 0, 0], "radius_mm": 0.4},
+          {"n1": "M", "n2": "A", "shift": [0, 1, 0], "radius_mm": 0.4},
+          {"n1": "M", "n2": "A", "shift": [1, 1, 0], "radius_mm": 0.4},
+          {"n1": "A", "n2": "A", "shift": [0, 0, 1], "radius_mm": 0.4},
+          {"n1": "M", "n2": "M", "shift": [0, 0, 1], "radius_mm": 0.4}
+        ],
+        "default_radius_mm": 0.45,
+        "free_params": {},
+        "lineage": {"tier": "tier2", "generator": "claude-proposer",
+                    "source": "工字梁翼缘-腹板原理点阵化(柱+面内剪力腹板)"}
+      },
+      "polish": {"radii_groups": [[0], [1, 2, 3, 4, 5, 6]]}
+    },
+    {
+      "name": "tetra_column_kagome",
+      "rationale": "kagome 式角点连通(高节点效率,低弯矩)+ y 柱:kagome 类网以最少材料实现 stretch 行为,柱提供主刚度,kagome 层做横向分配。",
+      "doc": {
+        "schema": "atlas-cell-graph/1.0", "name": "tetra_column_kagome",
+        "cell": {"size_mm": 5.0},
+        "nodes": [{"id": "K1", "frac": [0.25, 0.0, 0.25]},
+                  {"id": "K2", "frac": [0.75, 0.0, 0.25]},
+                  {"id": "K3", "frac": [0.5, 0.0, 0.75]},
+                  {"id": "T", "frac": [0.5, 0.5, 0.417]}],
+        "edges": [
+          {"n1": "K1", "n2": "K2", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "K2", "n2": "K3", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "K3", "n2": "K1", "shift": [0, 0, 0], "radius_mm": 0.4},
+          {"n1": "K2", "n2": "K1", "shift": [1, 0, 0], "radius_mm": 0.4},
+          {"n1": "K3", "n2": "K1", "shift": [0, 0, 1], "radius_mm": 0.4},
+          {"n1": "K3", "n2": "K2", "shift": [-1, 0, 1], "radius_mm": 0.4},
+          {"n1": "K1", "n2": "T", "shift": [0, 0, 0], "radius_mm": 0.45},
+          {"n1": "K2", "n2": "T", "shift": [0, 0, 0], "radius_mm": 0.45},
+          {"n1": "K3", "n2": "T", "shift": [0, 0, 0], "radius_mm": 0.45},
+          {"n1": "T", "n2": "K1", "shift": [0, 1, 0], "radius_mm": 0.45},
+          {"n1": "T", "n2": "K2", "shift": [0, 1, 0], "radius_mm": 0.45},
+          {"n1": "T", "n2": "K3", "shift": [0, 1, 0], "radius_mm": 0.45}
+        ],
+        "default_radius_mm": 0.42,
+        "free_params": {},
+        "lineage": {"tier": "tier2", "generator": "claude-proposer",
+                    "source": "kagome 角点连通层 + 四面体过渡(低弯矩高效节点)"}
+      },
+      "polish": {"radii_groups": [[6, 7, 8, 9, 10, 11], [0, 1, 2, 3, 4, 5]],
+                 "polish_nodes": ["T"]}
+    }
+  ]
+}

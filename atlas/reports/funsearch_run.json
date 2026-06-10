@@ -1,0 +1,1337 @@
+{
+ "baseline_best_seed": 591.2,
+ "baseline_top5": {
+  "Cubic": 591.2,
+  "Auxetic": 420.3,
+  "Truncated_cube": 348.1,
+  "WeairePhelan": 307.1,
+  "BCCZ": 271.6
+ },
+ "accepted": [
+  {
+   "name": "dual_column_web",
+   "round": 1,
+   "proposer": "claude",
+   "absolute_gates": {
+    "G1_spd": true,
+    "rho_mesh": 0.12413,
+    "G2_voigt": true,
+    "G3_frame_over_bulk": 0.513,
+    "G3_consistent": true
+   },
+   "score": 1046.5,
+   "rho_mesh": 0.1241,
+   "E_y_bulk": 129.9,
+   "vs_best_seed": 1.77,
+   "wl_hash": "1f3557d7e797bcd7",
+   "rationale": "rationale: 撑板成本摊薄:两族竖柱(角柱 A + 体心柱 B)共享一套斜撑——web 密度税按柱数摊薄,score≈2E_col/(2ρ_col+ρ_web)。斜撑同时三角化两族柱的失稳模态。诚实注:E_y/ρ̄ 度量天然奖励柱密集化(Voigt 方向),多轴/SEA 规格下结论不同,报告须限定单轴刚度场景。",
+   "doc": {
+    "schema": "atlas-cell-graph/1.0",
+    "name": "dual_column_web",
+    "cell": {
+     "size_mm": 5.0
+    },
+    "nodes": [
+     {
+      "id": "A",
+      "frac": [
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "id": "B",
+      "frac": [
+       0.5,
+       0.5,
+       0.5
+      ]
+     }
+    ],
+    "edges": [
+     {
+      "n1": "A",
+      "n2": "A",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.55
+     },
+     {
+      "n1": "B",
+      "n2": "B",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.55
+     },
+     {
+      "n1": "A",
+      "n2": "B",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "B",
+      "n2": "A",
+      "shift": [
+       1,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "B",
+      "n2": "A",
+      "shift": [
+       0,
+       0,
+       1
+      ],
+      "radius_mm": 0.4
+     }
+    ],
+    "default_radius_mm": 0.5,
+    "free_params": {},
+    "lineage": {
+     "tier": "tier2",
+     "generator": "claude-proposer",
+     "source": "双柱族 web 成本摊薄 + 斜撑三角化",
+     "notes": [
+      "rationale: 撑板成本摊薄:两族竖柱(角柱 A + 体心柱 B)共享一套斜撑——web 密度税按柱数摊薄,score≈2E_col/(2ρ_col+ρ_web)。斜撑同时三角化两族柱的失稳模态。诚实注:E_y/ρ̄ 度量天然奖励柱密集化(Voigt 方向),多轴/SEA 规格下结论不同,报告须限定单轴刚度场景。"
+     ]
+    }
+   }
+  },
+  {
+   "name": "mid_braced_column",
+   "round": 1,
+   "proposer": "claude",
+   "absolute_gates": {
+    "G1_spd": true,
+    "rho_mesh": 0.076,
+    "G2_voigt": true,
+    "G3_frame_over_bulk": 1.0,
+    "G3_consistent": true
+   },
+   "score": 850.3,
+   "rho_mesh": 0.076,
+   "E_y_bulk": 64.62,
+   "vs_best_seed": 1.438,
+   "wl_hash": "10d4819e0f4c06c8",
+   "rationale": "rationale: 撑板放在柱半波长处(y=0.5):屈曲有效长度减半(Euler P_cr×4),横撑⊥载荷轴几乎不吃 E_y 预算。商图 2 节点 4 边,与 Cubic(1 节点)拓扑不同——撑板高度从参数升格为拓扑特征。预期 score≈E_col/(ρ_col+ρ_brace)≈800+。",
+   "doc": {
+    "schema": "atlas-cell-graph/1.0",
+    "name": "mid_braced_column",
+    "cell": {
+     "size_mm": 5.0
+    },
+    "nodes": [
+     {
+      "id": "A",
+      "frac": [
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "id": "M",
+      "frac": [
+       0.0,
+       0.5,
+       0.0
+      ]
+     }
+    ],
+    "edges": [
+     {
+      "n1": "A",
+      "n2": "M",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.55
+     },
+     {
+      "n1": "M",
+      "n2": "A",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.55
+     },
+     {
+      "n1": "M",
+      "n2": "M",
+      "shift": [
+       1,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "M",
+      "n2": "M",
+      "shift": [
+       0,
+       0,
+       1
+      ],
+      "radius_mm": 0.4
+     }
+    ],
+    "default_radius_mm": 0.5,
+    "free_params": {},
+    "lineage": {
+     "tier": "tier2",
+     "generator": "claude-proposer",
+     "source": "屈曲半波长支撑:撑板高度=拓扑特征",
+     "notes": [
+      "rationale: 撑板放在柱半波长处(y=0.5):屈曲有效长度减半(Euler P_cr×4),横撑⊥载荷轴几乎不吃 E_y 预算。商图 2 节点 4 边,与 Cubic(1 节点)拓扑不同——撑板高度从参数升格为拓扑特征。预期 score≈E_col/(ρ_col+ρ_brace)≈800+。"
+     ]
+    }
+   }
+  },
+  {
+   "name": "twin_offset_web",
+   "round": 1,
+   "proposer": "claude",
+   "absolute_gates": {
+    "G1_spd": true,
+    "rho_mesh": 0.07609,
+    "G2_voigt": true,
+    "G3_frame_over_bulk": 1.0,
+    "G3_consistent": true
+   },
+   "score": 849.3,
+   "rho_mesh": 0.0761,
+   "E_y_bulk": 64.62,
+   "vs_best_seed": 1.437,
+   "wl_hash": "c714b8c225a9ff37",
+   "rationale": "rationale: 交错撑板:x 向撑在 y=0(节点 A 层),z 向撑在 y=0.5(M 层)——两正交方向的柱失稳模态被不同高度撑板打断,商图与 mid_braced 不同(撑板分层),屈曲各向异性更均衡。",
+   "doc": {
+    "schema": "atlas-cell-graph/1.0",
+    "name": "twin_offset_web",
+    "cell": {
+     "size_mm": 5.0
+    },
+    "nodes": [
+     {
+      "id": "A",
+      "frac": [
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "id": "M",
+      "frac": [
+       0.0,
+       0.5,
+       0.0
+      ]
+     }
+    ],
+    "edges": [
+     {
+      "n1": "A",
+      "n2": "M",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.55
+     },
+     {
+      "n1": "M",
+      "n2": "A",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.55
+     },
+     {
+      "n1": "A",
+      "n2": "A",
+      "shift": [
+       1,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "M",
+      "n2": "M",
+      "shift": [
+       0,
+       0,
+       1
+      ],
+      "radius_mm": 0.4
+     }
+    ],
+    "default_radius_mm": 0.5,
+    "free_params": {},
+    "lineage": {
+     "tier": "tier2",
+     "generator": "claude-proposer",
+     "source": "正交失稳模态分层打断(交错撑板)",
+     "notes": [
+      "rationale: 交错撑板:x 向撑在 y=0(节点 A 层),z 向撑在 y=0.5(M 层)——两正交方向的柱失稳模态被不同高度撑板打断,商图与 mid_braced 不同(撑板分层),屈曲各向异性更均衡。"
+     ]
+    }
+   }
+  },
+  {
+   "name": "octet_y_reinforced",
+   "round": 1,
+   "proposer": "claude",
+   "absolute_gates": {
+    "G1_spd": true,
+    "rho_mesh": 0.22082,
+    "G2_voigt": true,
+    "G3_frame_over_bulk": 0.667,
+    "G3_consistent": true
+   },
+   "score": 646.5,
+   "rho_mesh": 0.2208,
+   "E_y_bulk": 142.77,
+   "vs_best_seed": 1.094,
+   "wl_hash": "a1dccec8a2563c96",
+   "rationale": "rationale: 已知最优种子族(octet,stretch)定向强化:y 向附加贯通柱把 (1/9)ρ̄ 标度的各向同性 octet 变成 y 偏置;柱与 octet 节点共享,传力路径直接。",
+   "doc": {
+    "schema": "atlas-cell-graph/1.0",
+    "name": "octet_y_reinforced",
+    "cell": {
+     "size_mm": 5.0
+    },
+    "nodes": [
+     {
+      "id": "C",
+      "frac": [
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "id": "FX",
+      "frac": [
+       0.0,
+       0.5,
+       0.5
+      ]
+     },
+     {
+      "id": "FY",
+      "frac": [
+       0.5,
+       0.0,
+       0.5
+      ]
+     },
+     {
+      "id": "FZ",
+      "frac": [
+       0.5,
+       0.5,
+       0.0
+      ]
+     }
+    ],
+    "edges": [
+     {
+      "n1": "C",
+      "n2": "FX",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "C",
+      "n2": "FY",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "C",
+      "n2": "FZ",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "FX",
+      "n2": "C",
+      "shift": [
+       0,
+       1,
+       1
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "FY",
+      "n2": "C",
+      "shift": [
+       1,
+       0,
+       1
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "FZ",
+      "n2": "C",
+      "shift": [
+       1,
+       1,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "FX",
+      "n2": "FY",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "FY",
+      "n2": "FZ",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "FZ",
+      "n2": "FX",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "FX",
+      "n2": "FY",
+      "shift": [
+       -1,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "FY",
+      "n2": "FZ",
+      "shift": [
+       0,
+       -1,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "FZ",
+      "n2": "FX",
+      "shift": [
+       0,
+       0,
+       -1
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "C",
+      "n2": "C",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.55
+     },
+     {
+      "n1": "FZ",
+      "n2": "FZ",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.55
+     }
+    ],
+    "default_radius_mm": 0.4,
+    "free_params": {},
+    "lineage": {
+     "tier": "tier2",
+     "generator": "claude-proposer",
+     "source": "octet(DFA stretch 标度)+ y 贯通柱定向强化",
+     "notes": [
+      "rationale: 已知最优种子族(octet,stretch)定向强化:y 向附加贯通柱把 (1/9)ρ̄ 标度的各向同性 octet 变成 y 偏置;柱与 octet 节点共享,传力路径直接。"
+     ]
+    }
+   }
+  },
+  {
+   "name": "braced_column_bcc",
+   "round": 1,
+   "proposer": "claude",
+   "absolute_gates": {
+    "G1_spd": true,
+    "rho_mesh": 0.10413,
+    "G2_voigt": true,
+    "G3_frame_over_bulk": 1.042,
+    "G3_consistent": true
+   },
+   "score": 624.3,
+   "rho_mesh": 0.1041,
+   "E_y_bulk": 65.01,
+   "vs_best_seed": 1.056,
+   "wl_hash": "1fb31739572b9cc2",
+   "rationale": "rationale: 粗柱承轴压 + BCC 式斜杆抗剪稳定:柱单独受压易屈曲(线弹性裁判看不见,但 Tier-D 会),斜杆给侧向支撑同时贡献少量轴向刚度。比 graded_column_frame 牺牲少量分数换稳健性。",
+   "doc": {
+    "schema": "atlas-cell-graph/1.0",
+    "name": "braced_column_bcc",
+    "cell": {
+     "size_mm": 5.0
+    },
+    "nodes": [
+     {
+      "id": "A",
+      "frac": [
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "id": "B",
+      "frac": [
+       0.5,
+       0.5,
+       0.5
+      ]
+     }
+    ],
+    "edges": [
+     {
+      "n1": "A",
+      "n2": "A",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.55
+     },
+     {
+      "n1": "A",
+      "n2": "B",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "B",
+      "n2": "A",
+      "shift": [
+       1,
+       1,
+       1
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "B",
+      "n2": "A",
+      "shift": [
+       0,
+       1,
+       1
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "B",
+      "n2": "A",
+      "shift": [
+       1,
+       1,
+       0
+      ],
+      "radius_mm": 0.4
+     }
+    ],
+    "default_radius_mm": 0.5,
+    "free_params": {},
+    "lineage": {
+     "tier": "tier2",
+     "generator": "claude-proposer",
+     "source": "轴向主通道 + 斜撑稳定化(屈曲意识设计)",
+     "notes": [
+      "rationale: 粗柱承轴压 + BCC 式斜杆抗剪稳定:柱单独受压易屈曲(线弹性裁判看不见,但 Tier-D 会),斜杆给侧向支撑同时贡献少量轴向刚度。比 graded_column_frame 牺牲少量分数换稳健性。"
+     ]
+    }
+   }
+  },
+  {
+   "name": "tetra_column_kagome",
+   "round": 1,
+   "proposer": "claude",
+   "absolute_gates": {
+    "G1_spd": true,
+    "rho_mesh": 0.173,
+    "G2_voigt": true,
+    "G3_frame_over_bulk": 1.956,
+    "G3_consistent": true
+   },
+   "score": 570.6,
+   "rho_mesh": 0.173,
+   "E_y_bulk": 98.71,
+   "vs_best_seed": 0.965,
+   "wl_hash": "a39aefdf11f71ae4",
+   "rationale": "rationale: kagome 式角点连通(高节点效率,低弯矩)+ y 柱:kagome 类网以最少材料实现 stretch 行为,柱提供主刚度,kagome 层做横向分配。",
+   "doc": {
+    "schema": "atlas-cell-graph/1.0",
+    "name": "tetra_column_kagome",
+    "cell": {
+     "size_mm": 5.0
+    },
+    "nodes": [
+     {
+      "id": "K1",
+      "frac": [
+       0.25,
+       0.0,
+       0.25
+      ]
+     },
+     {
+      "id": "K2",
+      "frac": [
+       0.75,
+       0.0,
+       0.25
+      ]
+     },
+     {
+      "id": "K3",
+      "frac": [
+       0.5,
+       0.0,
+       0.75
+      ]
+     },
+     {
+      "id": "T",
+      "frac": [
+       0.4885904236516502,
+       0.49524368416117454,
+       0.34384453770159495
+      ]
+     }
+    ],
+    "edges": [
+     {
+      "n1": "K1",
+      "n2": "K2",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4009
+     },
+     {
+      "n1": "K2",
+      "n2": "K3",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4009
+     },
+     {
+      "n1": "K3",
+      "n2": "K1",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4009
+     },
+     {
+      "n1": "K2",
+      "n2": "K1",
+      "shift": [
+       1,
+       0,
+       0
+      ],
+      "radius_mm": 0.4009
+     },
+     {
+      "n1": "K3",
+      "n2": "K1",
+      "shift": [
+       0,
+       0,
+       1
+      ],
+      "radius_mm": 0.4009
+     },
+     {
+      "n1": "K3",
+      "n2": "K2",
+      "shift": [
+       -1,
+       0,
+       1
+      ],
+      "radius_mm": 0.4009
+     },
+     {
+      "n1": "K1",
+      "n2": "T",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.548
+     },
+     {
+      "n1": "K2",
+      "n2": "T",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.548
+     },
+     {
+      "n1": "K3",
+      "n2": "T",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.548
+     },
+     {
+      "n1": "T",
+      "n2": "K1",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.548
+     },
+     {
+      "n1": "T",
+      "n2": "K2",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.548
+     },
+     {
+      "n1": "T",
+      "n2": "K3",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.548
+     }
+    ],
+    "default_radius_mm": 0.42,
+    "free_params": {},
+    "lineage": {
+     "tier": "tier2",
+     "generator": "claude-proposer",
+     "source": "kagome 角点连通层 + 四面体过渡(低弯矩高效节点)",
+     "notes": [
+      "rationale: kagome 式角点连通(高节点效率,低弯矩)+ y 柱:kagome 类网以最少材料实现 stretch 行为,柱提供主刚度,kagome 层做横向分配。"
+     ]
+    }
+   }
+  },
+  {
+   "name": "shear_web_column",
+   "round": 1,
+   "proposer": "claude",
+   "absolute_gates": {
+    "G1_spd": true,
+    "rho_mesh": 0.12483,
+    "G2_voigt": true,
+    "G3_frame_over_bulk": 1.183,
+    "G3_consistent": true
+   },
+   "score": 543.6,
+   "rho_mesh": 0.1248,
+   "E_y_bulk": 67.85,
+   "vs_best_seed": 0.919,
+   "wl_hash": "e3e6c8607bb678b2",
+   "rationale": "rationale: 工字梁原理的点阵化:y 柱当翼缘,x-y 面内 45° 腹板杆把剪力传给柱;z 向最少连通。面内斜杆角度 45° 在 LPBF 自支撑边界,MJF 无碍。",
+   "doc": {
+    "schema": "atlas-cell-graph/1.0",
+    "name": "shear_web_column",
+    "cell": {
+     "size_mm": 5.0
+    },
+    "nodes": [
+     {
+      "id": "A",
+      "frac": [
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "id": "M",
+      "frac": [
+       0.5,
+       0.5,
+       0.0
+      ]
+     }
+    ],
+    "edges": [
+     {
+      "n1": "A",
+      "n2": "A",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.55
+     },
+     {
+      "n1": "A",
+      "n2": "M",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "M",
+      "n2": "A",
+      "shift": [
+       1,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "M",
+      "n2": "A",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "M",
+      "n2": "A",
+      "shift": [
+       1,
+       1,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "A",
+      "n2": "A",
+      "shift": [
+       0,
+       0,
+       1
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "M",
+      "n2": "M",
+      "shift": [
+       0,
+       0,
+       1
+      ],
+      "radius_mm": 0.4
+     }
+    ],
+    "default_radius_mm": 0.45,
+    "free_params": {},
+    "lineage": {
+     "tier": "tier2",
+     "generator": "claude-proposer",
+     "source": "工字梁翼缘-腹板原理点阵化(柱+面内剪力腹板)",
+     "notes": [
+      "rationale: 工字梁原理的点阵化:y 柱当翼缘,x-y 面内 45° 腹板杆把剪力传给柱;z 向最少连通。面内斜杆角度 45° 在 LPBF 自支撑边界,MJF 无碍。"
+     ]
+    }
+   }
+  },
+  {
+   "name": "diag_strut_column",
+   "round": 1,
+   "proposer": "claude",
+   "absolute_gates": {
+    "G1_spd": true,
+    "rho_mesh": 0.12018,
+    "G2_voigt": true,
+    "G3_frame_over_bulk": 1.025,
+    "G3_consistent": true
+   },
+   "score": 537.7,
+   "rho_mesh": 0.1202,
+   "E_y_bulk": 64.62,
+   "vs_best_seed": 0.91,
+   "wl_hash": "5d746e7c1ba3d5d9",
+   "rationale": "rationale: 柱+下斜杆三角化:斜杆 M→邻柱底(Δ=(±2.5,−2.5,0)/(0,−2.5,±2.5)),cos²θ_y=0.5,既稳定柱又贡献轴向刚度(平行传力路径);全三角化消柱摆动机构。",
+   "doc": {
+    "schema": "atlas-cell-graph/1.0",
+    "name": "diag_strut_column",
+    "cell": {
+     "size_mm": 5.0
+    },
+    "nodes": [
+     {
+      "id": "A",
+      "frac": [
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "id": "M",
+      "frac": [
+       0.0,
+       0.5,
+       0.0
+      ]
+     }
+    ],
+    "edges": [
+     {
+      "n1": "A",
+      "n2": "M",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.55
+     },
+     {
+      "n1": "M",
+      "n2": "A",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.55
+     },
+     {
+      "n1": "M",
+      "n2": "A",
+      "shift": [
+       1,
+       0,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "M",
+      "n2": "A",
+      "shift": [
+       -1,
+       1,
+       0
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "M",
+      "n2": "A",
+      "shift": [
+       0,
+       0,
+       1
+      ],
+      "radius_mm": 0.4
+     },
+     {
+      "n1": "M",
+      "n2": "A",
+      "shift": [
+       0,
+       1,
+       -1
+      ],
+      "radius_mm": 0.4
+     }
+    ],
+    "default_radius_mm": 0.5,
+    "free_params": {},
+    "lineage": {
+     "tier": "tier2",
+     "generator": "claude-proposer",
+     "source": "柱-斜杆三角化:稳定化兼平行轴向通道",
+     "notes": [
+      "rationale: 柱+下斜杆三角化:斜杆 M→邻柱底(Δ=(±2.5,−2.5,0)/(0,−2.5,±2.5)),cos²θ_y=0.5,既稳定柱又贡献轴向刚度(平行传力路径);全三角化消柱摆动机构。"
+     ]
+    }
+   }
+  },
+  {
+   "name": "diamond_column_hybrid",
+   "round": 1,
+   "proposer": "claude",
+   "absolute_gates": {
+    "G1_spd": true,
+    "rho_mesh": 0.16414,
+    "G2_voigt": true,
+    "G3_frame_over_bulk": 1.068,
+    "G3_consistent": true
+   },
+   "score": 448.6,
+   "rho_mesh": 0.1641,
+   "E_y_bulk": 73.63,
+   "vs_best_seed": 0.759,
+   "wl_hash": "971c4012e42936be",
+   "rationale": "rationale: 弯曲主导族(diamond,韧性/吸能好)注入轴向通道:保留 diamond 的四面体配位(变形均匀)同时用 y 柱托底刚度——刚度-韧性折中设计,预期分数中游但形态独特。",
+   "doc": {
+    "schema": "atlas-cell-graph/1.0",
+    "name": "diamond_column_hybrid",
+    "cell": {
+     "size_mm": 5.0
+    },
+    "nodes": [
+     {
+      "id": "D1",
+      "frac": [
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "id": "D2",
+      "frac": [
+       0.25,
+       0.25,
+       0.25
+      ]
+     },
+     {
+      "id": "D3",
+      "frac": [
+       0.5,
+       0.5,
+       0.0
+      ]
+     },
+     {
+      "id": "D4",
+      "frac": [
+       0.75,
+       0.75,
+       0.25
+      ]
+     },
+     {
+      "id": "D5",
+      "frac": [
+       0.5,
+       0.0,
+       0.5
+      ]
+     },
+     {
+      "id": "D6",
+      "frac": [
+       0.75,
+       0.25,
+       0.75
+      ]
+     },
+     {
+      "id": "D7",
+      "frac": [
+       0.0,
+       0.5,
+       0.5
+      ]
+     },
+     {
+      "id": "D8",
+      "frac": [
+       0.25,
+       0.75,
+       0.75
+      ]
+     }
+    ],
+    "edges": [
+     {
+      "n1": "D1",
+      "n2": "D2",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D3",
+      "n2": "D2",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D5",
+      "n2": "D2",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D7",
+      "n2": "D2",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D3",
+      "n2": "D4",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D5",
+      "n2": "D6",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D7",
+      "n2": "D8",
+      "shift": [
+       0,
+       0,
+       0
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D4",
+      "n2": "D1",
+      "shift": [
+       1,
+       1,
+       0
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D4",
+      "n2": "D5",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D4",
+      "n2": "D7",
+      "shift": [
+       1,
+       0,
+       0
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D6",
+      "n2": "D1",
+      "shift": [
+       1,
+       0,
+       1
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D6",
+      "n2": "D3",
+      "shift": [
+       0,
+       0,
+       1
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D6",
+      "n2": "D7",
+      "shift": [
+       1,
+       0,
+       0
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D8",
+      "n2": "D1",
+      "shift": [
+       0,
+       1,
+       1
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D8",
+      "n2": "D3",
+      "shift": [
+       0,
+       0,
+       1
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D8",
+      "n2": "D5",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.4001
+     },
+     {
+      "n1": "D1",
+      "n2": "D1",
+      "shift": [
+       0,
+       1,
+       0
+      ],
+      "radius_mm": 0.55
+     }
+    ],
+    "default_radius_mm": 0.4,
+    "free_params": {},
+    "lineage": {
+     "tier": "tier2",
+     "generator": "claude-proposer",
+     "source": "diamond 四面体配位 + y 柱:刚度-韧性折中",
+     "notes": [
+      "rationale: 弯曲主导族(diamond,韧性/吸能好)注入轴向通道:保留 diamond 的四面体配位(变形均匀)同时用 y 柱托底刚度——刚度-韧性折中设计,预期分数中游但形态独特。"
+     ]
+    }
+   }
+  }
+ ],
+ "killed": [
+  {
+   "name": "graded_column_frame",
+   "round": 1,
+   "proposer": "claude",
+   "killed": "WL 查重(索引内已存在)"
+  }
+ ],
+ "n_winners_110pct": 3,
+ "novelty_wording": "新颖性限定 ATLAS 索引范围内未发现重复;score 为 screening 级(线弹性 bulk),SEA/塑性须 Tier-D"
+}

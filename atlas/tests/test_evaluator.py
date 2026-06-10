@@ -145,10 +145,11 @@ def _run_hook(payload, enabled=True):
     import os
     env = dict(os.environ)
     env['ATLAS_EVALUATOR_HOOK'] = '1' if enabled else '0'
+    env['PYTHONIOENCODING'] = 'utf-8'  # stderr 中文,钉死编码防环境耦合
     p = subprocess.run(
         [sys.executable, 'atlas/evaluator/hooks/block_non_evidence.py'],
         input=json.dumps(payload), capture_output=True, text=True,
-        env=env)
+        encoding='utf-8', env=env)
     return p.returncode, p.stderr
 
 

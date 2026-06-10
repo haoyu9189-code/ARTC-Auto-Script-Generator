@@ -46,8 +46,12 @@ def parse_text(text):
 
 
 def fem_pack(doc, label_class):
-    """压缩工况求解 → demo 数据包(变形场/公式实算值/角度直方)。"""
-    fem = solve_compression(doc, n=2, strain=0.05)
+    """压缩工况求解 → demo 数据包(变形场/公式实算值/角度直方)。
+
+    载荷沿设计 y 轴(structure_set 约定):y↔z 置换后用 frame 的 z 压,
+    可视化中载荷轴仍竖直。"""
+    from atlas.mechanics.calibrate import swap_yz
+    fem = solve_compression(swap_yz(doc), n=2, strain=0.05)
     coords = fem['coords']
     u = fem['u'].reshape(-1, 6)[:, :3]
     elems, angles = [], []
@@ -97,28 +101,28 @@ for topo in ('Octet_truss', 'Kelvin', 'Auxetic'):
                       'segments': segments_from(c, y),
                       'fem': fem_pack(doc, classify(topo))}
 
-print('运行生成式搜索(变异→硬门→WL 查重→FEM 裁判)…')
-gs = search()
-champ = gs['top'][0]
-gdoc = champ['doc']
-text, _ = graph_to_structure_text(gdoc)
-c, y = parse_text(text)
-best_seed_score = max(v['score'] for v in gs['seed_refs'].values())
-lattices['GEN-01'] = {
-    'tier': 'TIER-2 · 库外生成(screening)',
-    'segments': segments_from(c, y),
-    'fem': fem_pack(gdoc, classify(champ['parent'])),
-    'gen': {'parent': champ['parent'],
-            'score': round(champ['score'], 1),
-            'best_seed_score': round(best_seed_score, 1),
-            'vs_parent': round(champ['score'] /
-                               gs['seed_refs'][champ['parent']]['score'], 2),
-            'proposed': gs['stats']['proposed'],
-            'survivors': gs['n_survivors'],
-            'dup_killed': gs['stats']['dup'],
-            'wl_hash': champ['wl_hash'][:16]}}
-print(f"GEN-01 = {gdoc['name']} score={champ['score']:.1f} "
-      f"(种子最优 {best_seed_score:.1f})")
+fs_path = os.path.join(_ROOT, 'atlas', 'reports', 'funsearch_run.json')
+fs = json.load(open(fs_path, encoding='utf-8'))
+n_killed = len(fs['killed'])
+for gi, champ in enumerate(fs['accepted'][:2], start=1):
+    gdoc = champ['doc']
+    text, _ = graph_to_structure_text(gdoc)
+    c, y = parse_text(text)
+    key = f'GEN-0{gi}'
+    lattices[key] = {
+        'tier': 'TIER-2 · FunSearch(Claude 提案,screening)',
+        'segments': segments_from(c, y),
+        'fem': fem_pack(gdoc, 'stretch'),
+        'gen': {'parent': champ['name'],
+                'score': champ['score'],
+                'best_seed_score': fs['baseline_best_seed'],
+                'vs_parent': champ['vs_best_seed'],
+                'proposed': len(fs['accepted']) + n_killed,
+                'survivors': len(fs['accepted']),
+                'dup_killed': n_killed,
+                'wl_hash': champ['wl_hash']}}
+    print(f"{key} = {gdoc['name']} score={champ['score']} "
+          f"= {champ['vs_best_seed']}x 种子最优")
 
 # ---- D1 案例(同 v1) ----
 cases = []

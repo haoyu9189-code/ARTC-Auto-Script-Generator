@@ -33,7 +33,7 @@
 | P2-1a | beam_homog 核心(Timoshenko PBC) | done | 竖柱锚 1e-9 精确;Octet=0.9×DFA;271 项全绿 |
 | P2-1b | Lumpe-Stanković 抽样验证 | done | 24 条中位偏差 0.9%,零条>30%;275 项全绿 |
 | P2-1c | 节点刚化标定 + 误差条入 Evaluator | done | 336 组分层标定;弯曲 OOD 数学强制 Tier-D;282 项全绿 |
-| P2-2 | FunSearch 回路 | todo | |
+| P2-2 | FunSearch 回路 | done | 3 冠军 1.77×/1.44×/1.44×;自我执法案例;288 项全绿 |
 | P2-3 | Tier-1.75 目录三级筛 | todo | |
 | P2-4 | 修正系数矩阵 | todo | |
 | P2-5 | 动态/剪切特征扩展 | todo | |
@@ -41,6 +41,7 @@
 
 ## 日志
 
+- **2026-06-12 P2-2 done**:`atlas/mechanics/funsearch.py` + `atlas/proposals/claude_20260612{,b}.json`。回路 = **Claude 提案文件(带力学论证入 lineage,可审计)** → C1–C8 → WL 查重 → CMA-ES/黄金分割抛光(per-edge 半径组+节点坐标,pycma 4.4.4)→ 三道绝对门(G1 SPD / G2 Voigt E_y≤ρ̄E_s / G3 跨档窗 [0.5,40],原 20% 针对同 BC,平台 vs bulk 物理差实测可达 31×,按观测域执行留痕)。**DoD 达成:3 冠军 ≥1.10×**——dual_column_web **1.77×**(双柱族摊薄 web 税)/ mid_braced_column **1.44×**(屈曲半波长撑板,撑板高度=拓扑特征)/ twin_offset_web **1.44×**(正交失稳模态分层打断);种子最优 = Cubic 591.2(网格真密度口径)。**三个过程教训**:① 验证链对设计者执法——graded_column_frame(梯度半径)被 WL 正确击杀(半径=Tier-1.5 参数不改拓扑);② G3 初版轴向 bug(frame z 压 vs bulk E_y)误杀全部 y 强化提案,swap_yz 修复;③ 开块"两端在盒内"取边对贯通柱有边界软化伪影(octet_y 0.667×bulk),G3 下界因此 0.5。**诚实限定已写入工件**:E_y/ρ̄ 度量天然奖励柱密集化(Voigt 方向),结论限单轴刚度场景;score 为 screening 级,SEA/塑性须 Tier-D;新颖性限定 ATLAS 索引范围。demo 更新(GEN-01/02 = FunSearch 冠军带变形场)。运行工件 `atlas/reports/funsearch_run.json`。测试 +6(冠军现场复验防伪造/自我执法案例/红线措辞/绝对门),套件 288 全绿(顺手修 hook 测试编码环境耦合)。
 - **2026-06-12 P2-1c done**:`atlas/mechanics/calibrate.py` + `atlas/references/beam_error_bars.json`。**两轮诊断改变了标定设计**:① CSV comp_stiffness 经原始曲线核实没坏(BCC raw 32.8 vs csv 38.4),26× 差异是真物理——**DB 测的是 n=1 单胞平台压缩**(边界层+横向锁+节点体积),与周期 bulk 是两种量;v1(beam_homog vs CSV)把尺寸效应混进修正(p90 283%),v2 改 **frame_fem n=1 块(同 BC)vs 原始曲线 0–2% 应变窗自提斜率**(载荷轴 y 经轴置换),修正系数收敛到普适 ~2.1(实体元+节点 vs 梁);② 单标量仍罩不住形变敏感族(BCC/G7/AFCC/FCC/CubicRosette/Diamond 类内 p90 190–354%,slider 大改几何)→ **分层修正**:逐拓扑(24 个,p50 残差中位 14.9%)+ 类级 OOD 兜底(stretch 折减 0.32 / hybrid 0.52 / **bending 0.00→margin 不可用,数学上强制弯曲类 OOD 走 Tier-D**——红线变定理)。certify() 接口:分层选 bars、标定域 l/d 检查(±10%)、E_y_margin_safe=校准值×折减;trace schema 与 R7 白名单加入 beam_fem_calibrated。336 组对照样本。测试 +7(工件结构/逐拓扑/敏感族旗标/OOD 推断/强制 Tier-D/域外拒/Evaluator 集成),套件 282 全绿。**P2-1 三件套(a/b/c)完成:Tier-B 裁判可上岗**。
 - **2026-06-12 P2-1b done**:`atlas/mechanics/lumpe_catalog.py`:目录流式解析(Name/*/晶系/性能/C,n/节点/杆,1-based 索引)+ 装饰条目商图规范化(seeds.py 同款数学)。**协议解码**:pcu 条目 Ex=3.34e-3=0.33·ρ̄ ⟹ 目录性能在 **ρ̄=1%** 取值(细长杆区,梁理论最佳适用域),半径一阶反解 r=√(ρV/πΣL)。24 条立方条目对照:**中位偏差 0.9%、p90 15.1%、最大 20.0%、零条 >30% 归因线、零解析失败**;pcu 锚 +0.2%;全部偏差为正(刚接 Timoshenko 系统性略硬,与 >10% 的 5 条全为低对称软弯曲方向网一致)。报告落档 `atlas/references/beam_homog_validation.md`(YAML front-matter)。测试 +4(pcu 解析/商图 1 节点 3 边/ρ̄=1% 自洽/beam<1%/报告在档;目录缺失自动 skip)。套件 275 全绿。**Tier-B 裁判获得外部独立背书**。
 - **2026-06-12 P2-1a done(Phase 2 启动)**:`atlas/mechanics/beam_homog.py`:Timoshenko 空间梁周期均质化。核心洞察:**商图节点自由度恰好就是周期涨落场 ũ 的自由度**(周期像共享 DOF,周期性内建,零主从约束),affine 部分 ε̄·x 化为单元载荷,能量法 6+15 解提完整 6×6 C*。解析锚:竖柱族 E_z=ρ̄_z·E_s 误差 1e-9、横向零刚度;Cubic 三轴精确等模量。**两个物理发现**:① slider=4 变形沿 y 轴 → BCC E_y/E_x=1.10、FCC=1.38 是真实各向异性(structure_set 为 y 压设计),真不变量为 E_x=E_z 横向对称(精确成立);② C5 一阶密度对密集拓扑高估 ~2×(Octet 0.714 vs 商图真值 0.36)——用真密度后 beam E_z=0.9×DFA 铰接值,Timoshenko 剪切柔化(l/d=3.5,φ≈0.17)解释余差,吻合优秀。l/d<5 → certified=False 红线入信封有测试;速度 ~10ms/胞(预算 100ms)。测试 +10,套件 271 全绿。遗留:工程常数在 C 奇异时(纯柱族横向)不输出——如实而非编数。
