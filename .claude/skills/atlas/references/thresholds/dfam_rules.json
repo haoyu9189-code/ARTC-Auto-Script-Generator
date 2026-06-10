@@ -1,7 +1,8 @@
 {
   "_meta": {
-    "version": "1.0",
+    "version": "1.1",
     "date": "2026-06-10",
+    "changelog": "1.1: B1 增加 LPBF max_overhang_area_fraction(inference)",
     "note": "DfAM 几何阈值,Printability Checker(B1)与生成期硬门共用;每条带 source/source_type;source_type=inference 的条目输出时必须降级标注",
     "source_types": ["academic_doi", "vendor", "inference"]
   },
@@ -66,6 +67,11 @@
       "value": [35, 45],
       "source": "LPBF 自支撑角行业共识区间(EOS/SLM Solutions 设计指南)",
       "source_type": "vendor"
+    },
+    "max_overhang_area_fraction": {
+      "value": 0.05,
+      "source": "内部工程容限:临界角以下面积占比 ≤5% 视为可接受(节点附近局部小面不可避免);无文献支撑",
+      "source_type": "inference"
     }
   }
 }

@@ -1,0 +1,18 @@
+# ATLAS 专属依赖(钉版本,2026-06-10 本机 Python 3.13.5 全部验证)
+# 安装: pip install -r atlas/requirements-atlas.txt
+# 注意:
+# - 禁 Open3D(无 cp313 轮子)
+# - embreex 必装(射线引擎,缺失时 printability fail loudly,禁慢引擎回退)
+# - sse-starlette<3 + starlette<0.48: 与本机 fastapi 0.116/gradio 6.1 共存
+#   (sse-starlette 3.x 强制 starlette>=0.49.1 会破坏二者)
+manifold3d==3.4.1
+trimesh==4.11.5
+embreex==4.4.0
+rtree==1.4.1
+fastmcp==3.4.2
+sse-starlette<3
+starlette<0.48
+jsonschema==4.25.1
+pytest==9.0.3
+numpy>=1.26
+scipy>=1.16
