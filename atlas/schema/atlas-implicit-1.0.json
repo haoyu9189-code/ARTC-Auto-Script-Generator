@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "atlas-implicit/1.0",
+  "title": "ATLAS 隐式场表示(TPMS 基组合 / spinodoid GRF)",
+  "description": "紧凑浮点参数向量,LLM 可直接提案;实现器(B2/Phase 3)经 marching 算法转 watertight 网格。",
+  "type": "object",
+  "required": ["schema", "name", "family", "cell", "params", "lineage"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "atlas-implicit/1.0"},
+    "name": {"type": "string", "minLength": 1},
+    "family": {"enum": ["tpms_combo", "spinodoid"]},
+    "cell": {
+      "type": "object",
+      "required": ["size_mm"],
+      "additionalProperties": false,
+      "properties": {
+        "size_mm": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "params": {
+      "type": "object",
+      "oneOf": [
+        {
+          "description": "TPMS 线性组合;variant=sheet 时 thickness_t 为水平集厚度",
+          "required": ["basis", "variant"],
+          "additionalProperties": false,
+          "properties": {
+            "basis": {
+              "type": "array", "minItems": 1, "maxItems": 5,
+              "items": {
+                "type": "object",
+                "required": ["type", "weight"],
+                "additionalProperties": false,
+                "properties": {
+                  "type": {"enum": ["gyroid", "diamond", "schwarz_p",
+                                    "iwp", "neovius"]},
+                  "weight": {"type": "number"},
+                  "period_scale": {"type": "number",
+                                   "exclusiveMinimum": 0, "default": 1.0}
+                }
+              }
+            },
+            "variant": {"enum": ["sheet", "skeletal"]},
+            "threshold_t": {"type": "number"},
+            "thickness_t": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
+        {
+          "description": "Spinodoid 4 参数族(Kumar et al. npj Comput. Mater. 2020):三个锥角 + 相对密度;GRF 实现为 NumPy 自研(规避 GIBBON AGPL)",
+          "required": ["theta1_deg", "theta2_deg", "theta3_deg", "rho_rel"],
+          "additionalProperties": false,
+          "properties": {
+            "theta1_deg": {"type": "number", "minimum": 0, "maximum": 90},
+            "theta2_deg": {"type": "number", "minimum": 0, "maximum": 90},
+            "theta3_deg": {"type": "number", "minimum": 0, "maximum": 90},
+            "rho_rel": {"type": "number", "exclusiveMinimum": 0,
+                        "maximum": 1},
+            "wave_number": {"type": "number", "exclusiveMinimum": 0},
+            "variant": {"enum": ["solid", "shell"]}
+          }
+        }
+      ]
+    },
+    "lineage": {
+      "type": "object",
+      "required": ["tier", "generator", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "tier": {"enum": ["seed", "tier1.5", "tier1.75", "tier2"]},
+        "generator": {"type": "string", "minLength": 1},
+        "source": {"type": "string", "minLength": 1},
+        "parents": {"type": "array", "items": {"type": "string"}},
+        "notes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "novelty": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "wl_hash": {"type": "string"},
+        "duplicate_of": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

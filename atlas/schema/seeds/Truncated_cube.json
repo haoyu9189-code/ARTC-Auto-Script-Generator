@@ -1,0 +1,254 @@
+{
+ "cell": {
+  "size_mm": 5.0
+ },
+ "default_radius_mm": 0.5,
+ "edges": [
+  {
+   "n1": "N0",
+   "n2": "N1",
+   "shift": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "n1": "N0",
+   "n2": "N2",
+   "shift": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "n1": "N0",
+   "n2": "N3",
+   "shift": [
+    0,
+    -1,
+    0
+   ]
+  },
+  {
+   "n1": "N0",
+   "n2": "N4",
+   "shift": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "n1": "N0",
+   "n2": "N5",
+   "shift": [
+    -1,
+    0,
+    0
+   ]
+  },
+  {
+   "n1": "N1",
+   "n2": "N2",
+   "shift": [
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "n1": "N1",
+   "n2": "N3",
+   "shift": [
+    0,
+    -1,
+    1
+   ]
+  },
+  {
+   "n1": "N1",
+   "n2": "N4",
+   "shift": [
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "n1": "N1",
+   "n2": "N5",
+   "shift": [
+    -1,
+    0,
+    1
+   ]
+  },
+  {
+   "n1": "N2",
+   "n2": "N3",
+   "shift": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "n1": "N2",
+   "n2": "N4",
+   "shift": [
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "n1": "N2",
+   "n2": "N5",
+   "shift": [
+    -1,
+    0,
+    0
+   ]
+  },
+  {
+   "n1": "N3",
+   "n2": "N4",
+   "shift": [
+    0,
+    1,
+    0
+   ]
+  },
+  {
+   "n1": "N3",
+   "n2": "N5",
+   "shift": [
+    -1,
+    1,
+    0
+   ]
+  },
+  {
+   "n1": "N4",
+   "n2": "N5",
+   "shift": [
+    0,
+    0,
+    0
+   ]
+  }
+ ],
+ "free_params": {
+  "radius_mm": {
+   "description": "全局杆半径(DB 覆盖区间)",
+   "max": 0.55,
+   "min": 0.25,
+   "value": 0.5
+  },
+  "slider": {
+   "description": "structure_set 拓扑变形参数(部分拓扑在 slider=8 改变连通性)",
+   "max": 8.0,
+   "min": 0.0,
+   "value": 4.0
+  }
+ },
+ "lineage": {
+  "generator": "atlas.schema.seeds.seed_graph",
+  "notes": [
+   "原始杆去重 21 条(同 (n1,n2,shift))"
+  ],
+  "parents": [],
+  "source": "ARTC-Auto-Script structure_set.get_crystal_structure(topology=Truncated_cube, slider=4)",
+  "tier": "seed"
+ },
+ "name": "Truncated_cube",
+ "nodes": [
+  {
+   "aliases": [
+    "A_1",
+    "B_1",
+    "C_1",
+    "D_1"
+   ],
+   "frac": [
+    0.0,
+    0.0,
+    0.32
+   ],
+   "id": "N0"
+  },
+  {
+   "aliases": [
+    "A1",
+    "B1",
+    "C1",
+    "D1"
+   ],
+   "frac": [
+    0.0,
+    0.0,
+    0.68
+   ],
+   "id": "N1"
+  },
+  {
+   "aliases": [
+    "C2",
+    "C_2",
+    "D2",
+    "D_2"
+   ],
+   "frac": [
+    0.0,
+    0.32,
+    0.0
+   ],
+   "id": "N2"
+  },
+  {
+   "aliases": [
+    "A2",
+    "A_2",
+    "B2",
+    "B_2"
+   ],
+   "frac": [
+    0.0,
+    0.68,
+    0.0
+   ],
+   "id": "N3"
+  },
+  {
+   "aliases": [
+    "A3",
+    "A_3",
+    "D3",
+    "D_3"
+   ],
+   "frac": [
+    0.32,
+    0.0,
+    0.0
+   ],
+   "id": "N4"
+  },
+  {
+   "aliases": [
+    "B3",
+    "B_3",
+    "C3",
+    "C_3"
+   ],
+   "frac": [
+    0.68,
+    0.0,
+    0.0
+   ],
+   "id": "N5"
+  }
+ ],
+ "schema": "atlas-cell-graph/1.0"
+}
