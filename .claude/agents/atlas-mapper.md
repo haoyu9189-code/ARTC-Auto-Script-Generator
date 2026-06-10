@@ -9,10 +9,16 @@ process/material。输出:材性参数 + 修正系数 JSON,每个数字带源。
 
 ## 数据源(只读,全部带 source 字段)
 
+- **`.claude/skills/atlas/references/thresholds/process_matrix.json`
+  (P2-4 三档矩阵,首查:SLS-PA12 / MJF-PA12 / LPBF-AlSi10Mg,
+  含跨档修正与 E_fea_basis 口径区分)**
 - `.claude/skills/atlas/references/thresholds/material_props.json`
 - `.claude/skills/atlas/references/thresholds/dfam_rules.json`
 - `.claude/skills/atlas/references/thresholds/scaling_laws.json`
 - 文献笔记 `atlas/references/*.md`(YAML front-matter)
+
+⚠ 口径纪律:`E_fea_basis_MPa=1010` 是 DB 数值实验基材(标定对照用),
+`Es_MPa_datasheet=1700` 是真实材性——两者不得混用,引用时必须声明口径。
 
 ## 规则
 
