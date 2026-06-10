@@ -36,11 +36,12 @@
 | P2-2 | FunSearch 回路 | done | 3 冠军 1.77×/1.44×/1.44×;自我执法案例;288 项全绿 |
 | P2-3 | Tier-1.75 目录三级筛 | done | 17,262 入库;三层同台 591→907→1047;293 项全绿 |
 | P2-4 | 修正系数矩阵 | done | 三档矩阵全带源;FEA 基材/真实材性口径分列;298 项全绿 |
-| P2-5 | 动态/剪切特征扩展 | todo | |
-| P2-6 | LanceDB(条件触发) | todo | 每迭代检查触发条件 |
+| P2-5 | 动态/剪切特征扩展 | done | 947/946/947/999 特征;25 缺曲线如实跳过;302 项全绿 |
+| P2-6 | LanceDB(条件触发) | skip-done | 语料 21≪100,miss 率 0%——五条件均未触发,留痕 |
 
 ## 日志
 
+- **2026-06-12 P2-5 done + P2-6 skip-done —— PHASE 2 完成(7/7)**:`atlas/data/extract_dynamic.py`:动态曲线实况(步长 ~0.1mm + 首点惯性瞬态振铃)使"初段弹性斜率"**不可提取**——诚实重定义:dyna_stiffness=5% 应变割线(caveat 含惯性瞬态非弹性模量,Phase 3 滤波重提)/ dyna_yield=首个局部峰应力(落锤动态屈服标准代理)/ dyna_peak=前 30% 应变窗峰值 / shear_peak(面积约定 25mm²)。实提 947/946/947/999 条入 features 表(带源带方法局限),25 条缺动态曲线如实跳过,幂等可复跑。verify.py 动态维度升级:近邻真特征值带源(OOD 不提供),仍 informational 不入 margin(动态验证成熟度 Phase 3)。**P2-6 量化检查:语料 21 篇 ≪100、retrieve_reference miss 率 0%——五条升级触发条件均未满足,按 PLAN skip-done 留痕**。测试 +4(诚实跳过计数/物理合理带/幂等/verify 升级),旧 availability 测试更新至新合同。套件 302 全绿。
 - **2026-06-12 P2-4 done**:`thresholds/process_matrix.json`(Mapper 唯一数据源):SLS-PA12 / MJF-PA12 / LPBF-AlSi10Mg 三档,逐条 source+source_type;**口径纪律制度化**——`E_fea_basis_MPa=1010`(DB 数值实验基材,internal_fea)与 `Es_MPa_datasheet=1700`(真实材性,vendor)分列并禁混用(P2-1c 标定一致性的制度保障);SLS 文献值标 inference+DOI 待核录;LPBF ×0.92 挂 errata E5;跨档刚度比 0.856 一阶近似(强度/SEA 跨档归 P3 实测)。Mapper agent 提示词更新(矩阵首查+口径纪律)。测试 +5,套件 298 全绿。
 - **2026-06-12 P2-3 done**:`atlas/mechanics/catalog_screen.py`:17,262 条全部入 `catalog.sqlite`(几何 JSON + 性能 + C,n + WL 哈希逐条,provenance=DOI+CC BY-NC 每行,gitignore 可重建)。**新勘误 E11**:头部声明的星号标记(40 条数值问题结构)在存档文件中实际缺失(全文无 '*'),无法按文件识别;WL 结构查重 103 条(头部按名对 135)——缓解:自家硬门+绝对门兜底。三级筛:S1 目录自带 C,n 标度排序(毫秒,sqlite 无 POWER 改 Python 排序)→ S2 硬门(r=DfAM 下限 0.4)→ S3 beam 裁判同口径;150 池 → 杀 56 → 幸存 94 → top-10。**三层同台叙事弧成形:种子最优 591(Cubic)→ 枚举冠军 907(cub_Z03.4_E13408,1.53×)→ 生成冠军 1047(dual_column_web,1.77×)**——database-wide 论点first有三层实测数据。措辞红线:枚举非生成,screening 级,有测试把守。测试 +5(17,262 计数/查重带/逐行 provenance/pcu 锚/三层排序),套件 293 全绿。
 - **2026-06-12 P2-2 done**:`atlas/mechanics/funsearch.py` + `atlas/proposals/claude_20260612{,b}.json`。回路 = **Claude 提案文件(带力学论证入 lineage,可审计)** → C1–C8 → WL 查重 → CMA-ES/黄金分割抛光(per-edge 半径组+节点坐标,pycma 4.4.4)→ 三道绝对门(G1 SPD / G2 Voigt E_y≤ρ̄E_s / G3 跨档窗 [0.5,40],原 20% 针对同 BC,平台 vs bulk 物理差实测可达 31×,按观测域执行留痕)。**DoD 达成:3 冠军 ≥1.10×**——dual_column_web **1.77×**(双柱族摊薄 web 税)/ mid_braced_column **1.44×**(屈曲半波长撑板,撑板高度=拓扑特征)/ twin_offset_web **1.44×**(正交失稳模态分层打断);种子最优 = Cubic 591.2(网格真密度口径)。**三个过程教训**:① 验证链对设计者执法——graded_column_frame(梯度半径)被 WL 正确击杀(半径=Tier-1.5 参数不改拓扑);② G3 初版轴向 bug(frame z 压 vs bulk E_y)误杀全部 y 强化提案,swap_yz 修复;③ 开块"两端在盒内"取边对贯通柱有边界软化伪影(octet_y 0.667×bulk),G3 下界因此 0.5。**诚实限定已写入工件**:E_y/ρ̄ 度量天然奖励柱密集化(Voigt 方向),结论限单轴刚度场景;score 为 screening 级,SEA/塑性须 Tier-D;新颖性限定 ATLAS 索引范围。demo 更新(GEN-01/02 = FunSearch 冠军带变形场)。运行工件 `atlas/reports/funsearch_run.json`。测试 +6(冠军现场复验防伪造/自我执法案例/红线措辞/绝对门),套件 288 全绿(顺手修 hook 测试编码环境耦合)。

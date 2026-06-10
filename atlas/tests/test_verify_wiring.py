@@ -58,13 +58,14 @@ def test_checks_feed_evaluator_and_db_margin_passes(db):
         assert 'internal_fea' == nn[0]['source_type']
 
 
-def test_dynamic_availability_is_informational(db):
+def test_dynamic_features_informational(db):
+    """P2-5 升级后:近邻真特征值带源,但仍 informational 不入 margin。"""
     checks = verify_candidate(cands()[0], SPEC, db_path=db)
     dyn = next(c for c in checks
-               if c['tool'] == 'dynamic_data_availability')
+               if c['tool'] == 'dynamic_shear_features')
     assert dyn['pass'] is None  # informational,不构成验证
     assert any('成熟度' in c for c in dyn['caveats'])
-    assert isinstance(dyn['value'], int)
+    assert dyn['value']['n_dynamic_curves'] >= 0
 
 
 def test_ood_candidate_gets_no_nearest_neighbor_call(db):

@@ -158,7 +158,7 @@ def verify_candidate(candidate, spec, db_path=None):
         caveats=(['n<3 强警示:1→3 胞跳变最剧烈,建议 n>=3 或实测']
                  if n_cells < 3 else [])))
 
-    # ---- 动态/剪切数据可用性(informational,不吹成熟度) ----
+    # ---- 动态/剪切(P2-5 升级:近邻真特征值,带源;成熟度仍如实标注) ----
     if topology:
         con = sqlite3.connect(db_path or os.path.join(
             _ROOT, 'atlas', 'data', 'cell_db.sqlite'))
@@ -168,13 +168,31 @@ def verify_candidate(candidate, spec, db_path=None):
                 "s.sample_name=c.sample_name WHERE s.topology=? AND "
                 "c.load_case IN ('DynaCompre','DynaShear')",
                 (topology,)).fetchone()[0]
+            dyn_feats = {}
+            dyn_src = None
+            if tier in ('1', '1.5'):
+                row = con.execute(
+                    "SELECT f.feature, f.value, f.source FROM features f "
+                    "JOIN structures s ON s.sample_name=f.sample_name "
+                    "WHERE s.topology=? AND f.feature IN "
+                    "('dyna_stiffness','dyna_yield','dyna_peak',"
+                    "'shear_peak') AND f.value IS NOT NULL AND "
+                    "s.density IS NOT NULL "
+                    "ORDER BY ABS(s.density - ?) LIMIT 8",
+                    (topology, rho)).fetchall()
+                for feat, val, src in row:
+                    dyn_feats.setdefault(feat, round(val, 4))
+                    dyn_src = src
         finally:
             con.close()
+        value = {'n_dynamic_curves': n_dyn}
+        value.update(dyn_feats)
         checks.append(_chk(
-            'mechanics', 'dynamic_data_availability', n_dyn, None,
-            'cell_db.sqlite curves 表',
-            caveats=['动态/剪切验证成熟度属 Phase 2/3,此处仅报数据'
-                     '可用性,不构成动态性能验证']))
+            'mechanics', 'dynamic_shear_features', value, None,
+            dyn_src or 'cell_db.sqlite curves 表',
+            caveats=['P2-5 自提特征(近邻库内值,OOD 不提供);'
+                     '动态/剪切验证成熟度属 Phase 3,数值供参考'
+                     '不入 margin']))
     return checks
 
 
