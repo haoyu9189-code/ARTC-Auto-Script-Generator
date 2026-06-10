@@ -60,13 +60,26 @@ c 只知用途**必须追问**落高/速度/质量/最大 g/空间/复用性;d d
 `status≠computed` 的值在报告中必须带状态标注。材性查
 `references/thresholds/material_props.json`(注意 ×0.92 是 inference)。
 
-### 判决(Evaluator 规则)
+### 判决(Evaluator 规则 —— 确定性引擎,非自由裁量)
 
-- 任何**单项**检查不得授予 PASS——须多模态一致(几何+力学+合理性)
-- margin = pred/SEA_design ≥ 1.0 才 PASS(含 FoS,见红线 2)
-- `source_type=inference` 的依据自动降级结论一档
-- fail → 回传生成端重生,**预算 K=3**;耗尽则报告 Pareto 前沿 + 不满足项
-- 验证 trace 记录:每个结论依赖的工具调用集合 + 输入回显 + 来源
+判决一律调 `atlas.evaluator.judge`(R1–R7 规则在代码里,逐条有测试):
+R1 多模态一致(单项检查不得 PASS)/ R2 margin=pred/design≥1.0 且 spec
+必须确认 fos_already_applied / R3 n<3 强警示(定稿级 FAIL)/ R4
+inference 自动降级 / R5 最近邻必带 applicability / R6 OOD 禁最近邻 /
+R7 margin 证据白名单(解析筛最高 SCREENING_PASS)。trace 必须合
+`atlas/schema/verification-trace-1.0.json`,引擎自动校验。
+
+### K=3 重生回路(Evaluator-Optimizer)
+
+驱动器 `atlas.orchestration.RegenerationLoop`(状态落盘文件计数器,
+防跨会话重复烧预算;长回路建议 skill 以 context fork 方式运行):
+- **round 1 确定性参数修补**(default_param_repair:margin 缺口按
+  ρ∝r² 放大半径 / DfAM 杆径抬到工艺下限;不动拓扑,不耗 LLM)
+- **round 2 LLM 重生成**:Orchestrator 调 atlas-generator,失败原因
+  (verdict_reasons)必须传入
+- **round 3 上下文增强重生成**:带全部历史 + 文献检索提示
+- **K 耗尽不硬憋**:输出全部候选 trace 的 Pareto 前沿(margin 最大化 ×
+  密度最小化)+ 未满足项清单,如实报告
 
 ## 3. Phase 2 — 报告(中文)
 
