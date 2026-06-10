@@ -17,7 +17,7 @@
 | B3 | 硬门 C1–C8 | done | 24 种子全过;互穿网反例双轨检出;~95ms/胞;150 项全绿 |
 | B4 | realize_graph.py(C9) | done | 24 种子+新图全水密;失败入 trace;178 项全绿 |
 | B5 | Novelty WL 哈希 | done | 24 种子零碰撞;重标号/翻边不变;182 项全绿 |
-| B6 | strut 图 → ABAQUS 适配器 | todo | |
+| B6 | strut 图 → ABAQUS 适配器 | done | 6 种子精确往返;新图端到端三件套;215 项全绿 |
 | B7 | 种子文献库(≥10+6) | todo | |
 | B8 | Retriever + cell_db MCP | todo | |
 | C1 | 6 worker subagents | todo | |
@@ -29,6 +29,7 @@
 ## 日志
 
 - **2026-06-10**:两轮多智能体调研完成(22 agents,对抗核查全过):`RESEARCH.md` + `RESEARCH_NOVEL_TOPO.md` 落盘;HANDOFF §11 增补(新拓扑主攻);PLAN v1.0 建立;loop 启动。关键勘误已固化:Zhong 2023 出处、TPMS 指数适用域、PA12 SEA 带 0.3–8、cell DB 实况 999 总计/无 provenance/23-24 watertight、C3 连通性 Smith 标准形条件。
+- **2026-06-11 B6 done**:`atlas/abaqus_adapter.py`:商图 → 装饰结构文本 → 现有 script_generator 管线(注入点 = `_get_structure_data`,参数校验无拓扑白名单,`AbaqusScriptGenerator` 零改动复用)。核心算法:枚举每条商图边与单胞盒相交的全部周期像,**正长度判据**(t1−t0>1e-6)排除点接触的邻胞杆、保留贴面正长杆——Cubic/BCC/Octet/Kelvin/Diamond/FCC 六代表种子与原始装饰文本**线段集精确相等**,全 24 种子盒内完备(缺 0 段)。词汇表外新图(cubic_plus_diagonal)端到端生成 preprocess+postprocess+run.pbs 三件套,注入坐标/连接确认在脚本内。剪切(需 X 旋转)显式 NotImplementedError 归 Phase 2(静态先行)。**Tier-D 终审通路就此打通:LLM 提案 → 硬门 → 实现器 → 可打印性 → ABAQUS 脚本,全链零人工**(提交求解仍由用户决定,符合 loop 协议)。测试 +33,套件 215 全绿。遗留:剪切旋转、N×N×N lattice_array 实测(管线已支持参数)归 Phase 2。
 - **2026-06-11 B5 done**:`atlas/schema/novelty.py`:WL 哈希(3 轮 refinement,初始标签=度,边标签=量化边长+shift ±规范形)+ NoveltyIndex 查重(from_seeds 24 条)。不变性已测:节点重标号/列表乱序/边定向翻转;半径与 free_params 不入哈希(Tier-1.5 自由度),节点几何移动则哈希变。诚实局限已声明:WL 必要非充分;不识别换原点/换胞基重表示(Systre 式规范化归 P2+)——duplicate_of=None 只解读为"ATLAS 索引范围内未发现重复"(红线 8 措辞限定)。novelty 块可写回 doc 过 schema 校验。测试 +4,套件 182 全绿。遗留:Lumpe-Stanković 17k 目录入索引归 P2-3。
 - **2026-06-11 B4 done**:`atlas/geometry/realize_graph.py`(C9):任意合法商图 → watertight CellMesh(A1 同栈),失败返回 RealizeResult(ok=False, reason).to_trace() 显式入链不抛异常(防搜索偏置)。24 种子 + 词汇表外新图(立方+体对角,先过 C1–C8 再实现)全水密;n³ 平铺一致性(n=2 体积比 ∈ (0.90, 1.001]×8)。**新增对称破缺 RADIUS_JITTER=5e-4**(确定性每杆半径微抖动 ≤0.25µm):CubicRosette 商图出现顶点不全同的零厚度翻盖(count=4 奇异边,成对清理抓不到),通用破缺优于逐拓扑打地鼠。**重要语义发现(供 Mechanics Surrogate/P2 注意)**:商图单胞体积 = 真实每胞材料量;装饰胞(generate_cell/cell DB 的 FEA 管线)边界杆被 2/4/8 胞共享、单胞体积偏大(Cubic:装饰 43.7 vs 商图 ~12.1)——DB 内部自洽,但**新候选的 bulk 密度应以商图实现为准**,与 DB 密度对比时须注意口径。测试 +28,套件 178 全绿。遗留:无。
 - **2026-06-11 B3 done**:`atlas/gates/`(C1 schema/引用完整性、C2 节点身份重复、C3 周期连通、C4 Maxwell+平衡矩阵 SVD(信息门,孤立节点才硬判)、C5 一阶密度可解性、C6 杆交叉(信息)、C7 图级 DfAM、C8 实现预算)。**C3 数学**:商图连通 + 圈-shift 矩阵 HNF 格指数=1(⟺SNF diag(1,1,1),逐列 gcd 消元免 3×3 子式组合爆炸);互穿网反例(单节点 shift=(2,0,0),(0,1,0),(0,0,1),指数 2)被杀。**三个实测语义校正(首稿门会杀掉 18/24 真实种子!)**:① C7 杆间净距硬判错误——Octet 内部杆距天然 <1mm(276 对)但实际可打印,厂商 min_gap 是部件间规则,净距降级为 flag、排粉权威归 B1 网格级(Raz ρ̄ 耦合);② C3 开边界超胞实现错误(边界边被丢→FCC"19 分量"假阳性),正确有限实现=周期环面,且单 torus-3 漏 index-2(2⊥3)→ torus-2+torus-3 双探针,HNF 为精确判据,"指数=1⟹环面连通"作一致性断言;③ C2 的 2r 硬限误杀 Iso_truss(1.5r)/WeairePhelan(1.4r)合法球重叠 → 硬限 0.5r(真重复),<2r 打 flag。净距计算 Ericson 夹逼向量化 + C6/C7 共享,24 种子全门 2.3s(~95ms/胞)。测试 +37,套件 150 全绿。遗留:无。
