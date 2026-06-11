@@ -1,85 +1,106 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>ATLAS 选型报告 · LPBF AlSi10Mg 航空支架点阵填充</title>
+<title>ATLAS Selection Report · LPBF AlSi10Mg aerospace bracket lattice infill</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Big+Shoulders+Display:wght@700;900&display=swap" rel="stylesheet">
 <style>
 :root{
-  --amber:#b87700; --amber-bright:#e09600; --ink:#1a2129; --dim:#5a6772;
-  --faint:#9aa6b0; --line:#d8dde2; --line2:#eceff2; --green:#1e8a5f;
-  --red:#c43d3d; --bg-soft:#f7f8f9;
+  --amber:#b87700; --ink:#1a2129; --dim:#5a6772; --faint:#9aa6b0;
+  --line:#d8dde2; --line2:#eceff2; --green:#1e8a5f; --red:#c43d3d;
+  --bg-soft:#f7f8f9;
   --mono:'IBM Plex Mono',ui-monospace,monospace;
   --sans:'IBM Plex Sans',sans-serif;
   --disp:'Big Shoulders Display',var(--sans);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-@page{size:A4;margin:0}
+@page{size:338.7mm 190.5mm;margin:0}  /* 16:9 PPT slide */
 html,body{background:#e8eaec}
 .sheet{
-  width:210mm;min-height:297mm;margin:8mm auto;background:#fff;
-  padding:11mm 12mm 9mm;position:relative;color:var(--ink);
-  font-family:var(--sans);font-size:8.6pt;line-height:1.4;
+  width:1280px;height:720px;margin:18px auto;background:#fff;
+  padding:26px 30px 18px;position:relative;color:var(--ink);
+  font-family:var(--sans);font-size:11px;line-height:1.38;
   box-shadow:0 2px 18px rgba(0,0,0,.18);
-  display:flex;flex-direction:column;
+  display:flex;flex-direction:column;overflow:hidden;
 }
-@media print{
-  html,body{background:#fff}
-  .sheet{margin:0;box-shadow:none;width:auto;min-height:auto}
-}
-/* ── 抬头 ── */
-.mast{display:flex;align-items:flex-start;gap:6mm;border-bottom:1.2pt solid var(--ink);padding-bottom:3mm}
-.mast .logo{font-family:var(--disp);font-weight:900;font-size:23pt;color:var(--amber);line-height:.85}
-.mast .logo small{display:block;font-family:var(--mono);font-weight:400;font-size:5pt;letter-spacing:.26em;color:var(--dim);margin-top:1.2mm}
+@media print{html,body{background:#fff}
+  .sheet{margin:0;box-shadow:none;width:338.7mm;height:190.5mm}}
+/* ── masthead ── */
+.mast{display:flex;align-items:flex-start;gap:22px;
+  border-bottom:2px solid var(--ink);padding-bottom:9px}
+.mast .logo{font-family:var(--disp);font-weight:900;font-size:34px;
+  color:var(--amber);line-height:.85}
+.mast .logo small{display:block;font-family:var(--mono);font-weight:400;
+  font-size:7px;letter-spacing:.3em;color:var(--dim);margin-top:4px}
 .mast .title{flex:1}
-.mast .title h1{font-size:13pt;font-weight:600;letter-spacing:.01em}
-.mast .title .specline{font-family:var(--mono);font-size:6.6pt;color:var(--dim);margin-top:1mm;letter-spacing:.04em}
-.mast .meta{text-align:right;font-family:var(--mono);font-size:6.4pt;color:var(--dim);line-height:1.7}
-.badge-risk{display:inline-block;font-family:var(--mono);font-size:6.5pt;color:var(--red);border:1pt solid var(--red);padding:.6mm 2mm;letter-spacing:.12em;margin-top:1mm}
-/* ── 栅格 ── */
-.grid{display:grid;grid-template-columns:7fr 5fr;gap:5mm;margin-top:4mm}
-h2{font-family:var(--mono);font-weight:600;font-size:7pt;letter-spacing:.2em;color:var(--amber);border-bottom:.6pt solid var(--line);padding-bottom:1mm;margin-bottom:2mm}
-h2 i{font-style:normal;float:right;color:var(--faint);letter-spacing:.06em}
-/* 推荐表 */
-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:7pt}
-th{text-align:left;color:var(--dim);font-weight:500;letter-spacing:.06em;border-bottom:.7pt solid var(--ink);padding:.8mm 1mm}
-td{padding:1.2mm 1mm;border-bottom:.4pt solid var(--line2);vertical-align:middle}
-tr.winner td{background:rgba(224,150,0,.07)}
-.vd{font-size:6.2pt;letter-spacing:.1em;padding:.4mm 1.6mm;border:.7pt solid}
+.mast .title h1{font-size:19px;font-weight:600}
+.mast .title .specline{font-family:var(--mono);font-size:9.5px;
+  color:var(--dim);margin-top:3px;letter-spacing:.03em}
+.mast .meta{text-align:right;font-family:var(--mono);font-size:9px;
+  color:var(--dim);line-height:1.65}
+.badge-risk{display:inline-block;font-family:var(--mono);font-size:9px;
+  color:var(--red);border:1px solid var(--red);padding:1px 7px;
+  letter-spacing:.12em;margin-top:4px}
+/* ── 3-column body ── */
+.grid{display:grid;grid-template-columns:30fr 24fr 18fr;gap:18px;
+  margin-top:12px;flex:1;min-height:0}
+h2{font-family:var(--mono);font-weight:600;font-size:9.5px;
+  letter-spacing:.18em;color:var(--amber);
+  border-bottom:1px solid var(--line);padding-bottom:3px;
+  margin-bottom:6px}
+h2 i{font-style:normal;float:right;color:var(--faint);
+  letter-spacing:.04em}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);
+  font-size:9.5px}
+th{text-align:left;color:var(--dim);font-weight:500;
+  letter-spacing:.05em;border-bottom:1.2px solid var(--ink);
+  padding:2px 3px}
+td{padding:3.5px 3px;border-bottom:.5px solid var(--line2);
+  vertical-align:middle}
+tr.winner td{background:rgba(224,150,0,.08)}
+.vd{font-size:8px;letter-spacing:.1em;padding:1px 5px;border:1px solid}
 .vd.PASS{color:var(--green);border-color:var(--green)}
 .vd.FAIL{color:var(--red);border-color:var(--red)}
-.vd.SCREENING_PASS{color:var(--amber);border-color:var(--amber)}
-.mbar{width:22mm;height:2.2mm;background:var(--line2);position:relative;display:inline-block;vertical-align:middle}
+.vd.SCREEN{color:var(--amber);border-color:var(--amber)}
+.mbar{width:64px;height:7px;background:var(--line2);position:relative;
+  display:inline-block;vertical-align:middle}
 .mbar i{position:absolute;inset:0 auto 0 0;display:block}
-.mbar b{position:absolute;top:-0.7mm;bottom:-0.7mm;left:50%;width:.5pt;background:var(--ink)}
-.note{font-size:6.6pt;color:var(--dim);margin-top:1.5mm;line-height:1.45}
-/* 线框图 */
-.wire{border:.6pt solid var(--line);background:var(--bg-soft);padding:2mm;text-align:center}
-.wire svg{width:100%;height:46mm}
-.wire .cap{font-family:var(--mono);font-size:6.2pt;color:var(--dim);margin-top:1mm;letter-spacing:.06em}
-/* 机理表 */
-.kv{display:flex;justify-content:space-between;font-family:var(--mono);font-size:6.8pt;padding:1mm 0;border-bottom:.4pt solid var(--line2)}
-.kv .k{color:var(--dim)}
-.kv .v b{color:var(--amber);font-weight:600}
-/* trace */
-.trace{margin-top:4mm}
-.trace table{font-size:6.2pt}
-.trace td{padding:.8mm 1mm}
-.trace .src{color:var(--faint);font-size:5.8pt}
-.ok{color:var(--green)}.no{color:var(--red)}.info{color:var(--faint)}
-/* 来源 */
-.sources{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3mm;margin-top:4mm;font-size:6.2pt}
-.sources h3{font-family:var(--mono);font-size:6.2pt;letter-spacing:.14em;color:var(--dim);margin-bottom:1mm}
+.mbar b{position:absolute;top:-2px;bottom:-2px;left:50%;width:1px;
+  background:var(--ink)}
+.note{font-size:9px;color:var(--dim);margin-top:5px;line-height:1.4}
+/* sources under candidates */
+.sources{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  margin-top:10px;font-size:8.5px}
+.sources h3{font-family:var(--mono);font-size:8px;letter-spacing:.14em;
+  color:var(--dim);margin-bottom:3px}
 .sources ul{list-style:none}
-.sources li{padding:.5mm 0;border-bottom:.3pt dotted var(--line);color:var(--ink);line-height:1.35}
+.sources li{padding:1.5px 0;border-bottom:.5px dotted var(--line);
+  line-height:1.3}
 .sources .inf li{color:var(--red)}
-/* 页脚 */
-footer{margin-top:auto;border-top:1.2pt solid var(--ink);padding-top:2mm;
-  font-family:var(--mono);font-size:5.9pt;color:var(--dim);line-height:1.7;
-  display:flex;gap:5mm;align-items:flex-end}
+/* trace */
+.trace table{font-size:8.5px}
+.trace td{padding:2.5px 3px}
+.trace .src{color:var(--faint);font-size:7.5px}
+.ok{color:var(--green)}.no{color:var(--red)}.info{color:var(--faint)}
+/* right column */
+.wire{border:1px solid var(--line);background:var(--bg-soft);
+  padding:6px;text-align:center}
+.wire svg{width:100%;height:188px}
+.wire .cap{font-family:var(--mono);font-size:8px;color:var(--dim);
+  margin-top:3px;letter-spacing:.04em}
+.kv{display:flex;justify-content:space-between;gap:8px;
+  font-family:var(--mono);font-size:9px;padding:3.5px 0;
+  border-bottom:.5px solid var(--line2)}
+.kv .k{color:var(--dim)}
+.kv .v{text-align:right}
+.kv .v b{color:var(--amber);font-weight:600}
+/* footer */
+footer{border-top:2px solid var(--ink);padding-top:6px;margin-top:10px;
+  font-family:var(--mono);font-size:8px;color:var(--dim);
+  line-height:1.55;display:flex;gap:24px;align-items:flex-end}
 footer .disc{flex:1}
 footer .disc b{color:var(--ink)}
-footer .pg{white-space:nowrap}
+footer .pg{white-space:nowrap;text-align:right}
 </style>
 </head>
 <body>
@@ -87,46 +108,45 @@ footer .pg{white-space:nowrap}
   <div class="mast">
     <div class="logo">ATLAS<small>LATTICE SELECTION REPORT</small></div>
     <div class="title">
-      <h1>LPBF AlSi10Mg 航空支架点阵填充</h1>
-      <div class="specline">LPBF / AlSi10Mg · 阵列 n=3 · FoS 1.5(已含) · design 60.0(comp_EA(库内同单位代理)) · 置信度 screening</div>
-      <span class="badge-risk">⚠ 高风险场景 · 仅作筛选</span>
+      <h1>LPBF AlSi10Mg aerospace bracket lattice infill</h1>
+      <div class="specline">LPBF / AlSi10Mg · array n=3 · FoS 1.5 (included) · design 60.0 (comp_EA, in-DB same-unit proxy) · confidence: screening</div>
+      <span class="badge-risk">⚠ HIGH-RISK APPLICATION · SCREENING ONLY</span>
     </div>
-    <div class="meta">REPORT LPBF_BRACKET<br>DATE 2026-06-11<br>PIPELINE D1-ACCEPT · 257+ TESTS</div>
+    <div class="meta">REPORT LPBF_BRACKET<br>DATE 2026-06-11<br>PIPELINE D1-ACCEPT · 300+ TESTS GREEN</div>
   </div>
 
   <div class="grid">
     <div>
-      <h2>推荐表 <i>MARGIN = PRED / DESIGN(已含 FoS,不二次乘)· GATE 1.0</i></h2>
+      <h2>Ranked candidates <i>MARGIN = PRED / DESIGN (FoS included once) · GATE 1.0</i></h2>
       <table>
-        <tr><th>候选</th><th>Tier</th><th>拓扑</th><th>ρ̄</th><th>margin</th><th></th><th>判决</th></tr>
-        <tr class="winner"><td>lp1</td><td>T1</td><td>Octet_truss</td><td>0.60518</td><td>无证据</td><td><span class="mbar"><i style="width:0%;background:var(--red)"></i><b></b></span></td><td><span class="vd FAIL">FAIL</span></td></tr><tr><td>lp2</td><td>T1</td><td>FCCZ</td><td>0.49139</td><td>无证据</td><td><span class="mbar"><i style="width:0%;background:var(--red)"></i><b></b></span></td><td><span class="vd FAIL">FAIL</span></td></tr><tr><td>lp3</td><td>T1</td><td>Kelvin</td><td>0.41188</td><td>无证据</td><td><span class="mbar"><i style="width:0%;background:var(--red)"></i><b></b></span></td><td><span class="vd FAIL">FAIL</span></td></tr>
+        <tr><th>ID</th><th>Tier</th><th>Topology</th><th>ρ̄</th><th>Margin</th><th></th><th>Verdict</th></tr>
+        <tr class="winner"><td>lp1</td><td>T1</td><td>Octet_truss</td><td>0.60518</td><td>no evid.</td><td><span class="mbar"><i style="width:0%;background:var(--red)"></i><b></b></span></td><td><span class="vd FAIL">FAIL</span></td></tr><tr><td>lp2</td><td>T1</td><td>FCCZ</td><td>0.49139</td><td>no evid.</td><td><span class="mbar"><i style="width:0%;background:var(--red)"></i><b></b></span></td><td><span class="vd FAIL">FAIL</span></td></tr><tr><td>lp3</td><td>T1</td><td>Kelvin</td><td>0.41188</td><td>no evid.</td><td><span class="mbar"><i style="width:0%;background:var(--red)"></i><b></b></span></td><td><span class="vd FAIL">FAIL</span></td></tr>
       </table>
-      <div class="note">margin 度量为库内 comp_EA 同单位代理(绝对单位映射待标定,inference 级,已降级);中线 = 1.0 及格门。</div>
-      <div class="trace">
-        <h2>验证 TRACE(冠选候选,每个数字可溯源)<i>候选 lp1(Tier-1)</i></h2>
-        <table>
-          <tr><th>维度</th><th>工具</th><th>值</th><th></th><th>来源</th></tr>
-          <tr><td>printability</td><td>validate_mesh</td><td>watertight=True; winding_consistent=True</td><td><span class="ok">✓</span></td><td class="src">trimesh 边-面计数 + manifold3d Mesh.merge 往返 statu</td></tr><tr><td>printability</td><td>measure_min_feature</td><td>min_mm=1.0905892320783388; p5_mm=1.0905892</td><td><span class="ok">✓</span></td><td class="src">阈值: 内部保守取值;文献设计指南给 0.4-0.6 mm(约保守 2 倍),记录在案后续可</td></tr><tr><td>printability</td><td>check_overhangs</td><td>overhang_area_fraction=0.3685094337974357;</td><td><span class="no">✗</span></td><td class="src">自支撑角: LPBF 自支撑角行业共识区间(EOS/SLM Solutions 设计指南);</td></tr><tr><td>printability</td><td>check_powder_escape</td><td>trapped_void_mm3=0.953125; voxel_pitch_mm=</td><td><span class="no">✗</span></td><td class="src">困粉: embree 列射线奇偶填充 + scipy flood-fill(bench_pr</td></tr><tr><td>density</td><td>mesh(manifold3d)</td><td>0.6052</td><td><span class="ok">✓</span></td><td class="src">manifold3d watertight 体积 / 胞体积</td></tr><tr><td>mechanics</td><td>estimate</td><td>E_MPa=114.3110341148964; sigma_y_MPa=9.077</td><td><span class="info">ℹ</span></td><td class="src">Deshpande, Fleck & Ashby, JMPS 49(8):1747-1769</td></tr><tr><td>topology_tendency</td><td>maxwell_check</td><td>maxwell_M=0; tendency=stretch-leaning</td><td><span class="ok">✓</span></td><td class="src">Maxwell 1864; Deshpande, Ashby & Fleck, Acta M</td></tr><tr><td>mechanics</td><td>nearest_by_density+comp_EA</td><td>921.8</td><td><span class="ok">✓</span></td><td class="src">internal FEA feature extraction: data_package/</td></tr><tr><td>material</td><td>material_props[AlSi10Mg_LP</td><td>75</td><td><span class="ok">✓</span></td><td class="src">EOS AlSi10Mg datasheet, as-built E ~75 GPa</td></tr><tr><td>material</td><td>surface_defect_knockdown</td><td>0.92</td><td><span class="ok">✓</span></td><td class="src">内部工程假设,查无文献出处(2026-06-10 调研);中期应以 Zhong 2023 e</td></tr><tr><td>size_effect</td><td>n_cells_advisory</td><td>3</td><td><span class="info">ℹ</span></td><td class="src">Onck/Andrews 2001 边界层机制(atlas/references);修正引擎</td></tr><tr><td>mechanics</td><td>dynamic_shear_features</td><td>n_dynamic_curves=88; dyna_peak=11.2091</td><td><span class="info">ℹ</span></td><td class="src">P2-5 原始曲线自提(atlas/data/extract_dynamic.py):dyn</td></tr>
-        </table>
+      <div class="note">Margin metric is an in-DB comp_EA same-unit proxy (absolute unit mapping pending calibration — flagged inference, downgraded); centre line = 1.0 pass gate.</div>
+      <div class="sources">
+        <div><h3>ACADEMIC SOURCES (DOI)</h3><ul><li>Deshpande, Ashby & Fleck 2001, Acta Mater — Maxwell criterion · DOI 10.1016/S1359-6454(00)00379-7</li><li>Deshpande, Fleck & Ashby 2001, JMPS — octet stretch scaling · DOI 10.1016/S0022-5096(01)00010-2</li><li>Gibson & Ashby 1997, Cellular Solids 2nd ed. — bending scaling</li><li>Zhong et al. 2023, COSSMS — AM as-built deviation (metal l/d<5) · DOI 10.1016/j.cossms.2023.101081</li></ul></div>
+        <div class="inf"><h3>FLAGGED INFERENCES (DOWNGRADED)</h3><ul><li>Area-fraction tolerance is an internal engineering value (inference); </li><li>Internal engineering assumption, no literature source found (sur</li><li>Internal engineering assumption, no literature source found (surveyed </li><li>Margin unit proxy: comp_EA absolute-unit mapping pending calibration (inference, downgraded)</li><li>Output must carry 'internal engineering assumption (no literature supp</li><li>Threshold is an internal engineering value (inference); output must be</li></ul></div>
       </div>
     </div>
-    <div>
-      <h2>几何 <i>Octet_truss</i></h2>
-      <div class="wire"><svg viewBox="0 0 560 380" xmlns="http://www.w3.org/2000/svg"><line x1="305.1" y1="227.2" x2="242.4" y2="168.5" stroke="rgb(150,100,0)" stroke-width="1.10" stroke-linecap="round" opacity="0.45"/><line x1="332.7" y1="174.7" x2="305.1" y2="227.2" stroke="rgb(152,101,0)" stroke-width="1.17" stroke-linecap="round" opacity="0.47"/><line x1="280.0" y1="249.2" x2="305.1" y2="227.2" stroke="rgb(153,102,0)" stroke-width="1.21" stroke-linecap="round" opacity="0.48"/><line x1="305.1" y1="30.0" x2="242.4" y2="168.5" stroke="rgb(165,109,0)" stroke-width="1.56" stroke-linecap="round" opacity="0.56"/><line x1="332.7" y1="174.7" x2="305.1" y2="30.0" stroke="rgb(167,111,0)" stroke-width="1.63" stroke-linecap="round" opacity="0.57"/><line x1="242.4" y1="168.5" x2="129.4" y2="278.3" stroke="rgb(169,112,0)" stroke-width="1.70" stroke-linecap="round" opacity="0.59"/><line x1="280.0" y1="249.2" x2="129.4" y2="278.3" stroke="rgb(173,114,0)" stroke-width="1.81" stroke-linecap="round" opacity="0.61"/><line x1="332.7" y1="174.7" x2="242.4" y2="168.5" stroke="rgb(175,116,0)" stroke-width="1.87" stroke-linecap="round" opacity="0.63"/><line x1="242.4" y1="168.5" x2="280.0" y2="249.2" stroke="rgb(177,116,0)" stroke-width="1.91" stroke-linecap="round" opacity="0.64"/><line x1="280.0" y1="130.8" x2="305.1" y2="30.0" stroke="rgb(178,117,0)" stroke-width="1.95" stroke-linecap="round" opacity="0.64"/><line x1="332.7" y1="174.7" x2="280.0" y2="249.2" stroke="rgb(179,118,0)" stroke-width="1.98" stroke-linecap="round" opacity="0.65"/><line x1="430.6" y1="298.8" x2="332.7" y2="174.7" stroke="rgb(180,118,0)" stroke-width="2.01" stroke-linecap="round" opacity="0.66"/><line x1="430.6" y1="298.8" x2="280.0" y2="249.2" stroke="rgb(181,119,0)" stroke-width="2.05" stroke-linecap="round" opacity="0.67"/><line x1="129.4" y1="278.3" x2="227.3" y2="205.3" stroke="rgb(184,121,0)" stroke-width="2.13" stroke-linecap="round" opacity="0.69"/><line x1="242.4" y1="168.5" x2="129.4" y2="81.2" stroke="rgb(185,122,0)" stroke-width="2.16" stroke-linecap="round" opacity="0.69"/><line x1="242.4" y1="168.5" x2="280.0" y2="130.8" stroke="rgb(186,122,0)" stroke-width="2.19" stroke-linecap="round" opacity="0.70"/><line x1="242.4" y1="168.5" x2="227.3" y2="205.3" stroke="rgb(187,123,0)" stroke-width="2.23" stroke-linecap="round" opacity="0.71"/><line x1="332.7" y1="174.7" x2="280.0" y2="130.8" stroke="rgb(188,124,0)" stroke-width="2.26" stroke-linecap="round" opacity="0.72"/><line x1="227.3" y1="205.3" x2="280.0" y2="249.2" stroke="rgb(191,125,0)" stroke-width="2.34" stroke-linecap="round" opacity="0.73"/><line x1="317.6" y1="211.5" x2="332.7" y2="174.7" stroke="rgb(192,126,0)" stroke-width="2.37" stroke-linecap="round" opacity="0.74"/><line x1="317.6" y1="211.5" x2="280.0" y2="249.2" stroke="rgb(193,127,0)" stroke-width="2.41" stroke-linecap="round" opacity="0.75"/><line x1="317.6" y1="211.5" x2="430.6" y2="298.8" stroke="rgb(194,127,0)" stroke-width="2.44" stroke-linecap="round" opacity="0.76"/><line x1="430.6" y1="101.7" x2="332.7" y2="174.7" stroke="rgb(195,128,0)" stroke-width="2.47" stroke-linecap="round" opacity="0.76"/><line x1="280.0" y1="130.8" x2="129.4" y2="81.2" stroke="rgb(198,130,0)" stroke-width="2.55" stroke-linecap="round" opacity="0.78"/><line x1="129.4" y1="81.2" x2="227.3" y2="205.3" stroke="rgb(199,131,0)" stroke-width="2.59" stroke-linecap="round" opacity="0.79"/><line x1="227.3" y1="205.3" x2="280.0" y2="130.8" stroke="rgb(200,131,0)" stroke-width="2.62" stroke-linecap="round" opacity="0.80"/><line x1="254.9" y1="350.0" x2="280.0" y2="249.2" stroke="rgb(201,132,0)" stroke-width="2.65" stroke-linecap="round" opacity="0.81"/><line x1="317.6" y1="211.5" x2="280.0" y2="130.8" stroke="rgb(202,133,0)" stroke-width="2.69" stroke-linecap="round" opacity="0.81"/><line x1="317.6" y1="211.5" x2="227.3" y2="205.3" stroke="rgb(204,133,0)" stroke-width="2.73" stroke-linecap="round" opacity="0.82"/><line x1="430.6" y1="101.7" x2="280.0" y2="130.8" stroke="rgb(206,135,0)" stroke-width="2.79" stroke-linecap="round" opacity="0.84"/><line x1="317.6" y1="211.5" x2="430.6" y2="101.7" stroke="rgb(210,137,0)" stroke-width="2.90" stroke-linecap="round" opacity="0.86"/><line x1="227.3" y1="205.3" x2="254.9" y2="350.0" stroke="rgb(212,138,0)" stroke-width="2.97" stroke-linecap="round" opacity="0.88"/><line x1="254.9" y1="350.0" x2="317.6" y2="211.5" stroke="rgb(214,140,0)" stroke-width="3.04" stroke-linecap="round" opacity="0.89"/><line x1="254.9" y1="152.8" x2="280.0" y2="130.8" stroke="rgb(226,147,0)" stroke-width="3.39" stroke-linecap="round" opacity="0.97"/><line x1="227.3" y1="205.3" x2="254.9" y2="152.8" stroke="rgb(227,148,0)" stroke-width="3.43" stroke-linecap="round" opacity="0.98"/><line x1="254.9" y1="152.8" x2="317.6" y2="211.5" stroke="rgb(229,149,0)" stroke-width="3.50" stroke-linecap="round" opacity="1.00"/></svg><div class="cap">Octet_truss · 36 struts · 5.0 mm cell · atlas.geometry 管线真实几何</div></div>
-      <h2 style="margin-top:3mm">力学要点 <i>SCREENING</i></h2>
-      <div class="kv"><span class="k">相对密度 ρ̄(网格实算)</span><span class="v"><b>0.60518</b></span></div><div class="kv"><span class="k">G–A 解析 E*(screening)</span><span class="v">114.3 MPa</span></div><div class="kv"><span class="k">Maxwell M(倾向,非判定)</span><span class="v">0 · stretch-leaning</span></div><div class="kv"><span class="k">库内最近邻 comp_EA</span><span class="v"><b>921.8</b> mJ</span></div><div class="kv"><span class="k">applicability 距离</span><span class="v">0.1213</span></div>
+    <div class="trace">
+      <h2>Verification trace <i>CANDIDATE lp1 (TIER-1)</i></h2>
+      <table>
+        <tr><th>Dimension</th><th>Tool</th><th>Value</th><th></th><th>Source</th></tr>
+        <tr><td>printability</td><td>validate_mesh</td><td>watertight=True; winding_consistent=True</td><td><span class="ok">✓</span></td><td class="src">trimesh edge-face count + manifold3d Mesh.merg</td></tr><tr><td>printability</td><td>measure_min_feature</td><td>min_mm=1.0905892320783388; p5_mm=1.0905892</td><td><span class="ok">✓</span></td><td class="src">Threshold: internal conservative value; publis</td></tr><tr><td>printability</td><td>check_overhangs</td><td>overhang_area_fraction=0.3685094337974357;</td><td><span class="no">✗</span></td><td class="src">Self-support angle: LPBF industry-consensus ra</td></tr><tr><td>printability</td><td>check_powder_escape</td><td>trapped_void_mm3=0.953125; voxel_pitch_mm=</td><td><span class="no">✗</span></td><td class="src">Trapped powder: embree column-ray parity fill </td></tr><tr><td>density</td><td>mesh(manifold3d)</td><td>0.6052</td><td><span class="ok">✓</span></td><td class="src">manifold3d watertight volume / cell volume</td></tr><tr><td>mechanics</td><td>estimate</td><td>E_MPa=114.3110341148964; sigma_y_MPa=9.077</td><td><span class="info">ℹ</span></td><td class="src">Deshpande, Fleck & Ashby, JMPS 49(8):1747-1769</td></tr><tr><td>topology_tendency</td><td>maxwell_check</td><td>maxwell_M=0; tendency=stretch-leaning</td><td><span class="ok">✓</span></td><td class="src">Maxwell 1864; Deshpande, Ashby & Fleck, Acta M</td></tr><tr><td>mechanics</td><td>nearest_by_density+comp_EA</td><td>921.8</td><td><span class="ok">✓</span></td><td class="src">internal FEA feature extraction: data_package/</td></tr><tr><td>material</td><td>material_props[AlSi10Mg_LP</td><td>75</td><td><span class="ok">✓</span></td><td class="src">EOS AlSi10Mg datasheet, as-built E ~75 GPa</td></tr><tr><td>material</td><td>surface_defect_knockdown</td><td>0.92</td><td><span class="ok">✓</span></td><td class="src">Internal engineering assumption, no literature</td></tr><tr><td>size_effect</td><td>n_cells_advisory</td><td>3</td><td><span class="info">ℹ</span></td><td class="src">Onck/Andrews 2001 boundary-layer mechanism (at</td></tr><tr><td>mechanics</td><td>dynamic_shear_features</td><td>n_dynamic_curves=88; dyna_peak=11.2091</td><td><span class="info">ℹ</span></td><td class="src">P2-5 raw-curve self-extraction(atlas/data/extr</td></tr>
+      </table>
+      <div class="note" style="margin-top:6px"><b>Vendor / internal evidence:</b> Deshpande, Fleck & Ashby, JMPS 49(8):1747-1769, 2001, DOI 10.101 · EOS AlSi10Mg datasheet, as-built E ~75 GPa · Gibson & Ashby, Cellular Solids, 2nd ed., Cambridge UP, 1997 (be · Maxwell 1864; Deshpande, Ashby & Fleck, Acta Mater. 49(6):1035-1 · Onck/Andrews 2001 boundary-layer mechanism (atlas/references); c</div>
     </div>
-  </div>
-
-  <div class="sources">
-    <div><h3>学术文献(DOI)</h3><ul><li>—</li></ul></div>
-    <div><h3>厂商标准 / 内部数据</h3><ul><li>Deshpande, Fleck & Ashby, JMPS 49(8):1747-1769, 2001, DOI 10.101</li><li>EOS AlSi10Mg datasheet, as-built E ~75 GPa</li><li>Gibson & Ashby, Cellular Solids, 2nd ed., Cambridge UP, 1997 (be</li><li>Maxwell 1864; Deshpande, Ashby & Fleck, Acta Mater. 49(6):1035-1</li><li>Onck/Andrews 2001 边界层机制(atlas/references);修正引擎接线归 P2</li><li>P2-5 原始曲线自提(atlas/data/extract_dynamic.py):dyna_stiffness=5% 应变割</li></ul></div>
-    <div class="inf"><h3>标记推测(已降级)</h3><ul><li>内部工程假设,查无文献出处(2026-06-10 调研);中期应以 Zhong 2023 effective-strut-dia</li></ul></div>
+    <div>
+      <h2>Geometry <i>Octet_truss</i></h2>
+      <div class="wire"><svg viewBox="0 0 560 380" xmlns="http://www.w3.org/2000/svg"><line x1="305.1" y1="227.2" x2="242.4" y2="168.5" stroke="rgb(150,100,0)" stroke-width="1.10" stroke-linecap="round" opacity="0.45"/><line x1="332.7" y1="174.7" x2="305.1" y2="227.2" stroke="rgb(152,101,0)" stroke-width="1.17" stroke-linecap="round" opacity="0.47"/><line x1="280.0" y1="249.2" x2="305.1" y2="227.2" stroke="rgb(153,102,0)" stroke-width="1.21" stroke-linecap="round" opacity="0.48"/><line x1="305.1" y1="30.0" x2="242.4" y2="168.5" stroke="rgb(165,109,0)" stroke-width="1.56" stroke-linecap="round" opacity="0.56"/><line x1="332.7" y1="174.7" x2="305.1" y2="30.0" stroke="rgb(167,111,0)" stroke-width="1.63" stroke-linecap="round" opacity="0.57"/><line x1="242.4" y1="168.5" x2="129.4" y2="278.3" stroke="rgb(169,112,0)" stroke-width="1.70" stroke-linecap="round" opacity="0.59"/><line x1="280.0" y1="249.2" x2="129.4" y2="278.3" stroke="rgb(173,114,0)" stroke-width="1.81" stroke-linecap="round" opacity="0.61"/><line x1="332.7" y1="174.7" x2="242.4" y2="168.5" stroke="rgb(175,116,0)" stroke-width="1.87" stroke-linecap="round" opacity="0.63"/><line x1="242.4" y1="168.5" x2="280.0" y2="249.2" stroke="rgb(177,116,0)" stroke-width="1.91" stroke-linecap="round" opacity="0.64"/><line x1="280.0" y1="130.8" x2="305.1" y2="30.0" stroke="rgb(178,117,0)" stroke-width="1.95" stroke-linecap="round" opacity="0.64"/><line x1="332.7" y1="174.7" x2="280.0" y2="249.2" stroke="rgb(179,118,0)" stroke-width="1.98" stroke-linecap="round" opacity="0.65"/><line x1="430.6" y1="298.8" x2="332.7" y2="174.7" stroke="rgb(180,118,0)" stroke-width="2.01" stroke-linecap="round" opacity="0.66"/><line x1="430.6" y1="298.8" x2="280.0" y2="249.2" stroke="rgb(181,119,0)" stroke-width="2.05" stroke-linecap="round" opacity="0.67"/><line x1="129.4" y1="278.3" x2="227.3" y2="205.3" stroke="rgb(184,121,0)" stroke-width="2.13" stroke-linecap="round" opacity="0.69"/><line x1="242.4" y1="168.5" x2="129.4" y2="81.2" stroke="rgb(185,122,0)" stroke-width="2.16" stroke-linecap="round" opacity="0.69"/><line x1="242.4" y1="168.5" x2="280.0" y2="130.8" stroke="rgb(186,122,0)" stroke-width="2.19" stroke-linecap="round" opacity="0.70"/><line x1="242.4" y1="168.5" x2="227.3" y2="205.3" stroke="rgb(187,123,0)" stroke-width="2.23" stroke-linecap="round" opacity="0.71"/><line x1="332.7" y1="174.7" x2="280.0" y2="130.8" stroke="rgb(188,124,0)" stroke-width="2.26" stroke-linecap="round" opacity="0.72"/><line x1="227.3" y1="205.3" x2="280.0" y2="249.2" stroke="rgb(191,125,0)" stroke-width="2.34" stroke-linecap="round" opacity="0.73"/><line x1="317.6" y1="211.5" x2="332.7" y2="174.7" stroke="rgb(192,126,0)" stroke-width="2.37" stroke-linecap="round" opacity="0.74"/><line x1="317.6" y1="211.5" x2="280.0" y2="249.2" stroke="rgb(193,127,0)" stroke-width="2.41" stroke-linecap="round" opacity="0.75"/><line x1="317.6" y1="211.5" x2="430.6" y2="298.8" stroke="rgb(194,127,0)" stroke-width="2.44" stroke-linecap="round" opacity="0.76"/><line x1="430.6" y1="101.7" x2="332.7" y2="174.7" stroke="rgb(195,128,0)" stroke-width="2.47" stroke-linecap="round" opacity="0.76"/><line x1="280.0" y1="130.8" x2="129.4" y2="81.2" stroke="rgb(198,130,0)" stroke-width="2.55" stroke-linecap="round" opacity="0.78"/><line x1="129.4" y1="81.2" x2="227.3" y2="205.3" stroke="rgb(199,131,0)" stroke-width="2.59" stroke-linecap="round" opacity="0.79"/><line x1="227.3" y1="205.3" x2="280.0" y2="130.8" stroke="rgb(200,131,0)" stroke-width="2.62" stroke-linecap="round" opacity="0.80"/><line x1="254.9" y1="350.0" x2="280.0" y2="249.2" stroke="rgb(201,132,0)" stroke-width="2.65" stroke-linecap="round" opacity="0.81"/><line x1="317.6" y1="211.5" x2="280.0" y2="130.8" stroke="rgb(202,133,0)" stroke-width="2.69" stroke-linecap="round" opacity="0.81"/><line x1="317.6" y1="211.5" x2="227.3" y2="205.3" stroke="rgb(204,133,0)" stroke-width="2.73" stroke-linecap="round" opacity="0.82"/><line x1="430.6" y1="101.7" x2="280.0" y2="130.8" stroke="rgb(206,135,0)" stroke-width="2.79" stroke-linecap="round" opacity="0.84"/><line x1="317.6" y1="211.5" x2="430.6" y2="101.7" stroke="rgb(210,137,0)" stroke-width="2.90" stroke-linecap="round" opacity="0.86"/><line x1="227.3" y1="205.3" x2="254.9" y2="350.0" stroke="rgb(212,138,0)" stroke-width="2.97" stroke-linecap="round" opacity="0.88"/><line x1="254.9" y1="350.0" x2="317.6" y2="211.5" stroke="rgb(214,140,0)" stroke-width="3.04" stroke-linecap="round" opacity="0.89"/><line x1="254.9" y1="152.8" x2="280.0" y2="130.8" stroke="rgb(226,147,0)" stroke-width="3.39" stroke-linecap="round" opacity="0.97"/><line x1="227.3" y1="205.3" x2="254.9" y2="152.8" stroke="rgb(227,148,0)" stroke-width="3.43" stroke-linecap="round" opacity="0.98"/><line x1="254.9" y1="152.8" x2="317.6" y2="211.5" stroke="rgb(229,149,0)" stroke-width="3.50" stroke-linecap="round" opacity="1.00"/></svg><div class="cap">Octet_truss · 36 struts · 5.0 mm cell · real pipeline geometry (atlas.geometry)</div></div>
+      <h2 style="margin-top:10px">Mechanics summary <i>SCREENING</i></h2>
+      <div class="kv"><span class="k">Rel. density ρ̄ (mesh-true)</span><span class="v"><b>0.60518</b></span></div><div class="kv"><span class="k">G–A analytic E* (screening)</span><span class="v">114.3 MPa</span></div><div class="kv"><span class="k">Maxwell M (tendency only)</span><span class="v">0 · stretch-leaning</span></div><div class="kv"><span class="k">In-DB nearest comp_EA</span><span class="v"><b>921.8</b> mJ</span></div><div class="kv"><span class="k">Applicability distance</span><span class="v">0.1213</span></div>
+    </div>
   </div>
 
   <footer>
-    <div class="disc"><b>免责声明</b> 本报告为计算与数据库辅助选型,最终设计须经实物压缩测试验证。推荐为 <b>database-wide(数据库范围内)</b>最优,不主张绝对全局最优;快速档数值为 screening 级;Tier-2 库外生成结论与库内检索分层呈现。本案例无候选通过全部硬性检查,推荐表如实呈现;出路见判决依据。</div>
-    <div class="pg">PAGE 1 / 1<br>ATLAS · NTU SC3DP × A*STAR ARTC</div>
+    <div class="disc"><b>Disclaimer</b> Computational, database-assisted selection only — final designs must be validated by physical compression testing. Recommendation is <b>database-wide</b> optimal (no claim of absolute global optimality); fast-tier values are screening grade; Tier-2 generated candidates are reported separately from in-database retrieval. No candidate passed every hard check in this case; the table reports this honestly — see the verdict basis for the way forward.</div>
+    <div class="pg">PAGE 1 / 1 · 16:9<br>ATLAS · NTU SC3DP × A*STAR ARTC</div>
   </footer>
 </div>
 </body>
