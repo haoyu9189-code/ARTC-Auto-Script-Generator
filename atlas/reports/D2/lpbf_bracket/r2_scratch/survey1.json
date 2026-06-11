@@ -1,0 +1,299 @@
+{
+ "probes": {
+  "vertical_cyl": 0.0,
+  "horizontal_cyl": 0.2766,
+  "diag45_cyl": 0.4765,
+  "sphere": 0.3655,
+  "two_overlap_vert_cyls": 0.0
+ },
+ "db_topologies": {
+  "Cubic": {
+   "s0": {
+    "overhang": 0.1707,
+    "watertight": true,
+    "rho": 0.4206
+   },
+   "s4": {
+    "overhang": 0.1707,
+    "watertight": true,
+    "rho": 0.4206
+   }
+  },
+  "BCC": {
+   "s0": {
+    "overhang": 0.3679,
+    "watertight": true,
+    "rho": 0.2816
+   },
+   "s4": {
+    "overhang": 0.3472,
+    "watertight": true,
+    "rho": 0.2624
+   }
+  },
+  "BCCZ": {
+   "s0": {
+    "overhang": 0.3272,
+    "watertight": true,
+    "rho": 0.3955
+   },
+   "s4": {
+    "overhang": 0.3137,
+    "watertight": true,
+    "rho": 0.3785
+   }
+  },
+  "Octet_truss": {
+   "s0": {
+    "overhang": 0.36,
+    "watertight": true,
+    "rho": 0.3845
+   },
+   "s4": {
+    "overhang": 0.3685,
+    "watertight": true,
+    "rho": 0.6052
+   }
+  },
+  "AFCC": {
+   "s0": {
+    "overhang": 0.4195,
+    "watertight": true,
+    "rho": 0.4823
+   },
+   "s4": {
+    "overhang": 0.3863,
+    "watertight": true,
+    "rho": 0.5402
+   }
+  },
+  "Truncated_cube": {
+   "s0": {
+    "overhang": 0.3692,
+    "watertight": true,
+    "rho": 0.4967
+   },
+   "s4": {
+    "overhang": 0.3354,
+    "watertight": true,
+    "rho": 0.4743
+   }
+  },
+  "FCC": {
+   "s0": {
+    "overhang": 0.3755,
+    "watertight": true,
+    "rho": 0.3308
+   },
+   "s4": {
+    "overhang": 0.339,
+    "watertight": true,
+    "rho": 0.384
+   }
+  },
+  "FCCZ": {
+   "s0": {
+    "overhang": 0.3344,
+    "watertight": true,
+    "rho": 0.445
+   },
+   "s4": {
+    "overhang": 0.3138,
+    "watertight": true,
+    "rho": 0.4914
+   }
+  },
+  "Tetrahedron_base": {
+   "s0": {
+    "overhang": 0.2892,
+    "watertight": true,
+    "rho": 0.7401
+   },
+   "s4": {
+    "overhang": 0.29,
+    "watertight": true,
+    "rho": 0.7532
+   }
+  },
+  "Iso_truss": {
+   "s0": {
+    "overhang": 0.2658,
+    "watertight": true,
+    "rho": 0.7542
+   },
+   "s4": {
+    "overhang": 0.2622,
+    "watertight": true,
+    "rho": 0.7266
+   }
+  },
+  "G7": {
+   "s0": {
+    "overhang": 0.2476,
+    "watertight": true,
+    "rho": 0.5132
+   },
+   "s4": {
+    "overhang": 0.245,
+    "watertight": true,
+    "rho": 0.4947
+   }
+  },
+  "FBCCZ": {
+   "s0": {
+    "overhang": 0.3463,
+    "watertight": true,
+    "rho": 0.52
+   },
+   "s4": {
+    "overhang": 0.343,
+    "watertight": true,
+    "rho": 0.4969
+   }
+  },
+  "FBCCXYZ": {
+   "s0": {
+    "overhang": 0.2994,
+    "watertight": true,
+    "rho": 0.9708
+   },
+   "s4": {
+    "overhang": 0.3018,
+    "watertight": true,
+    "rho": 1.0047
+   }
+  },
+  "Cuboctahedron_Z": {
+   "s0": {
+    "overhang": 0.3683,
+    "watertight": true,
+    "rho": 0.7921
+   },
+   "s4": {
+    "overhang": 0.391,
+    "watertight": true,
+    "rho": 0.772
+   }
+  },
+  "Diamond": {
+   "s0": {
+    "overhang": 0.338,
+    "watertight": true,
+    "rho": 0.2584
+   },
+   "s4": {
+    "overhang": 0.3385,
+    "watertight": true,
+    "rho": 0.2478
+   }
+  },
+  "Rhombic": {
+   "s0": {
+    "overhang": 0.3405,
+    "watertight": true,
+    "rho": 0.4168
+   },
+   "s4": {
+    "overhang": 0.3395,
+    "watertight": true,
+    "rho": 0.5356
+   }
+  },
+  "Kelvin": {
+   "s0": {
+    "overhang": 0.4107,
+    "watertight": true,
+    "rho": 0.3354
+   },
+   "s4": {
+    "overhang": 0.4118,
+    "watertight": true,
+    "rho": 0.4119
+   }
+  },
+  "Auxetic": {
+   "s0": {
+    "overhang": 0.3442,
+    "watertight": true,
+    "rho": 0.6202
+   },
+   "s4": {
+    "overhang": 0.3459,
+    "watertight": true,
+    "rho": 0.5904
+   }
+  },
+  "Octahedron": {
+   "s0": {
+    "overhang": 0.4245,
+    "watertight": true,
+    "rho": 0.2584
+   },
+   "s4": {
+    "overhang": 0.4245,
+    "watertight": true,
+    "rho": 0.2584
+   }
+  },
+  "Truncated_Octoctahedron": {
+   "s0": {
+    "overhang": 0.3335,
+    "watertight": true,
+    "rho": 0.5579
+   },
+   "s4": {
+    "overhang": 0.3477,
+    "watertight": true,
+    "rho": 0.5474
+   }
+  },
+  "CubicRosette": {
+   "s0": {
+    "overhang": 0.387,
+    "watertight": true,
+    "rho": 0.5379
+   },
+   "s4": {
+    "overhang": 0.3877,
+    "watertight": true,
+    "rho": 0.5333
+   }
+  },
+  "CBCC": {
+   "s0": {
+    "overhang": 0.2478,
+    "watertight": true,
+    "rho": 0.6256
+   },
+   "s4": {
+    "overhang": 0.2478,
+    "watertight": true,
+    "rho": 0.6098
+   }
+  },
+  "WeairePhelan": {
+   "s0": {
+    "overhang": 0.3039,
+    "watertight": true,
+    "rho": 0.6459
+   },
+   "s4": {
+    "overhang": 0.3046,
+    "watertight": true,
+    "rho": 0.6596
+   }
+  },
+  "DiamondPlus": {
+   "s0": {
+    "overhang": 0.3957,
+    "watertight": true,
+    "rho": 0.4483
+   },
+   "s4": {
+    "overhang": 0.3987,
+    "watertight": true,
+    "rho": 0.4387
+   }
+  }
+ }
+}

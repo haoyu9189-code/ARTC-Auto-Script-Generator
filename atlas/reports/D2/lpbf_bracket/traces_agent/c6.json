@@ -1,0 +1,124 @@
+{
+  "candidate_id": "c6",
+  "tier": "2",
+  "checks": [
+    {
+      "dimension": "printability",
+      "tool": "printability.validate_mesh",
+      "value": {
+        "watertight": true,
+        "winding_consistent": true,
+        "is_volume": true,
+        "manifold3d_status": "Error.NoError",
+        "body_count": 1
+      },
+      "pass": true,
+      "status": "computed",
+      "source": "trimesh 边-面计数 + manifold3d Mesh.merge 往返 status(双引擎,bench_printability.py 本机验证)",
+      "caveats": [],
+      "threshold": {
+        "watertight": true,
+        "manifold3d_status": "NoError"
+      }
+    },
+    {
+      "dimension": "printability",
+      "tool": "printability.measure_min_feature",
+      "value": {
+        "min_mm": 1.1581739729917668,
+        "p5_mm": 1.1659391360920193,
+        "median_mm": 1.1662978226238816,
+        "n_valid_samples": 400
+      },
+      "pass": true,
+      "status": "computed",
+      "source": "阈值: 内部保守取值;文献设计指南给 0.4-0.6 mm(约保守 2 倍),记录在案后续可论证放宽;方法: embree 射线测厚(bench 验证 BCC d=1.0 误差 0.1-0.5%)",
+      "caveats": [
+        "判据用 p5(射线采样对尖角/相贯线的极小值噪声鲁棒);min_mm 一并报告",
+        "阈值为内部工程取值(inference),输出须降级标注"
+      ],
+      "threshold": 1.0
+    },
+    {
+      "dimension": "printability",
+      "tool": "printability.check_overhangs",
+      "value": {
+        "overhang_area_fraction": 0.4701060622796124,
+        "threshold_angle_deg": 45,
+        "downward_face_count": 643
+      },
+      "pass": false,
+      "status": "computed",
+      "source": "自支撑角: LPBF 自支撑角行业共识区间(EOS/SLM Solutions 设计指南);容限: 内部工程容限:临界角以下面积占比 ≤5% 视为可接受(节点附近局部小面不可避免);无文献支撑;方法: 面法向分类(毫秒级,bench 验证)",
+      "caveats": [
+        "面积分数容限为内部工程取值(inference),输出须降级标注"
+      ],
+      "threshold": 0.05
+    },
+    {
+      "dimension": "printability",
+      "tool": "printability.check_powder_escape",
+      "value": {
+        "trapped_void_mm3": 0.0,
+        "voxel_pitch_mm": 0.25,
+        "tolerance_mm3": 0.125,
+        "odd_parity_rays": 0
+      },
+      "pass": true,
+      "status": "computed",
+      "source": "困粉: embree 列射线奇偶填充 + scipy flood-fill(bench_printability3.py 正负对照验证)",
+      "caveats": [
+        "体素量化容差 ±0.125 mm³(pitch=0.25);Evaluator 不得据此误杀边界候选"
+      ],
+      "threshold": 0.125
+    },
+    {
+      "dimension": "density",
+      "tool": "rel_density.mesh(manifold3d)",
+      "value": 0.26508,
+      "pass": true,
+      "status": "computed",
+      "source": "manifold3d watertight 体积 / 胞体积"
+    },
+    {
+      "dimension": "material",
+      "tool": "material_props[AlSi10Mg_LPBF]",
+      "value": 75,
+      "pass": true,
+      "status": "computed",
+      "source": "EOS AlSi10Mg datasheet, as-built E ~75 GPa",
+      "source_type": "vendor"
+    },
+    {
+      "dimension": "material",
+      "tool": "surface_defect_knockdown",
+      "value": 0.92,
+      "pass": true,
+      "status": "computed",
+      "source": "内部工程假设,查无文献出处(2026-06-10 调研);中期应以 Zhong 2023 effective-strut-diameter 框架替代, DOI 10.1016/j.cossms.2023.101081",
+      "source_type": "inference",
+      "caveats": [
+        "输出时必须标'内部工程假设(无文献支撑)'并降级"
+      ]
+    },
+    {
+      "dimension": "size_effect",
+      "tool": "scaling.n_cells_advisory",
+      "value": 3,
+      "pass": null,
+      "status": "computed",
+      "source": "Onck/Andrews 2001 边界层机制(atlas/references);修正引擎接线归 P2",
+      "caveats": []
+    }
+  ],
+  "verdict": "FAIL",
+  "verdict_reasons": [
+    "硬性检查未过: printability/printability.check_overhangs"
+  ],
+  "downgrades": [
+    "R4: material/surface_defect_knockdown 证据为 inference,结论降级一档"
+  ],
+  "confidence_level": "screening",
+  "n_cells": 3,
+  "regeneration_round": 0
+}

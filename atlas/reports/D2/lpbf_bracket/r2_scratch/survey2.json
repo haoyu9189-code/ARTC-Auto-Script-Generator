@@ -1,0 +1,42 @@
+{
+ "gyroid_sheet": {
+  "overhang": 0.3151,
+  "rho": 0.3006
+ },
+ "gyroid_skeletal": {
+  "overhang": 0.2341,
+  "rho": 0.3009
+ },
+ "diamond_sheet": {
+  "overhang": 0.3226,
+  "rho": 0.3012
+ },
+ "diamond_skeletal": {
+  "overhang": 0.2417,
+  "rho": 0.3003
+ },
+ "schwarz_p_sheet": {
+  "overhang": 0.3202,
+  "rho": 0.3011
+ },
+ "schwarz_p_skeletal": {
+  "overhang": 0.1584,
+  "rho": 0.3012
+ },
+ "iwp_sheet": {
+  "overhang": 0.2995,
+  "rho": 0.3005
+ },
+ "iwp_skeletal": {
+  "overhang": 0.2495,
+  "rho": 0.3
+ },
+ "neovius_sheet": {
+  "overhang": 0.293,
+  "rho": 0.3001
+ },
+ "neovius_skeletal": {
+  "overhang": 0.1583,
+  "rho": 0.2997
+ }
+}

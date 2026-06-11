@@ -19,6 +19,7 @@
 | E9 | Lumpe-Stanković 目录 = 17,087 条 | 论文**分析**了 17,087 个 unit cells;ETH 存档目录实际含 **17,262** 个结构(基于 RCSR + EPINET);引用时区分"分析数"与"目录数" | ETH 存档元数据 |
 | E10 | 调研报告引"Kirchhof et al., J Elasticity 2024"(尺寸效应-Poisson 文献) | **查无此文**(Crossref 检索无果);实际相关文献为 **Li & Guo 2024, JMBBM, DOI 10.1016/j.jmbbm.2024.106532**("Size effect in polymeric lattice materials with size-dependent Poisson's ratio caused by Cosserat elasticity")——调研 agent 引文张冠李戴 | Crossref API 核对(B7) |
 | E11 | Lumpe-Stanković 目录头部声明"数值问题结构以星号(*)标记"(40 条) | 存档文件 **全文无任何星号**,该标记实际缺失,40 条问题结构无法按文件识别;另 WL 结构查重得 103 条重复(头部按名对声明 135)。缓解:ATLAS 硬门+绝对门在筛选时兜底捕获数值退化网 | P2-3 摄入实测 |
+| E12 | check_overhangs 面法向分类(B1 起所有 LPBF 悬垂判决) | 实现取了**余角**(`alpha=90-theta` 再判 `alpha<45°`),判据带反:数了 [45°,90°) 的陡峭**自支撑**面、漏了 [0°,45°) 的**真朝下**面。三圆柱正交验证:竖直柱 0.0(应 ~0.045 底盖)/ 水平柱 0.227(碰巧对,带测度对称)/ 45° 斜柱 0.477 **大于**水平柱(物理不可能)。**影响**:此前全部 LPBF 悬垂数值与归因无效——D1"节点球底面"机理叙事错误(球底 theta≈0 恰被反向判据漏掉);修正后 D2 c6(PSCZ 自支撑新图)悬垂 0.0103 过检,反向判据曾判其最差(0.470)。修复 = theta 直判 + 三圆柱已知几何回归测试。发现方式:**D2 round-2 真 atlas-generator 实跑,实测值与设计意图矛盾后 agent 主动质疑判据方向**——311 项测试未捕获(B1 测试断言对着实现写;BCC 案例恰好双语义同判) | P3-B D2 真 agent 实跑 + 三圆柱正交验证 |
 
 ## 数据实况勘误(盘面 vs 文档)
 

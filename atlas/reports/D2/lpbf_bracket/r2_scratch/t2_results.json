@@ -1,0 +1,177 @@
+{
+ "grid_rp075": {
+  "name": "grid_rp075",
+  "gates_passed": true,
+  "hard_failures": [],
+  "flags": [
+   "C2: \u8282\u70b9\u5bf9 ('A0', 'A4') \u95f4\u8ddd 1.000 < 2r(\u7403\u4e92\u541e,\u5408\u6cd5\u4f46\u63d0\u793a)",
+   "C4: pin-jointed \u673a\u6784\u6570 \u2248 16(\u94f0\u63a5\u4f30\u8ba1,\u5b9e\u6746\u6709\u8282\u70b9\u5f2f\u521a,\u4ec5\u503e\u5411)",
+   "C5: \u4e00\u9636\u4f30\u7b97\u5ffd\u7565\u8282\u70b9\u91cd\u53e0(\u9ad8\u4f30),\u5b9a\u7a3f\u5bc6\u5ea6\u7528 mesh \u6a21\u5f0f",
+   "C6: 161 \u5bf9\u6746\u8d34\u5408/\u4ea4\u53c9(\u7194\u5408,\u6539\u53d8\u6709\u6548\u62d3\u6251,Maxwell/\u529b\u5b66\u503e\u5411\u6309\u7194\u5408\u540e\u89e3\u8bfb)",
+   "C7: 162 \u5bf9\u6746\u51c0\u8ddd \u2208 (0.05, 1.0) mm,\u6392\u7c89\u53ef\u884c\u6027\u4ee5 B1 \u7f51\u683c\u7ea7\u68c0\u67e5\u4e3a\u51c6"
+  ],
+  "C5": {
+   "rho_estimate_at_default_r": 0.7775,
+   "total_strut_length_mm": 55.0
+  },
+  "C7": {
+   "min_strut_diameter_mm": 1.0,
+   "n_narrow_gaps": 162,
+   "min_gap_observed_mm": -1.5
+  },
+  "C4": {
+   "maxwell_M": -2,
+   "tendency": "bending-leaning"
+  },
+  "C3": {
+   "quotient_connected": true,
+   "cycle_lattice_index": 1,
+   "snf_diag_111": true,
+   "torus2_components": 1,
+   "torus3_components": 1,
+   "dual_track_consistent": true
+  },
+  "n1": {
+   "realize_ok": true,
+   "stats": {
+    "nodes": 9,
+    "edges": 19,
+    "degenerate_edges": 0,
+    "faces": 2646,
+    "volume_mm3": 70.7205,
+    "rho_rel": 0.56576
+   },
+   "overhang": 0.26267,
+   "overhang_pass": false,
+   "watertight_b1": true,
+   "min_feature_p5": 1.487,
+   "min_feature_pass": true,
+   "trapped_void_mm3": 0.0,
+   "powder_pass": true
+  },
+  "n3": {
+   "realize_ok": false,
+   "reason": "\u5e03\u5c14\u7ed3\u679c\u975e\u6c34\u5bc6(\u53cc\u8f68\u5224\u636e)"
+  }
+ },
+ "grid_rp065_k6": {
+  "name": "grid_rp065_k6",
+  "gates_passed": true,
+  "hard_failures": [],
+  "flags": [
+   "C2: \u8282\u70b9\u5bf9 ('A0', 'A5') \u95f4\u8ddd 0.833 < 2r(\u7403\u4e92\u541e,\u5408\u6cd5\u4f46\u63d0\u793a)",
+   "C4: pin-jointed \u673a\u6784\u6570 \u2248 20(\u94f0\u63a5\u4f30\u8ba1,\u5b9e\u6746\u6709\u8282\u70b9\u5f2f\u521a,\u4ec5\u503e\u5411)",
+   "C5: \u4e00\u9636\u4f30\u7b97\u5ffd\u7565\u8282\u70b9\u91cd\u53e0(\u9ad8\u4f30),\u5b9a\u7a3f\u5bc6\u5ea6\u7528 mesh \u6a21\u5f0f",
+   "C6: 201 \u5bf9\u6746\u8d34\u5408/\u4ea4\u53c9(\u7194\u5408,\u6539\u53d8\u6709\u6548\u62d3\u6251,Maxwell/\u529b\u5b66\u503e\u5411\u6309\u7194\u5408\u540e\u89e3\u8bfb)",
+   "C7: 188 \u5bf9\u6746\u51c0\u8ddd \u2208 (0.05, 1.0) mm,\u6392\u7c89\u53ef\u884c\u6027\u4ee5 B1 \u7f51\u683c\u7ea7\u68c0\u67e5\u4e3a\u51c6"
+  ],
+  "C5": {
+   "rho_estimate_at_default_r": 0.6902,
+   "total_strut_length_mm": 65.0
+  },
+  "C7": {
+   "min_strut_diameter_mm": 1.0,
+   "n_narrow_gaps": 188,
+   "min_gap_observed_mm": -1.3
+  },
+  "C4": {
+   "maxwell_M": -4,
+   "tendency": "bending-leaning"
+  },
+  "C3": {
+   "quotient_connected": true,
+   "cycle_lattice_index": 1,
+   "snf_diag_111": true,
+   "torus2_components": 1,
+   "torus3_components": 1,
+   "dual_track_consistent": true
+  },
+  "n1": {
+   "realize_ok": true,
+   "stats": {
+    "nodes": 11,
+    "edges": 23,
+    "degenerate_edges": 0,
+    "faces": 3652,
+    "volume_mm3": 61.9617,
+    "rho_rel": 0.49569
+   },
+   "overhang": 0.34079,
+   "overhang_pass": false,
+   "watertight_b1": true,
+   "min_feature_p5": 1.289,
+   "min_feature_pass": true,
+   "trapped_void_mm3": 0.0,
+   "powder_pass": true
+  },
+  "n3": {
+   "realize_ok": false,
+   "reason": "\u5e03\u5c14\u7ed3\u679c\u975e\u6c34\u5bc6(\u53cc\u8f68\u5224\u636e)"
+  }
+ },
+ "comb_rp075": {
+  "name": "comb_rp075",
+  "gates_passed": true,
+  "hard_failures": [],
+  "flags": [
+   "C2: \u8282\u70b9\u5bf9 ('A0', 'A4') \u95f4\u8ddd 1.000 < 2r(\u7403\u4e92\u541e,\u5408\u6cd5\u4f46\u63d0\u793a)",
+   "C4: pin-jointed \u673a\u6784\u6570 \u2248 10(\u94f0\u63a5\u4f30\u8ba1,\u5b9e\u6746\u6709\u8282\u70b9\u5f2f\u521a,\u4ec5\u503e\u5411)",
+   "C5: \u4e00\u9636\u4f30\u7b97\u5ffd\u7565\u8282\u70b9\u91cd\u53e0(\u9ad8\u4f30),\u5b9a\u7a3f\u5bc6\u5ea6\u7528 mesh \u6a21\u5f0f",
+   "C6: 84 \u5bf9\u6746\u8d34\u5408/\u4ea4\u53c9(\u7194\u5408,\u6539\u53d8\u6709\u6548\u62d3\u6251,Maxwell/\u529b\u5b66\u503e\u5411\u6309\u7194\u5408\u540e\u89e3\u8bfb)",
+   "C7: 43 \u5bf9\u6746\u51c0\u8ddd \u2208 (0.05, 1.0) mm,\u6392\u7c89\u53ef\u884c\u6027\u4ee5 B1 \u7f51\u683c\u7ea7\u68c0\u67e5\u4e3a\u51c6"
+  ],
+  "C5": {
+   "rho_estimate_at_default_r": 0.5655,
+   "total_strut_length_mm": 40.0
+  },
+  "C7": {
+   "min_strut_diameter_mm": 1.0,
+   "n_narrow_gaps": 43,
+   "min_gap_observed_mm": -1.5
+  },
+  "C4": {
+   "maxwell_M": 1,
+   "tendency": "stretch-leaning"
+  },
+  "C3": {
+   "quotient_connected": true,
+   "cycle_lattice_index": 1,
+   "snf_diag_111": true,
+   "torus2_components": 1,
+   "torus3_components": 1,
+   "dual_track_consistent": true
+  },
+  "n1": {
+   "realize_ok": true,
+   "stats": {
+    "nodes": 6,
+    "edges": 13,
+    "degenerate_edges": 0,
+    "faces": 1914,
+    "volume_mm3": 52.08,
+    "rho_rel": 0.41664
+   },
+   "overhang": 0.278,
+   "overhang_pass": false,
+   "watertight_b1": true,
+   "min_feature_p5": 0.992,
+   "min_feature_pass": false,
+   "trapped_void_mm3": 0.0,
+   "powder_pass": true
+  },
+  "n3": {
+   "realize_ok": true,
+   "stats": {
+    "nodes": 6,
+    "edges": 13,
+    "degenerate_edges": 0,
+    "faces": 37074,
+    "volume_mm3": 1272.7574,
+    "rho_rel": 0.37711
+   },
+   "overhang": 0.21972,
+   "overhang_pass": false,
+   "watertight_b1": true
+  }
+ }
+}

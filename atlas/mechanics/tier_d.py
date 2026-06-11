@@ -109,53 +109,68 @@ def load_champion_docs(names=CHAMPIONS):
     return out
 
 
+def generate_job_for_doc(doc, out_dir, analysis_type='StaCompre',
+                         lattice_array=(1, 1, 1), extra_caveats=()):
+    """任意 atlas-cell-graph 文档 → Tier-D 作业目录(三件套+能量注入+meta)。
+
+    P3-B 用例:D2 真 agent 生成的 OOD 新图(如 PSCZ)被 R2/R7 卡在
+    margin 证据 → 本函数即其合法升压出口。
+    """
+    from atlas.abaqus_adapter import generate_abaqus_script
+    name = doc.get('name', 'atlas_graph')
+    os.makedirs(out_dir, exist_ok=True)
+    r = generate_abaqus_script(doc, out_dir,
+                               analysis_type=analysis_type,
+                               lattice_array=lattice_array)
+    if not r['ok']:
+        raise RuntimeError(f'{name} 脚本生成失败: {r["message"]}')
+    post = [f for f in os.listdir(out_dir)
+            if f.endswith('_postprocess.py')]
+    if len(post) != 1:
+        raise RuntimeError(f'{name} postprocess 文件异常: {post}')
+    ppath = os.path.join(out_dir, post[0])
+    with open(ppath, encoding='utf-8') as f:
+        txt = f.read()
+    with open(ppath, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(inject_energy_extraction(txt))
+
+    caveats = [
+        '管线为单半径:逐杆/逐组半径不可表示,'
+        f'按均匀 default_radius_mm={doc["default_radius_mm"]} 生成',
+        f'analysis_type={analysis_type};剪切需 X 旋转适配,不支持',
+    ] + list(extra_caveats)
+    meta = {'name': name, 'analysis_type': analysis_type,
+            'lattice_array': list(lattice_array),
+            'radius_mm': doc['default_radius_mm'],
+            'cell_size_mm': doc['cell']['size_mm'],
+            'adapter_stats': r['adapter_stats'],
+            'energy_gate': {'threshold': ENERGY_GATE_THRESHOLD,
+                            'source': ENERGY_GATE_SOURCE,
+                            'source_type': 'vendor'},
+            'caveats': caveats,
+            'source': 'atlas.mechanics.tier_d.generate_job_for_doc'}
+    with open(os.path.join(out_dir, 'job_meta.json'), 'w',
+              encoding='utf-8') as f:
+        json.dump(meta, f, ensure_ascii=False, indent=2)
+    return meta
+
+
 def generate_tier_d_jobs(out_root, names=CHAMPIONS,
                          analysis_type='StaCompre',
                          lattice_array=(1, 1, 1)):
     """冠军 → 作业目录(三件套 + 能量注入 + job_meta.json + README)。"""
-    from atlas.abaqus_adapter import generate_abaqus_script
     os.makedirs(out_root, exist_ok=True)
     jobs = []
     for name, doc, polish in load_champion_docs(names):
-        out_dir = os.path.join(out_root, name)
-        os.makedirs(out_dir, exist_ok=True)
-        r = generate_abaqus_script(doc, out_dir,
-                                   analysis_type=analysis_type,
-                                   lattice_array=lattice_array)
-        if not r['ok']:
-            raise RuntimeError(f'{name} 脚本生成失败: {r["message"]}')
-        post = [f for f in os.listdir(out_dir)
-                if f.endswith('_postprocess.py')]
-        if len(post) != 1:
-            raise RuntimeError(f'{name} postprocess 文件异常: {post}')
-        ppath = os.path.join(out_dir, post[0])
-        with open(ppath, encoding='utf-8') as f:
-            txt = f.read()
-        with open(ppath, 'w', encoding='utf-8', newline='\n') as f:
-            f.write(inject_energy_extraction(txt))
-
-        caveats = [
-            '管线为单半径:CMA-ES polish 的 radii_groups 不可表示,'
-            f'按均匀 default_radius_mm={doc["default_radius_mm"]} 生成'
-            '——冠军分数中的逐组半径增益不在本次 Tier-D 测试内',
-            f'analysis_type={analysis_type};剪切需 X 旋转适配,不支持',
-        ]
+        extra = []
         if polish.get('radii_groups'):
-            caveats.append(f'polish.radii_groups 共 '
-                           f'{len(polish["radii_groups"])} 组,已忽略')
-        meta = {'name': name, 'analysis_type': analysis_type,
-                'lattice_array': list(lattice_array),
-                'radius_mm': doc['default_radius_mm'],
-                'cell_size_mm': doc['cell']['size_mm'],
-                'adapter_stats': r['adapter_stats'],
-                'energy_gate': {'threshold': ENERGY_GATE_THRESHOLD,
-                                'source': ENERGY_GATE_SOURCE,
-                                'source_type': 'vendor'},
-                'caveats': caveats,
-                'source': 'atlas.mechanics.tier_d.generate_tier_d_jobs'}
-        with open(os.path.join(out_dir, 'job_meta.json'), 'w',
-                  encoding='utf-8') as f:
-            json.dump(meta, f, ensure_ascii=False, indent=2)
+            extra.append(f'polish.radii_groups 共 '
+                         f'{len(polish["radii_groups"])} 组,已忽略'
+                         '——冠军分数中的逐组半径增益不在本次测试内')
+        meta = generate_job_for_doc(
+            doc, os.path.join(out_root, name),
+            analysis_type=analysis_type, lattice_array=lattice_array,
+            extra_caveats=extra)
         jobs.append(meta)
 
     readme = [

@@ -1,0 +1,18 @@
+{
+ "n1": {
+  "rho_mesh": 0.4206,
+  "watertight_dualtrack": true,
+  "overhang_area_fraction": 0.17073,
+  "watertight_b1": true,
+  "min_feature_p5_mm": 1.0906,
+  "min_feature_pass": true,
+  "trapped_void_mm3": 0.0,
+  "powder_pass": true
+ },
+ "n3": {
+  "rho_mesh": 0.17885,
+  "watertight_dualtrack": false,
+  "overhang_area_fraction": 0.20648,
+  "watertight_b1": false
+ }
+}

@@ -1,0 +1,513 @@
+{
+  "spec_ref": {
+    "key": "lpbf_bracket",
+    "process": "LPBF",
+    "material": "AlSi10Mg",
+    "n_cells": 3,
+    "high_risk": true,
+    "margin_metric_spec": "comp_EA(库内同单位代理), design_value_with_fos=60.0",
+    "retrieval_metric_directive": "comp_stiffness(orchestrator D2 指令);两指标值均随候选记录,margin 判定归 Evaluator"
+  },
+  "diversity": {
+    "tiers": [
+      "1",
+      "1.5",
+      "1.75",
+      "2"
+    ],
+    "topology_families": [
+      "Iso_truss",
+      "Auxetic",
+      "CBCC",
+      "TPMS-gyroid(sheet)",
+      "novel pillar+steep-cross graph"
+    ],
+    "tendency_mix_note": "DB topology_class: bending×3 + hybrid×1;Tier-2 C4 倾向 stretch-leaning;TPMS sheet 非杆系。刚度主导 spec 下 stretch 侧由 Tier-2 承担"
+  },
+  "generator_notes": [
+    "高风险航空案例:本层仅保证几何合法+可实现+查重留痕;所有候选仅作筛选,网格级悬垂/困粉判决归 Printability Checker,力学归 Surrogate/Evaluator",
+    "D1 复盘已前置:三个 killed 提案连同原因留痕;Tier-1 选型按竖杆含量+45° 边缘态占比几何预筛"
+  ],
+  "candidates": [
+    {
+      "id": "c1",
+      "tier": "1",
+      "geometry": {
+        "topology": "Iso_truss",
+        "slider": 0.0,
+        "radius_mm": 0.55,
+        "cell_size_mm": 5.0
+      },
+      "rho_rel": 0.333958,
+      "features": {
+        "comp_stiffness": {
+          "value": 226.030088,
+          "load_mode": "static_compression",
+          "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline"
+        },
+        "comp_EA": {
+          "value": 519.047873,
+          "load_mode": "static_compression",
+          "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline",
+          "note": "spec margin_metric=comp_EA(同单位代理),design_value_with_fos=60.0;margin 判定归 Evaluator"
+        }
+      },
+      "gates": {
+        "applicable": false,
+        "note": "库内实测样本,生成期图门 C1-C8 不适用;网格级 overhang/困粉复核归 Printability Checker"
+      },
+      "novelty": {
+        "applicable": false,
+        "note": "Tier-1 库内检索,非新拓扑"
+      },
+      "self_support_prescreen": {
+        "frac_len_ge_50deg": 0.231,
+        "frac_len_vertical_ge_85deg": 0.166,
+        "frac_len_45deg_marginal": 0.118,
+        "frac_len_below_44deg": 0.651,
+        "method": "图级杆倾角预筛(几何,杆长加权,建造方向=z);仅取向启发,网格级悬垂判决归 Printability Checker"
+      },
+      "lineage": {
+        "tier": "tier1",
+        "generator": "atlas-candidate-generator/D2",
+        "source": "cell_db.sqlite structures/features 行 sample_name=Iso_truss_5_0p5500000000000003_0;检索:query_cell_db(feature=comp_stiffness, load_mode=static_compression),LPBF 可行域过滤 strut_radius>=0.5(d>=1.0mm);D1 教训:Octet/FCCZ/Kelvin 死于 overhang(节点球底面+45° 杆下表面内禀需支撑);本轮 Tier-1 优先竖杆含量最高且 45° 边缘态含量低的家族",
+        "sample_name": "Iso_truss_5_0p5500000000000003_0",
+        "topology_class_db": "bending",
+        "rho_source": "structures.density_smoothed(库内值)"
+      }
+    },
+    {
+      "id": "c2",
+      "tier": "1",
+      "geometry": {
+        "topology": "Auxetic",
+        "slider": 8.0,
+        "radius_mm": 0.55,
+        "cell_size_mm": 5.0
+      },
+      "rho_rel": 0.251856,
+      "features": {
+        "comp_stiffness": {
+          "value": 168.287926,
+          "load_mode": "static_compression",
+          "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline"
+        },
+        "comp_EA": {
+          "value": 429.805302,
+          "load_mode": "static_compression",
+          "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline",
+          "note": "spec margin_metric=comp_EA(同单位代理),design_value_with_fos=60.0;margin 判定归 Evaluator"
+        }
+      },
+      "gates": {
+        "applicable": false,
+        "note": "库内实测样本,生成期图门 C1-C8 不适用;网格级 overhang/困粉复核归 Printability Checker"
+      },
+      "novelty": {
+        "applicable": false,
+        "note": "Tier-1 库内检索,非新拓扑"
+      },
+      "self_support_prescreen": {
+        "frac_len_ge_50deg": 0.321,
+        "frac_len_vertical_ge_85deg": 0.0,
+        "frac_len_45deg_marginal": 0.0,
+        "frac_len_below_44deg": 0.679,
+        "method": "图级杆倾角预筛(几何,杆长加权,建造方向=z);仅取向启发,网格级悬垂判决归 Printability Checker"
+      },
+      "lineage": {
+        "tier": "tier1",
+        "generator": "atlas-candidate-generator/D2",
+        "source": "cell_db.sqlite structures/features 行 sample_name=Auxetic_5_0p5500000000000003_8;检索:query_cell_db(feature=comp_stiffness, load_mode=static_compression),LPBF 可行域过滤 strut_radius>=0.5(d>=1.0mm);D1 教训:Octet/FCCZ/Kelvin 死于 overhang(节点球底面+45° 杆下表面内禀需支撑);本轮 Tier-1 优先竖杆含量最高且 45° 边缘态含量低的家族",
+        "sample_name": "Auxetic_5_0p5500000000000003_8",
+        "topology_class_db": "hybrid",
+        "rho_source": "structures.density_smoothed(库内值)"
+      }
+    },
+    {
+      "id": "c3",
+      "tier": "1",
+      "geometry": {
+        "topology": "CBCC",
+        "slider": 0.0,
+        "radius_mm": 0.55,
+        "cell_size_mm": 5.0
+      },
+      "rho_rel": 0.253763,
+      "features": {
+        "comp_stiffness": {
+          "value": 160.683355,
+          "load_mode": "static_compression",
+          "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline"
+        },
+        "comp_EA": {
+          "value": 356.590901,
+          "load_mode": "static_compression",
+          "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline",
+          "note": "spec margin_metric=comp_EA(同单位代理),design_value_with_fos=60.0;margin 判定归 Evaluator"
+        }
+      },
+      "gates": {
+        "applicable": false,
+        "note": "库内实测样本,生成期图门 C1-C8 不适用;网格级 overhang/困粉复核归 Printability Checker"
+      },
+      "novelty": {
+        "applicable": false,
+        "note": "Tier-1 库内检索,非新拓扑"
+      },
+      "self_support_prescreen": {
+        "frac_len_ge_50deg": 0.203,
+        "frac_len_vertical_ge_85deg": 0.203,
+        "frac_len_45deg_marginal": 0.143,
+        "frac_len_below_44deg": 0.654,
+        "method": "图级杆倾角预筛(几何,杆长加权,建造方向=z);仅取向启发,网格级悬垂判决归 Printability Checker"
+      },
+      "lineage": {
+        "tier": "tier1",
+        "generator": "atlas-candidate-generator/D2",
+        "source": "cell_db.sqlite structures/features 行 sample_name=CBCC_5_0p5500000000000003_0;检索:query_cell_db(feature=comp_stiffness, load_mode=static_compression),LPBF 可行域过滤 strut_radius>=0.5(d>=1.0mm);D1 教训:Octet/FCCZ/Kelvin 死于 overhang(节点球底面+45° 杆下表面内禀需支撑);本轮 Tier-1 优先竖杆含量最高且 45° 边缘态含量低的家族",
+        "sample_name": "CBCC_5_0p5500000000000003_0",
+        "topology_class_db": "bending",
+        "rho_source": "structures.density_smoothed(库内值)"
+      }
+    },
+    {
+      "id": "c4",
+      "tier": "1.5",
+      "geometry": {
+        "topology": "Iso_truss",
+        "slider": 0.0,
+        "radius_mm": 0.575,
+        "cell_size_mm": 5.0
+      },
+      "rho_rel": 0.34383,
+      "features": {
+        "note": "off-grid 半径,无库内实测;力学估算归 Surrogate(分布内插值适用)"
+      },
+      "gates": {
+        "applicable": false,
+        "realization": {
+          "engine": "atlas.geometry.generate_cell",
+          "n": 1,
+          "is_watertight": true
+        }
+      },
+      "novelty": {
+        "applicable": false,
+        "note": "Tier-1.5 库内拓扑连续变形,非新拓扑"
+      },
+      "self_support_prescreen": {
+        "frac_len_ge_50deg": 0.231,
+        "frac_len_vertical_ge_85deg": 0.166,
+        "frac_len_45deg_marginal": 0.118,
+        "frac_len_below_44deg": 0.651,
+        "method": "图级杆倾角预筛(几何,杆长加权,建造方向=z);仅取向启发,网格级悬垂判决归 Printability Checker"
+      },
+      "lineage": {
+        "tier": "tier1.5",
+        "generator": "atlas-candidate-generator/D2",
+        "parents": [
+          "Iso_truss_5_0p5500000000000003_0",
+          "Iso_truss_5_0p5250000000000002_0"
+        ],
+        "source": "半径外推 r=0.575(网格边界 0.55 外半步):杆径 1.15mm,较 D1 实测最小特征 1.09mm 增加 LPBF as-built 工艺裕量;rho_rel = 库内 rho(r) 二次趋势外推(5 个 grid 点拟合,slider=0),标记 interpolated/extrapolated,非实测",
+        "rho_source": "extrapolated from structures.density_smoothed radius trend (flagged)"
+      }
+    },
+    {
+      "id": "c5",
+      "tier": "1.75",
+      "geometry": {
+        "tpms": {
+          "type": "gyroid",
+          "variant": "sheet",
+          "rho_target": 0.3,
+          "threshold_t": 0.93171,
+          "cell_size_mm": 5.0
+        }
+      },
+      "rho_rel": 0.30062,
+      "features": {
+        "note": "TPMS 非杆系,库内最近邻不适用;力学估算归 Surrogate(TPMS 定标律)"
+      },
+      "gates": {
+        "applicable": false,
+        "realization": {
+          "engine": "atlas.geometry.tpms.generate_tpms_at_density",
+          "is_watertight": true,
+          "density_calibration": "定标域 sheet rho>=0.15,tol 2%,实现 rho=0.30062"
+        }
+      },
+      "novelty": {
+        "applicable": false,
+        "note": "已知 TPMS 族参数化,非新拓扑"
+      },
+      "self_support_prescreen": {
+        "note": "sheet 连续曲壁,无离散节点球、无水平杆;自支撑性最终以网格级 overhang 检查为准(Printability Checker),此处不做断言"
+      },
+      "lineage": {
+        "tier": "tier1.75",
+        "generator": "atlas-candidate-generator/D2",
+        "source": "TPMS gyroid/sheet @rho=0.30,密度定标 atlas.geometry.tpms(定标域内,水密自检通过);选择动机:规避杆系内禀悬垂模式(D1 三杀)"
+      }
+    },
+    {
+      "id": "c6",
+      "tier": "2",
+      "geometry": {
+        "graph_doc": {
+          "schema": "atlas-cell-graph/1.0",
+          "name": "PSCZ_pillar_steepcross",
+          "cell": {
+            "size_mm": 5.0
+          },
+          "nodes": [
+            {
+              "id": "A",
+              "frac": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "id": "C",
+              "frac": [
+                0.5,
+                0.5,
+                0.0
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "n1": "A",
+              "n2": "A",
+              "shift": [
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "n1": "C",
+              "n2": "C",
+              "shift": [
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "n1": "C",
+              "n2": "A",
+              "shift": [
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "n1": "C",
+              "n2": "A",
+              "shift": [
+                1,
+                0,
+                1
+              ]
+            },
+            {
+              "n1": "C",
+              "n2": "A",
+              "shift": [
+                0,
+                1,
+                1
+              ]
+            },
+            {
+              "n1": "C",
+              "n2": "A",
+              "shift": [
+                1,
+                1,
+                1
+              ]
+            }
+          ],
+          "default_radius_mm": 0.588,
+          "free_params": {
+            "radius_mm": {
+              "value": 0.588,
+              "min": 0.5,
+              "max": 0.8,
+              "description": "strut radius; rho first-order = 0.8669 r^2"
+            }
+          },
+          "lineage": {
+            "tier": "tier2",
+            "generator": "atlas-candidate-generator/D2",
+            "source": "LPBF 自支撑角设计准则前置:全部杆 >=50°(竖柱 90° + 陡交叉斜杆 54.74°,方向 (±0.5,±0.5,1));动机 = D1 中 35-45° 杆系家族全部死于 overhang 门"
+          }
+        }
+      },
+      "rho_rel": 0.26508,
+      "rho_notes": {
+        "first_order_at_r0.588": 0.2997,
+        "realized_mesh_n1": 0.26508,
+        "note": "一阶估算高估(忽略节点重叠);两口径均列出,定稿密度以网格为准"
+      },
+      "features": {
+        "note": "OOD 新图:禁用 cell-DB 最近邻 surrogate,力学裁判须物理计算(beam-FEM/均质化,HANDOFF §11),本层不做力学判断"
+      },
+      "gates": {
+        "passed": true,
+        "hard_failures": [],
+        "detail": {
+          "C1": {
+            "pass": true,
+            "hard": true,
+            "value": {
+              "nodes": 2,
+              "edges": 6
+            },
+            "flags": []
+          },
+          "C2": {
+            "pass": true,
+            "hard": true,
+            "value": {
+              "min_node_distance_mm": 3.535534,
+              "closest_pair": [
+                "A",
+                "C"
+              ],
+              "hard_limit_mm": 0.294
+            },
+            "flags": []
+          },
+          "C3": {
+            "pass": true,
+            "hard": true,
+            "value": {
+              "quotient_connected": true,
+              "cycle_lattice_index": 1,
+              "snf_diag_111": true,
+              "torus2_components": 1,
+              "torus3_components": 1,
+              "dual_track_consistent": true
+            },
+            "flags": []
+          },
+          "C4": {
+            "pass": true,
+            "hard": false,
+            "value": {
+              "maxwell_M": 6,
+              "tendency": "stretch-leaning",
+              "equilibrium_rank": 3,
+              "mechanisms_est": 0,
+              "self_stress_states": 3,
+              "caveat": "Maxwell/SVD 均为必要非充分,只输出倾向"
+            },
+            "flags": []
+          },
+          "C5": {
+            "pass": true,
+            "hard": true,
+            "value": {
+              "rho_estimate_at_default_r": 0.2997,
+              "total_strut_length_mm": 34.495,
+              "radius_for_target_mm": 0.5883
+            },
+            "flags": [
+              "一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式"
+            ]
+          },
+          "C6": {
+            "pass": true,
+            "hard": false,
+            "value": {
+              "contact_pairs": 21
+            },
+            "flags": [
+              "21 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)"
+            ]
+          },
+          "C7": {
+            "pass": true,
+            "hard": true,
+            "value": {
+              "min_strut_diameter_mm": 1.176,
+              "n_narrow_gaps": 0,
+              "min_gap_observed_mm": -1.176
+            },
+            "flags": []
+          },
+          "C8": {
+            "pass": true,
+            "hard": true,
+            "value": {
+              "nodes": 2,
+              "edges": 6,
+              "limits": [
+                500,
+                2000
+              ]
+            },
+            "flags": []
+          }
+        },
+        "C9_realization": {
+          "engine": "atlas.geometry.realize_graph",
+          "ok": true,
+          "watertight": true,
+          "faces": 1118,
+          "volume_mm3": 33.1348
+        },
+        "flags_carryover": [
+          "C5: 一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式",
+          "C6: 21 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)"
+        ]
+      },
+      "novelty": {
+        "wl_hash": "a2aad03d27887aec8a3c4479abf418d8c20102a70288629c7c540d0cd24427ea",
+        "duplicate_of": null,
+        "statement": "ATLAS 索引范围内未发现重复(WL 同构查重 vs seed 拓扑索引)"
+      },
+      "self_support_prescreen": {
+        "frac_len_ge_50deg": 1.0,
+        "frac_len_vertical_ge_85deg": 0.29,
+        "frac_len_45deg_marginal": 0.0,
+        "frac_len_below_44deg": 0.0,
+        "method": "图级杆倾角(几何):竖柱 2×90° + 斜杆 4×54.74°;网格级判决归 Printability Checker"
+      },
+      "lineage": {
+        "tier": "tier2",
+        "generator": "atlas-candidate-generator/D2",
+        "source": "LPBF 自支撑角设计准则前置:全部杆 >=50°(竖柱 90° + 陡交叉斜杆 54.74°,方向 (±0.5,±0.5,1));动机 = D1 中 35-45° 杆系家族全部死于 overhang 门",
+        "maxwell_from_C4": {
+          "M": 6,
+          "tendency": "stretch-leaning",
+          "caveat": "必要非充分,只说倾向(C4 信息门输出,转述)"
+        }
+      }
+    }
+  ],
+  "killed": [
+    {
+      "proposal": "pure_pillar_probe(单节点竖柱,自支撑性极限探针)",
+      "tier": "2",
+      "reason": "C3 硬门:圈-shift 格指数=0(一维网,torus2/torus3 分量 4/9,横向不连通);C5 硬门:rho_target=0.30 需 r=1.545mm,越出 free_params [0.5,0.8]。双硬杀,留痕防搜索偏置"
+    },
+    {
+      "proposal": "TPMS gyroid/sheet @rho=0.10(减重探针)",
+      "tier": "1.75",
+      "reason": "generate_tpms_at_density 域外 fail loudly:sheet 定标域 rho>=0.15(低密度壁厚不可靠,违粉末床 DfAM 最小壁厚),按引擎拒绝原文留痕"
+    },
+    {
+      "proposal": "Cubic(库内竖杆含量最高拓扑,杆长占比 0.33 竖直)Tier-1 检索",
+      "tier": "1",
+      "reason": "cell_db comp_stiffness 非空行数=0(Octahedron 同),无法按指令指标 comp_stiffness 排序;检索阶段杀,非力学判断"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "candidate_id": "c5",
+  "tier": "1.75",
+  "checks": [
+    {
+      "dimension": "gates",
+      "tool": "verify.geometry_support",
+      "value": "tpms",
+      "threshold": null,
+      "pass": false,
+      "source": "atlas.orchestration.verify._geometry_mesh 无 TPMS 网格路径(D2 实跑发现,归 Phase 3 backlog)",
+      "source_type": "internal_computed",
+      "status": "out_of_domain",
+      "caveats": [
+        "候选几何本身合法(B2 定标管线水密),仅验证扇出不支持"
+      ]
+    }
+  ],
+  "verdict": "FAIL",
+  "verdict_reasons": [
+    "硬性检查未过: gates/verify.geometry_support"
+  ],
+  "downgrades": [],
+  "confidence_level": "screening",
+  "n_cells": 3,
+  "regeneration_round": 0
+}

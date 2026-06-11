@@ -81,6 +81,23 @@ R7 margin 证据白名单(解析筛最高 SCREENING_PASS)。trace 必须合
 - **K 耗尽不硬憋**:输出全部候选 trace 的 Pareto 前沿(margin 最大化 ×
   密度最小化)+ 未满足项清单,如实报告
 
+### 真子代理派发协议(P3-B D2 实证,Orchestrator = 主会话)
+
+文件传递上下文,协议层 `atlas/orchestration/d2.py`:
+1. **生成**:Agent 工具派发 `atlas-generator`(读 `<case>/spec.json`,
+   按合同写 `<case>/candidates.json`;killed 留痕;回复只给摘要省上下文)
+2. **验证**:主会话 `d2.verify_case()`(verify_batch 扇出 →
+   `checks/<cid>.json` + stage 计时;TPMS 候选落 out_of_domain 不假装)
+3. **判决**:派发 `atlas-evaluator`(读 checks,Bash 调引擎,写
+   `traces_agent/`)——agent 是载体不是裁判;`d2.judge_direct()` +
+   `d2.compare_traces()` 与主会话直跑对照,**不全等 = agent 改写了证据**
+4. **K=3**:round-1 修补在主会话 Python 跑;round-2/3 由主会话带
+   verdict_reasons + 实测数值重新派发 generator(D2 实证:round-2 必须
+   喂失败史的"数学现实",否则 agent 重复无效方向)
+实证教训(2026-06-11):D2 真跑抓出 param_repair 匹配词与引擎实文
+不符(修补死代码)与 check_overhangs 判据带反(勘误 E12)——
+**集成正确性只有真派发能证明,桩测试会跟着实现一起错**。
+
 ## 3. Phase 2 — 报告(中文)
 
 必含:① 推荐表(候选 × 指标,**必须有 margin 列**,≥1.0 PASS);

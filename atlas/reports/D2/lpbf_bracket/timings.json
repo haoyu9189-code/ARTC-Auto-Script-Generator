@@ -1,0 +1,6 @@
+{
+  "n_candidates": 6,
+  "n_tpms_gap": 1,
+  "verify_batch_s": 1.007,
+  "source": "time.perf_counter(P3-C 仪表前身)"
+}

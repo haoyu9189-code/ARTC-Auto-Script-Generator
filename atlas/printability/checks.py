@@ -154,11 +154,16 @@ def check_overhangs(mesh, process='LPBF', build_dir=(0, 0, 1)):
         b = b / np.linalg.norm(b)
         fn = mesh.face_normals
         downward = fn @ b < 0
-        # 与水平板夹角 alpha = 90 - angle(normal, -build_dir)
+        # 几何事实:朝下面的「法向与正下方向的夹角 theta」**就是**该面
+        # 与水平板的夹角(平面倾角)。自支撑惯例:倾角 ≥ thr(45°) 自支撑;
+        # theta < thr 需支撑。
+        # 勘误 E12(D2 round-2 真 agent 实跑发现):原实现误取余角
+        # alpha=90-theta 再判 alpha<thr,把判据带反——数了 [45°,90°) 的
+        # 陡峭自支撑面、漏了 [0°,45°) 的真朝下面(竖直柱测 0、45° 斜柱
+        # 反而 0.48)。正交验证=三圆柱已知几何回归测试。
         theta = np.degrees(np.arccos(np.clip(-(fn[downward] @ b), -1, 1)))
-        alpha = 90.0 - theta
         areas = mesh.area_faces[downward]
-        crit = alpha < thr_deg
+        crit = theta < thr_deg
         frac = float(areas[crit].sum() / mesh.area) if mesh.area > 0 else 0.0
         value = {'overhang_area_fraction': frac,
                  'threshold_angle_deg': thr_deg,

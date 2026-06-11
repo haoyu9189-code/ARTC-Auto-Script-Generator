@@ -1,0 +1,172 @@
+# -*- coding: utf-8 -*-
+import json, copy
+from atlas.gates import run_gates
+
+OUT = r'D:/ARTC/ARTC-Auto-Script/atlas/reports/D2/mjf_auxetic_pad/candidates.json'
+t2 = json.load(open(r'D:/ARTC/ARTC-Auto-Script/atlas/reports/D2/mjf_auxetic_pad/_t2_runs.json', encoding='utf-8'))
+
+FEAT_SRC = ("internal FEA feature extraction: data_package/extracted_features_smoothed.csv "
+            "(mtime 2026-01-21), derived from the same Abaqus pipeline")
+DV = 40.0
+METRIC = "comp_EA(库内同单位代理)"
+
+def t1_gate_note(n2_welded_ok):
+    base = ("Tier-1 库内结构,C1-C8 图门不适用;generate_cell(n=1) 双轨水密=true(本次实测);"
+            "spec n_cells=2 复测:")
+    if n2_welded_ok:
+        return base + "n=2 双轨水密=true"
+    return (base + "n=2 manifold/raw 轨=true,welded 轨 sliver 翻盖奇偶失败(已知阵列焊接伪影,"
+            "cells.py 根因注释;打印走 manifold 导出轨,转交实现端确认)")
+
+def tier1(cid, topo, slider, r, rho, ea, sample, klass, n2_ok, why):
+    return {
+        "id": cid, "tier": "1",
+        "geometry": {"topology": topo, "slider": slider, "radius_mm": r},
+        "rho_rel": rho,
+        "gates": {"applicable": False, "note": t1_gate_note(n2_ok),
+                  "watertight_n1": True, "watertight_n2_dual": n2_ok,
+                  "mjf_dfam": "d=0.8mm = MJF 最小杆径 0.8(贴线合规);开放胞元,无封闭腔体(困粉规避)"},
+        "novelty": {"applicable": False,
+                    "note": "库内已知结构(检索复用,非新拓扑)",
+                    "duplicate_of": sample},
+        "lineage": {"tier": "tier1",
+            "generator": "atlas.retriever.core.query_cell_db(feature=comp_EA, load_mode=static_compression, strut_radius>=0.4 per MJF DfAM)",
+            "source": "cell DB sample " + sample, "topology_class_db": klass,
+            "rho_rel_source": "cell DB structures.density=" + repr(rho) + " (density_source=fea, quality_flag=ok), sample " + sample,
+            "selection_rationale": why,
+            "margin_metric_evidence": {
+                "metric": METRIC, "library_value": ea, "design_value_with_fos": DV,
+                "load_mode": "static_compression", "source": FEAT_SRC,
+                "note": "仅检索值原样转录;力学裁决归 Surrogate/Evaluator"}}}
+
+candidates = []
+candidates.append(tier1("c1","Auxetic",8.0,0.4,0.148239116680107,200.025941,
+    "Auxetic_5_0p4_8","hybrid",False,
+    "Auxetic 族优先(负泊松比/机制类需求);r>=0.4(MJF d>=0.8)且 quality=ok 的 Auxetic 中密度最低、comp_EA=200.0>=40 余量充足"))
+candidates.append(tier1("c2","Auxetic",5.0,0.4,0.175164197633801,182.17811,
+    "Auxetic_5_0p4_5","hybrid",False,
+    "Auxetic 族第二点:中段 slider=5 形态差异化(同族不同变形参数),comp_EA=182.2>=40"))
+candidates.append(tier1("c3","Diamond",8.0,0.4,0.075414717822166,43.77741,
+    "Diamond_5_0p4_8","bending",True,
+    "全库 r>=0.4 且 comp_EA>=40 中密度最低(0.0754):最贴设计值(43.8 vs 40.0)的材料效率极限点;bending 类,缓冲取向"))
+candidates.append(tier1("c4","Truncated_cube",7.0,0.4,0.0917130719360246,68.54445,
+    "Truncated_cube_5_0p4_7","hybrid",False,
+    "hybrid 类低密度高效点(rho=0.0917, comp_EA=68.5):效率介于 c3 与 c1 之间,家族发散"))
+candidates.append(tier1("c5","BCC",0.0,0.4,0.108986088043185,89.864794,
+    "BCC_5_0p4_0","bending",True,
+    "bending 基线(经典缓冲拓扑):rho=0.1090, comp_EA=89.9,与 Auxetic 族形成机制/弯曲混搭"))
+
+candidates.append({
+    "id": "c6", "tier": "1.5",
+    "geometry": {"topology": "Auxetic", "slider": 8.0, "radius_mm": 0.4125},
+    "rho_rel": 0.1602,
+    "gates": {"applicable": False,
+        "note": "Tier-1.5 连续插值(free_params.radius_mm,库网格 0.4/0.425 之间的离网点);generate_cell(Auxetic, slider=8.0, radius=0.4125) n=1 与 n=2 双轨水密=true(本次实测)",
+        "watertight_n1": True, "watertight_n2_dual": True,
+        "mjf_dfam": "d=0.825mm > MJF 最小 0.8;开放胞元,无封闭腔体"},
+    "novelty": {"applicable": False,
+        "note": "已知拓扑的连续参数插值,非新拓扑(半径不入 WL 哈希)",
+        "duplicate_of": None},
+    "lineage": {"tier": "tier1.5",
+        "generator": "atlas.geometry.generate_cell 半径插值(库网格 0.4/0.425 之间的离网点)",
+        "source": "atlas.retriever.core nearest neighbors (topology=Auxetic, slider=8.0)",
+        "rho_rel_source": "r^2 标度线性插值于库内邻点:Auxetic_5_0p4_8 density=0.148239 (fea, ok) 与 Auxetic_5_0p42500000000000016_8 density=0.172458 (smoothed, csv_only_no_curves) => rho(0.4125)~0.1602;括号 [0.1482, 0.1725]",
+        "selection_rationale": "c1 与下一格点之间的密度细分:在 Auxetic 族内提供 0.148-0.172 之间的连续设计点供 Surrogate 精调",
+        "margin_metric_evidence": {
+            "metric": METRIC,
+            "library_bracket": [200.025941, 244.018533],
+            "bracket_samples": ["Auxetic_5_0p4_8 (fea/ok)",
+                                "Auxetic_5_0p42500000000000016_8 (smoothed)"],
+            "design_value_with_fos": DV, "load_mode": "static_compression",
+            "source": FEAT_SRC,
+            "note": "仅给库内括号值,插值点 EA 由 Surrogate 评估"},
+        "caveat": "n=1 未裁剪网格体积分数不可比(边界节点外凸),故 rho_rel 取库内 r^2 标度插值而非网格实测"}})
+
+def t2_candidate(cid, tag, novelty_wording, parents=None):
+    rec = t2[tag]; doc = copy.deepcopy(rec['doc']); g = rec['gates']; c9 = rec['c9']
+    doc['novelty'] = {'wl_hash': rec['novelty']['wl_hash'], 'duplicate_of': None}
+    if parents: doc['lineage']['parents'] = parents
+    per_gate = {k: g['gates'][k]['pass'] for k in ['C1','C2','C3','C4','C5','C6','C7','C8']}
+    c4v = g['gates']['C4']['value']
+    cand = {
+        "id": cid, "tier": "2",
+        "geometry": {"graph_doc": doc},
+        "rho_rel": c9['stats']['rho_rel'],
+        "gates": {
+            "passed": True, "per_gate": per_gate, "hard_failures": [],
+            "flags": list(g['flags']),
+            "C4_tendency": {"maxwell_M": c4v['maxwell_M'], "tendency": c4v['tendency'],
+                "mechanisms_est": c4v['mechanisms_est'],
+                "self_stress_states": c4v['self_stress_states'],
+                "caveat": "Maxwell/SVD 均为必要非充分,只输出倾向(gate 原话转录,非本 agent 力学判断)"},
+            "C5_rho_estimate_at_default_r": g['gates']['C5']['value']['rho_estimate_at_default_r'],
+            "C7": g['gates']['C7']['value'],
+            "C9_realize": {"pass": True, "watertight": True,
+                "faces": c9['stats']['faces'], "volume_mm3": c9['stats']['volume_mm3'],
+                "rho_rel": c9['stats']['rho_rel'],
+                "source": "atlas.geometry.realize_graph(manifold3d,双轨水密判据)"},
+            "mjf_dfam_note": "d=0.9mm > MJF 最小 0.8;开放胞元(柱+斜杆),无封闭腔体(困粉规避);杆间净距 flag 交 B1 网格级裁决"},
+        "novelty": {"wl_hash": rec['novelty']['wl_hash'], "duplicate_of": None,
+            "wording": novelty_wording},
+        "lineage": {"tier": "tier2",
+            "generator": "claude-candidate-generator(D2 mjf_auxetic_pad)",
+            "rho_rel_source": "realize_graph C9 stats rho_rel=" + repr(c9['stats']['rho_rel']) + "(n=1 网格体积分数,manifold3d)",
+            "source": doc['lineage']['source'],
+            "margin_metric_evidence": {"metric": METRIC, "library_value": None,
+                "design_value_with_fos": DV,
+                "note": "新图不在 cell DB(OOD);无库内代理值,力学评估归物理计算裁判"}}}
+    if parents: cand['lineage']['parents'] = parents
+    return cand
+
+candidates.append(t2_candidate("c7", "doc1",
+    "ATLAS 索引范围内未发现重复(24 种子 + 既有 proposals 已注册;WL 为必要非充分判据)"))
+candidates.append(t2_candidate("c8", "doc2",
+    "ATLAS 索引范围内未发现重复(24 种子 + 既有 proposals + 本批 c7 已注册;WL 为必要非充分判据)",
+    parents=["c7/reentrant_xcolumn_pad"]))
+
+def base_doc(nodes, edges, name, source, r):
+    return {"schema": "atlas-cell-graph/1.0", "name": name, "cell": {"size_mm": 5.0},
+        "nodes": nodes, "edges": edges, "default_radius_mm": r,
+        "free_params": {"radius_mm": {"value": r, "min": 0.4, "max": 0.6,
+            "description": "全局杆半径(MJF d>=0.8 => r>=0.4)"}},
+        "lineage": {"tier": "tier2",
+            "generator": "claude-candidate-generator(D2 mjf_auxetic_pad)", "source": source}}
+def E(n1, n2, s, r): return {"n1": n1, "n2": n2, "shift": s, "radius_mm": r}
+def edges_x(r, zcol=True):
+    es = [E("V0","V1",[0,0,0],r), E("V1","V0",[1,0,0],r), E("V1","V0",[-1,0,0],r),
+          E("V1","V0",[0,1,0],r), E("V1","V0",[0,-1,0],r)]
+    if zcol: es.insert(1, E("V1","V0",[0,0,1],r))
+    return es
+nodes_std = [{"id":"V0","frac":[0.0,0.0,0.30]},{"id":"V1","frac":[0.0,0.0,0.70]}]
+GK = ['C1','C2','C3','C4','C5','C6','C7','C8']
+
+killed = []
+k1 = base_doc(nodes_std, edges_x(0.45, zcol=False), "reentrant_xcolumn_nocol",
+    "纯机制意图:去掉柱 z 向连续边,仅留再入斜杆", 0.45)
+g1 = run_gates(k1, process='MJF')
+killed.append({
+    "proposal": "reentrant_xcolumn_nocol(去掉柱 z 连续边,追纯机制变形)",
+    "reason": "C3 硬门杀:圈-shift 格指数=0 不等于 1(z 向分层/低维化,无限网不连通)——torus2_components=2/torus3_components=3 双轨一致;周期点阵必须三向连通,纯平面再入层无法成体",
+    "tier_attempted": "2",
+    "gates": {"passed": False, "hard_failures": g1['hard_failures'],
+        "per_gate": {k: g1['gates'][k]['pass'] for k in GK}}})
+
+k2 = base_doc(nodes_std, edges_x(0.35, zcol=True), "reentrant_xcolumn_lowrho",
+    "低密度变体 r=0.35 追 rho~0.08", 0.35)
+k2['free_params']['radius_mm'].update({"value":0.35,"min":0.3,"max":0.45})
+g2 = run_gates(k2, process='MJF')
+killed.append({
+    "proposal": "reentrant_xcolumn_lowrho(r=0.35,C5 一阶 rho~0.082 追低密度)",
+    "reason": "C7 硬门杀:杆径 0.70 < MJF 最小 0.8(d=2r=0.7mm,HP MJF PA12 vendor 规则)——该拓扑达 rho~0.08 需 r=0.35,与 MJF DfAM 下限冲突,此密度区间对本拓扑在 MJF 不可达",
+    "tier_attempted": "2",
+    "gates": {"passed": False, "hard_failures": g2['hard_failures'],
+        "per_gate": {k: g2['gates'][k]['pass'] for k in GK}}})
+
+out = {"candidates": candidates, "killed": killed}
+with open(OUT, 'w', encoding='utf-8') as f:
+    json.dump(out, f, ensure_ascii=False, indent=2)
+print('written', OUT)
+print('n_candidates=', len(candidates), 'tiers=', sorted(set(c['tier'] for c in candidates)),
+      'killed=', len(killed))
+chk = json.load(open(OUT, encoding='utf-8'))
+print('roundtrip ok:', len(chk['candidates']), len(chk['killed']))

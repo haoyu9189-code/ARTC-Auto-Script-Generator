@@ -26,7 +26,7 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 60.0。注:库�
 |------|------|----|------|------|
 | printability | printability.validate_mesh | watertight=True; winding_consistent=True; is_volume=True | ✓ | trimesh 边-面计数 + manifold3d Mesh.merge 往返 status(双引擎,bench_pr |
 | printability | printability.measure_min_feature | min_mm=1.0905892320783388; p5_mm=1.0905892920621563; median_mm=1.09058937841378 | ✓ | 阈值: 内部保守取值;文献设计指南给 0.4-0.6 mm(约保守 2 倍),记录在案后续可论证放宽;方法: embre |
-| printability | printability.check_overhangs | overhang_area_fraction=0.3685094337974357; threshold_angle_deg=45; downward_face_count=2908 | ✗ | 自支撑角: LPBF 自支撑角行业共识区间(EOS/SLM Solutions 设计指南);容限: 内部工程容限:临界角 |
+| printability | printability.check_overhangs | overhang_area_fraction=0.1314905662037765; threshold_angle_deg=45; downward_face_count=2908 | ✗ | 自支撑角: LPBF 自支撑角行业共识区间(EOS/SLM Solutions 设计指南);容限: 内部工程容限:临界角 |
 | printability | printability.check_powder_escape | trapped_void_mm3=0.953125; voxel_pitch_mm=0.25; tolerance_mm3=0.125 | ✗ | 困粉: embree 列射线奇偶填充 + scipy flood-fill(bench_printability3.py |
 | density | rel_density.mesh(manifold3d) | 0.60518 | ✓ | manifold3d watertight 体积 / 胞体积 |
 | mechanics | gibson_ashby.estimate | E_MPa=114.3110341148964; sigma_y_MPa=9.077640944418244; model=DFA octet (stretch) | ℹ️ | Deshpande, Fleck & Ashby, JMPS 49(8):1747-1769, 2001, DOI 10 |
@@ -35,7 +35,7 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 60.0。注:库�
 | material | material_props[AlSi10Mg_LPBF] | 75 | ✓ | EOS AlSi10Mg datasheet, as-built E ~75 GPa |
 | material | surface_defect_knockdown | 0.92 | ✓ | 内部工程假设,查无文献出处(2026-06-10 调研);中期应以 Zhong 2023 effective-strut |
 | size_effect | scaling.n_cells_advisory | 3 | ℹ️ | Onck/Andrews 2001 边界层机制(atlas/references);修正引擎接线归 P2 |
-| mechanics | dynamic_data_availability | 88 | ℹ️ | cell_db.sqlite curves 表 |
+| mechanics | dynamic_shear_features | n_dynamic_curves=88; dyna_peak=11.2091; dyna_stiffness=61.3854 | ℹ️ | P2-5 原始曲线自提(atlas/data/extract_dynamic.py):dyna_stiffness=5% |
 
 判决依据:硬性检查未过: printability/printability.check_overhangs;硬性检查未过: printability/printability.check_powder_escape
 
@@ -49,7 +49,7 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 60.0。注:库�
 |------|------|----|------|------|
 | printability | printability.validate_mesh | watertight=True; winding_consistent=True; is_volume=True | ✓ | trimesh 边-面计数 + manifold3d Mesh.merge 往返 status(双引擎,bench_pr |
 | printability | printability.measure_min_feature | min_mm=1.0905892017641772; p5_mm=1.0905892856094304; median_mm=1.090589390512445 | ✓ | 阈值: 内部保守取值;文献设计指南给 0.4-0.6 mm(约保守 2 倍),记录在案后续可论证放宽;方法: embre |
-| printability | printability.check_overhangs | overhang_area_fraction=0.31381023695799537; threshold_angle_deg=45; downward_face_count=2146 | ✗ | 自支撑角: LPBF 自支撑角行业共识区间(EOS/SLM Solutions 设计指南);容限: 内部工程容限:临界角 |
+| printability | printability.check_overhangs | overhang_area_fraction=0.1861897630420783; threshold_angle_deg=45; downward_face_count=2146 | ✗ | 自支撑角: LPBF 自支撑角行业共识区间(EOS/SLM Solutions 设计指南);容限: 内部工程容限:临界角 |
 | printability | printability.check_powder_escape | trapped_void_mm3=0.0; voxel_pitch_mm=0.25; tolerance_mm3=0.125 | ✓ | 困粉: embree 列射线奇偶填充 + scipy flood-fill(bench_printability3.py |
 | density | rel_density.mesh(manifold3d) | 0.49139 | ✓ | manifold3d watertight 体积 / 胞体积 |
 | mechanics | gibson_ashby.estimate | E_MPa=92.81905277132871; sigma_y_MPa=7.370924778899632; model=DFA octet (stretch) | ℹ️ | Deshpande, Fleck & Ashby, JMPS 49(8):1747-1769, 2001, DOI 10 |
@@ -58,7 +58,7 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 60.0。注:库�
 | material | material_props[AlSi10Mg_LPBF] | 75 | ✓ | EOS AlSi10Mg datasheet, as-built E ~75 GPa |
 | material | surface_defect_knockdown | 0.92 | ✓ | 内部工程假设,查无文献出处(2026-06-10 调研);中期应以 Zhong 2023 effective-strut |
 | size_effect | scaling.n_cells_advisory | 3 | ℹ️ | Onck/Andrews 2001 边界层机制(atlas/references);修正引擎接线归 P2 |
-| mechanics | dynamic_data_availability | 90 | ℹ️ | cell_db.sqlite curves 表 |
+| mechanics | dynamic_shear_features | n_dynamic_curves=90; dyna_peak=5.7454; dyna_stiffness=71.2053 | ℹ️ | P2-5 原始曲线自提(atlas/data/extract_dynamic.py):dyna_stiffness=5% |
 
 判决依据:硬性检查未过: printability/printability.check_overhangs
 
@@ -72,7 +72,7 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 60.0。注:库�
 |------|------|----|------|------|
 | printability | printability.validate_mesh | watertight=True; winding_consistent=True; is_volume=True | ✓ | trimesh 边-面计数 + manifold3d Mesh.merge 往返 status(双引擎,bench_pr |
 | printability | printability.measure_min_feature | min_mm=1.0905892680521319; p5_mm=1.090589320356246; median_mm=1.0905893750378715 | ✓ | 阈值: 内部保守取值;文献设计指南给 0.4-0.6 mm(约保守 2 倍),记录在案后续可论证放宽;方法: embre |
-| printability | printability.check_overhangs | overhang_area_fraction=0.4118250883717007; threshold_angle_deg=45; downward_face_count=2832 | ✗ | 自支撑角: LPBF 自支撑角行业共识区间(EOS/SLM Solutions 设计指南);容限: 内部工程容限:临界角 |
+| printability | printability.check_overhangs | overhang_area_fraction=0.08817493847934225; threshold_angle_deg=45; downward_face_count=2832 | ✗ | 自支撑角: LPBF 自支撑角行业共识区间(EOS/SLM Solutions 设计指南);容限: 内部工程容限:临界角 |
 | printability | printability.check_powder_escape | trapped_void_mm3=0.0; voxel_pitch_mm=0.25; tolerance_mm3=0.125 | ✓ | 困粉: embree 列射线奇偶填充 + scipy flood-fill(bench_printability3.py |
 | density | rel_density.mesh(manifold3d) | 0.41188 | ✓ | manifold3d watertight 体积 / 胞体积 |
 | mechanics | gibson_ashby.estimate | E_MPa=288.39225077296766; sigma_y_MPa=3.5684923276621503; model=Gibson-Ashby (bending) | ℹ️ | Gibson & Ashby, Cellular Solids, 2nd ed., Cambridge UP, 1997 |
@@ -81,7 +81,7 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 60.0。注:库�
 | material | material_props[AlSi10Mg_LPBF] | 75 | ✓ | EOS AlSi10Mg datasheet, as-built E ~75 GPa |
 | material | surface_defect_knockdown | 0.92 | ✓ | 内部工程假设,查无文献出处(2026-06-10 调研);中期应以 Zhong 2023 effective-strut |
 | size_effect | scaling.n_cells_advisory | 3 | ℹ️ | Onck/Andrews 2001 边界层机制(atlas/references);修正引擎接线归 P2 |
-| mechanics | dynamic_data_availability | 89 | ℹ️ | cell_db.sqlite curves 表 |
+| mechanics | dynamic_shear_features | n_dynamic_curves=89; dyna_peak=2.1466; dyna_stiffness=24.1248 | ℹ️ | P2-5 原始曲线自提(atlas/data/extract_dynamic.py):dyna_stiffness=5% |
 
 判决依据:硬性检查未过: printability/printability.check_overhangs
 
@@ -102,7 +102,7 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 60.0。注:库�
 - Gibson & Ashby, Cellular Solids, 2nd ed., Cambridge UP, 1997 (bending: E*~rho^2, sigma_y*~0.3 rho^1.5)
 - Maxwell 1864; Deshpande, Ashby & Fleck, Acta Mater. 49(6):1035-1040, 2001, DOI 10.1016/S1359-6454(00)00379-7
 - Onck/Andrews 2001 边界层机制(atlas/references);修正引擎接线归 P2
-- cell_db.sqlite curves 表
+- P2-5 原始曲线自提(atlas/data/extract_dynamic.py):dyna_stiffness=5% 应变割线(含惯性瞬态,非弹性模量,Phase 3 滤波后重提);dyna_yield=首个局部峰应力(落锤动态屈服代理);peak 取前 30% 应变窗;剪切面积=名义 25mm²(约定);曲线源=内部 Abaqus 显式管线(步长 ~0.1mm)
 - manifold3d watertight 体积 / 胞体积
 - trimesh 边-面计数 + manifold3d Mesh.merge 往返 status(双引擎,bench_printability.py 本机验证)
 - 困粉: embree 列射线奇偶填充 + scipy flood-fill(bench_printability3.py 正负对照验证)

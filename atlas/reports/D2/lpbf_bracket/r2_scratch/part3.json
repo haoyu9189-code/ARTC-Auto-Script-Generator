@@ -1,0 +1,44 @@
+{
+ "killed": [
+  {
+   "proposal": "VWallGrid_XY / VWallComb_P(tier-2 竖壁族: 融合竖柱墙 + 埋入 tie)",
+   "tier": "2",
+   "reason": "设计假说成立但被实现层否决: 纯竖柱融合墙单基元实测 overhang=0.0(法向 z 精确为 0 不计 downward), 但 realize_graph 强制节点球(r = max incident x1.001, 恒大于柱棱柱内切半径)切割棱柱面, 重三角化引入 1e-4 级法向抖动, 约半数近竖直面翻成 downward-critical;实测 grid n1 0.26267(k5)/0.34079(k6), comb 0.27800;grid n3 实现非水密。全家族杀, 数字留痕防搜索偏置"
+  },
+  {
+   "proposal": "HSlabPillar k=6 变体(rs=0.68/0.70, r=0.52): 本轮 n=1 悬垂最优 0.09802/0.10214",
+   "tier": "2",
+   "reason": "n=3(spec n_cells)realize_graph 布尔非水密(双轨判据), C9@spec-n 杀;n=1 数字留痕: 0.09802 为全词汇表 n=1 实测最小值"
+  },
+  {
+   "proposal": "HSlabPillarMid(竖柱中点专用节点变体)",
+   "tier": "2",
+   "reason": "中点节点球污染两段柱面, 实测 n1 0.14691 / n3 0.09459, 被 r2c1 支配杀"
+  },
+  {
+   "proposal": "HSlabPillar k=4 粗板条变体(rs=0.85/0.90)",
+   "tier": "2",
+   "reason": "实测 n3 0.07277 / 0.05717 且 rho 0.39-0.42 更重, 被 r2c1/r2c2 支配杀"
+  },
+  {
+   "proposal": "TPMS sheet 全族 @rho0.3(gyroid/diamond/schwarz_p/iwp/neovius)+ schwarz_p sheet @0.4/0.5",
+   "tier": "1.75",
+   "reason": "实测 overhang 0.2930-0.3226(@0.3), 0.2794-0.3016(@0.4/0.5): 连续曲壁近竖直区天然带真实向下法向, 全族 >=0.28 杀;round-1 c5 的验证管线 TPMS 网格缺口本轮已绕开(直接对生成网格跑 B1)"
+  },
+  {
+   "proposal": "TPMS skeletal 族(schwarz_p@0.2-0.6: 0.1707->0.1241;neovius@0.2-0.6: 0.1546->0.1383;gyroid/iwp >=0.20)",
+   "tier": "1.75",
+   "reason": "悬垂全族 >0.12 已不达标, 且 LPBF min_feature 硬杀: schwarz_p@0.5 p5=0.706mm、@0.6 p5=0.663mm、neovius@0.5 p5=0.370mm, 远低于 1.0mm;另 schwarz_p@0.5 水密自检 fail-loudly 复现性依赖进程态(引擎 flake 留痕, 报 B2/B4)"
+  },
+  {
+   "proposal": "Cubic 以 Tier-1 检索身份入候选",
+   "tier": "1",
+   "reason": "cell_db 221 行存在但 density_smoothed 与 comp_* 特征全 NULL, Tier-1 合同(库内实测数值带源)无法满足, 检索杀;几何以 Tier-1.5 身份复活为 r2c3(留痕)"
+  },
+  {
+   "proposal": "24 拓扑家族普查其余 23 族(BCC/Octet/Kelvin/Auxetic/FCC/FCCZ/BCCZ/G7/CBCC 等, slider 0/4)",
+   "tier": "1",
+   "reason": "实测 overhang 0.2450(G7 s4)- 0.4245(Octahedron), 全部为容限 0.05 的 4.9 倍以上;数字在 r2_scratch/survey1.json 留痕"
+  }
+ ]
+}

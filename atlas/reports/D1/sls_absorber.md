@@ -30,7 +30,7 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 55.0。注:库�
 | mechanics | retriever.nearest_by_density+comp_EA | 228.638984 | ✓ | internal FEA feature extraction: data_package/extracted_feat |
 | material | material_props[PA12_MJF] | 1700 | ✓ | HP 3D HR PA12 datasheet, tensile modulus ~1700-1800 MPa |
 | size_effect | scaling.n_cells_advisory | 4 | ℹ️ | Onck/Andrews 2001 边界层机制(atlas/references);修正引擎接线归 P2 |
-| mechanics | dynamic_data_availability | 90 | ℹ️ | cell_db.sqlite curves 表 |
+| mechanics | dynamic_shear_features | n_dynamic_curves=90; dyna_peak=2.5426; dyna_stiffness=39.7186 | ℹ️ | P2-5 原始曲线自提(atlas/data/extract_dynamic.py):dyna_stiffness=5% |
 
 判决依据:全维度通过,margin 4.157 >= 1.0
 
@@ -50,7 +50,7 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 55.0。注:库�
 | mechanics | retriever.nearest_by_density+comp_EA | 246.042478 | ✓ | internal FEA feature extraction: data_package/extracted_feat |
 | material | material_props[PA12_MJF] | 1700 | ✓ | HP 3D HR PA12 datasheet, tensile modulus ~1700-1800 MPa |
 | size_effect | scaling.n_cells_advisory | 4 | ℹ️ | Onck/Andrews 2001 边界层机制(atlas/references);修正引擎接线归 P2 |
-| mechanics | dynamic_data_availability | 86 | ℹ️ | cell_db.sqlite curves 表 |
+| mechanics | dynamic_shear_features | n_dynamic_curves=86; dyna_peak=3.1021; dyna_stiffness=52.3774 | ℹ️ | P2-5 原始曲线自提(atlas/data/extract_dynamic.py):dyna_stiffness=5% |
 
 判决依据:全维度通过,margin 4.473 >= 1.0
 
@@ -70,7 +70,7 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 55.0。注:库�
 | mechanics | retriever.nearest_by_density+comp_EA | 259.378851 | ✓ | internal FEA feature extraction: data_package/extracted_feat |
 | material | material_props[PA12_MJF] | 1700 | ✓ | HP 3D HR PA12 datasheet, tensile modulus ~1700-1800 MPa |
 | size_effect | scaling.n_cells_advisory | 4 | ℹ️ | Onck/Andrews 2001 边界层机制(atlas/references);修正引擎接线归 P2 |
-| mechanics | dynamic_data_availability | 90 | ℹ️ | cell_db.sqlite curves 表 |
+| mechanics | dynamic_shear_features | n_dynamic_curves=90; dyna_peak=3.5294; dyna_stiffness=46.1174 | ℹ️ | P2-5 原始曲线自提(atlas/data/extract_dynamic.py):dyna_stiffness=5% |
 
 判决依据:全维度通过,margin 4.716 >= 1.0
 
@@ -89,7 +89,7 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 55.0。注:库�
 - Gibson & Ashby, Cellular Solids, 2nd ed., Cambridge UP, 1997 (bending: E*~rho^2, sigma_y*~0.3 rho^1.5)
 - Maxwell 1864; Deshpande, Ashby & Fleck, Acta Mater. 49(6):1035-1040, 2001, DOI 10.1016/S1359-6454(00)00379-7
 - Onck/Andrews 2001 边界层机制(atlas/references);修正引擎接线归 P2
-- cell_db.sqlite curves 表
+- P2-5 原始曲线自提(atlas/data/extract_dynamic.py):dyna_stiffness=5% 应变割线(含惯性瞬态,非弹性模量,Phase 3 滤波后重提);dyna_yield=首个局部峰应力(落锤动态屈服代理);peak 取前 30% 应变窗;剪切面积=名义 25mm²(约定);曲线源=内部 Abaqus 显式管线(步长 ~0.1mm)
 - manifold3d watertight 体积 / 胞体积
 - trimesh 边-面计数 + manifold3d Mesh.merge 往返 status(双引擎,bench_printability.py 本机验证)
 - 困粉: embree 列射线奇偶填充 + scipy flood-fill(bench_printability3.py 正负对照验证)

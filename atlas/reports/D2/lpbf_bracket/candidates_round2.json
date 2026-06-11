@@ -1,0 +1,852 @@
+{
+ "spec_ref": {
+  "key": "lpbf_bracket",
+  "process": "LPBF",
+  "material": "AlSi10Mg",
+  "n_cells": 3,
+  "high_risk": true,
+  "round": 2,
+  "objective_override": "orchestrator round-2 指令: 最小化 overhang_area_fraction(B1 实测), 2-3 候选",
+  "margin_metric_spec": "comp_EA(库内同单位代理), design_value_with_fos=60.0; margin 判定归 Evaluator"
+ },
+ "diversity": {
+  "tiers": [
+   "2",
+   "1.5"
+  ],
+  "topology_families": [
+   "HSlabPillar(novel graph, 水平板条+竖柱)",
+   "Cubic(DB 家族)"
+  ],
+  "tendency_mix_note": "r2c1/r2c2 C4 M=2 stretch-leaning(必要非充分, 熔合后按板-柱解读);Cubic 力学倾向判定归 Surrogate;round-2 目标覆写常规 3 族发散要求, 收敛为悬垂最优家族 + 对照锚, 理由见 notes"
+ },
+ "generator_notes": [
+  "本层只保证几何合法 + 可实现 + 查重留痕 + B1 实测数字;力学归 Surrogate/Evaluator, 阈值规则归 B7",
+  "所有 overhang 数字 = printability.check_overhangs(LPBF, build_dir z)对焊接 trimesh 实测, n=1 与 n=3 双口径并报;round-1 c1 0.2658 在本管线精确复现, 口径可比"
+ ],
+ "candidates": [
+  {
+   "id": "r2c1",
+   "tier": "2",
+   "geometry": {
+    "graph_doc": {
+     "schema": "atlas-cell-graph/1.0",
+     "name": "HSlabPillar",
+     "cell": {
+      "size_mm": 5.0
+     },
+     "nodes": [
+      {
+       "id": "S0",
+       "frac": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "id": "S1",
+       "frac": [
+        0.0,
+        0.2,
+        0.0
+       ]
+      },
+      {
+       "id": "S2",
+       "frac": [
+        0.0,
+        0.4,
+        0.0
+       ]
+      },
+      {
+       "id": "S3",
+       "frac": [
+        0.0,
+        0.6,
+        0.0
+       ]
+      },
+      {
+       "id": "S4",
+       "frac": [
+        0.0,
+        0.8,
+        0.0
+       ]
+      }
+     ],
+     "edges": [
+      {
+       "n1": "S0",
+       "n2": "S0",
+       "shift": [
+        1,
+        0,
+        0
+       ],
+       "radius_mm": 0.75
+      },
+      {
+       "n1": "S1",
+       "n2": "S1",
+       "shift": [
+        1,
+        0,
+        0
+       ],
+       "radius_mm": 0.75
+      },
+      {
+       "n1": "S2",
+       "n2": "S2",
+       "shift": [
+        1,
+        0,
+        0
+       ],
+       "radius_mm": 0.75
+      },
+      {
+       "n1": "S3",
+       "n2": "S3",
+       "shift": [
+        1,
+        0,
+        0
+       ],
+       "radius_mm": 0.75
+      },
+      {
+       "n1": "S4",
+       "n2": "S4",
+       "shift": [
+        1,
+        0,
+        0
+       ],
+       "radius_mm": 0.75
+      },
+      {
+       "n1": "S0",
+       "n2": "S1",
+       "shift": [
+        0,
+        0,
+        0
+       ],
+       "radius_mm": 0.52
+      },
+      {
+       "n1": "S1",
+       "n2": "S2",
+       "shift": [
+        0,
+        0,
+        0
+       ],
+       "radius_mm": 0.52
+      },
+      {
+       "n1": "S2",
+       "n2": "S3",
+       "shift": [
+        0,
+        0,
+        0
+       ],
+       "radius_mm": 0.52
+      },
+      {
+       "n1": "S3",
+       "n2": "S4",
+       "shift": [
+        0,
+        0,
+        0
+       ],
+       "radius_mm": 0.52
+      },
+      {
+       "n1": "S4",
+       "n2": "S0",
+       "shift": [
+        0,
+        1,
+        0
+       ],
+       "radius_mm": 0.52
+      },
+      {
+       "n1": "S0",
+       "n2": "S0",
+       "shift": [
+        0,
+        0,
+        1
+       ],
+       "radius_mm": 0.52
+      }
+     ],
+     "default_radius_mm": 0.75,
+     "lineage": {
+      "tier": "tier2",
+      "generator": "atlas-candidate-generator/D2-r2",
+      "source": "round-2 anti-overhang: horizontal slab of fused x-cylinders (pitch<r*sqrt2 so exposed bottom scallop normals stay within 45deg of straight-down = self-classified OK) + single vertical pillar for z-connectivity"
+     },
+     "free_params": {
+      "radius_mm": {
+       "value": 0.75,
+       "min": 0.5,
+       "max": 0.9,
+       "description": "slab cylinder radius; ties/pillar per-edge"
+      }
+     }
+    }
+   },
+   "rho_rel": 0.35073,
+   "rho_notes": {
+    "mesh_n1": 0.35073,
+    "mesh_n3": 0.31558,
+    "first_order_C5_at_default_r": 0.4948,
+    "note": "一阶估算忽略节点/融合重叠(高估);定稿密度以 mesh 为准, n3 值含边界效应"
+   },
+   "features": {
+    "note": "OOD 新图: 禁用 cell-DB 最近邻 surrogate, 力学裁判须物理计算(beam/shell-FEM 或均质化, HANDOFF s11);本层不做力学判断。spec margin_metric=comp_EA(design_value_with_fos=60.0)判定归 Evaluator"
+   },
+   "gates": {
+    "passed": true,
+    "hard_failures": [],
+    "detail": {
+     "C1": {
+      "pass": true,
+      "hard": true,
+      "value": {
+       "nodes": 5,
+       "edges": 11
+      },
+      "flags": []
+     },
+     "C2": {
+      "pass": true,
+      "hard": true,
+      "value": {
+       "min_node_distance_mm": 1.0,
+       "closest_pair": [
+        "S0",
+        "S4"
+       ],
+       "hard_limit_mm": 0.375
+      },
+      "flags": [
+       "节点对 ('S0', 'S4') 间距 1.000 < 2r(球互吞,合法但提示)"
+      ]
+     },
+     "C3": {
+      "pass": true,
+      "hard": true,
+      "value": {
+       "quotient_connected": true,
+       "cycle_lattice_index": 1,
+       "snf_diag_111": true,
+       "torus2_components": 1,
+       "torus3_components": 1,
+       "dual_track_consistent": true
+      },
+      "flags": []
+     },
+     "C4": {
+      "pass": true,
+      "hard": false,
+      "value": {
+       "maxwell_M": 2,
+       "tendency": "stretch-leaning",
+       "equilibrium_rank": 4,
+       "mechanisms_est": 8,
+       "self_stress_states": 7,
+       "caveat": "Maxwell/SVD 均为必要非充分,只输出倾向"
+      },
+      "flags": [
+       "pin-jointed 机构数 ≈ 8(铰接估计,实杆有节点弯刚,仅倾向)"
+      ]
+     },
+     "C5": {
+      "pass": true,
+      "hard": true,
+      "value": {
+       "rho_estimate_at_default_r": 0.4948,
+       "total_strut_length_mm": 35.0
+      },
+      "flags": [
+       "一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式"
+      ]
+     },
+     "C6": {
+      "pass": true,
+      "hard": false,
+      "value": {
+       "contact_pairs": 82
+      },
+      "flags": [
+       "82 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)"
+      ]
+     },
+     "C7": {
+      "pass": true,
+      "hard": true,
+      "value": {
+       "min_strut_diameter_mm": 1.04,
+       "n_narrow_gaps": 52,
+       "min_gap_observed_mm": -1.5
+      },
+      "flags": [
+       "52 对杆净距 ∈ (0.05, 1.0) mm,排粉可行性以 B1 网格级检查为准"
+      ]
+     },
+     "C8": {
+      "pass": true,
+      "hard": true,
+      "value": {
+       "nodes": 5,
+       "edges": 11,
+       "limits": [
+        500,
+        2000
+       ]
+      },
+      "flags": []
+     }
+    },
+    "C9_realization": {
+     "engine": "atlas.geometry.realize_graph",
+     "n1": {
+      "ok": true,
+      "watertight": true,
+      "faces": 1608,
+      "volume_mm3": 43.8408
+     },
+     "n3": {
+      "ok": true,
+      "watertight": true,
+      "faces": 28038,
+      "volume_mm3": 1065.0949
+     }
+    },
+    "flags_carryover": [
+     "C2: 节点对 ('S0', 'S4') 间距 1.000 < 2r(球互吞,合法但提示)",
+     "C4: pin-jointed 机构数 ≈ 8(铰接估计,实杆有节点弯刚,仅倾向)",
+     "C5: 一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式",
+     "C6: 82 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)",
+     "C7: 52 对杆净距 ∈ (0.05, 1.0) mm,排粉可行性以 B1 网格级检查为准"
+    ]
+   },
+   "novelty": {
+    "wl_hash": "b5dfc7e187404d75a784b9e17ca40bdaefc4ef2a815e9474aec8e5f663033646",
+    "duplicate_of": null,
+    "statement": "ATLAS 索引范围内未发现重复(WL 同构查重 vs seed 拓扑索引)",
+    "note": "r2c1 与 r2c2 同一商图拓扑(WL hash 相同), 仅 free_params 半径不同 - 参数兄弟, 非独立新拓扑"
+   },
+   "printability_measured_B1": {
+    "note": "B1 实测口径: printability.check_overhangs(process=LPBF, build_dir=(0,0,1)), 焊接 trimesh;n=1 = round-1 B1 检查口径(c1 0.2658 完全复现), n=3 = spec n_cells 口径;容限 0.05 为内部工程取值(inference, 输出须降级标注)",
+    "n1": {
+     "overhang_area_fraction": 0.10911,
+     "overhang_pass_vs_0.05": false,
+     "watertight_b1": true,
+     "min_feature_p5_mm": 1.0314,
+     "min_feature_pass": true,
+     "trapped_void_mm3": 0.0,
+     "powder_pass": true
+    },
+    "n3": {
+     "overhang_area_fraction": 0.05028,
+     "overhang_pass_vs_0.05": false,
+     "watertight_b1": true
+    }
+   },
+   "lineage": {
+    "tier": "tier2",
+    "generator": "atlas-candidate-generator/D2-round2",
+    "source": "round-2 反悬垂设计 HSlabPillar: 水平板条(5 根沿 x 的融合水平圆柱 rs=0.75, y-pitch 1.0 < rs*sqrt2)+ 链向 y-tie(r=0.52, 全埋入板条)+ 单根竖柱(r=0.52, S0 自环)承担 z 连通。机理: 板条底面扇贝法向全部落在正下方 45 度锥内(check_overhangs 分类为安全), 对布尔重三角化的近竖直面法向抖动翻转免疫;竖柱是唯一受翻转影响的暴露面, 已压到 C3 允许的最小量(1 根/胞)",
+    "measured_overhang_area_fraction": {
+     "n1": 0.10911,
+     "n3": 0.05028,
+     "vs_threshold_0.05": "n1 FAIL(2.2x); n3 FAIL(超 0.00028, 即 0.56%)",
+     "noise_caveat": "同家族近邻参数 n3 实测散布 0.0503-0.0728(布尔重三角化对近竖直面的 1e-4 级法向抖动, 半随机翻转), 0.050 是家族地板而非可调参数;数值确定性复现(同进程两次一致)"
+    },
+    "scripts": "atlas/reports/D2/lpbf_bracket/r2_scratch/ 下 survey1.py t2_walls.py t2_slab.py write_out 系列",
+    "maxwell_from_C4": {
+     "M": 2,
+     "tendency": "stretch-leaning",
+     "caveat": "必要非充分, 只说倾向;82 对杆熔合(C6), 按熔合后板-柱结构解读"
+    },
+    "design_probes": {
+     "vertical_cyl": 0.0,
+     "horizontal_cyl": 0.2766,
+     "diag45_cyl": 0.4765,
+     "sphere": 0.3655,
+     "fused_vertical_wall": 0.0,
+     "note": "单基元 check_overhangs 实测(survey1.py);竖直面法向 z 分量精确为 0 时不计 downward"
+    },
+    "d1_d2_lessons": "round-1 六杀消化: 杆系斜杆/节点球内禀 0.25-0.47;竖壁策略被 realize_graph 强制节点球的面污染否决(实测 0.26-0.34, 见 killed);水平板条是该词汇表内唯一逼近 0.05 的家族"
+   }
+  },
+  {
+   "id": "r2c2",
+   "tier": "2",
+   "geometry": {
+    "graph_doc": {
+     "schema": "atlas-cell-graph/1.0",
+     "name": "HSlabPillar",
+     "cell": {
+      "size_mm": 5.0
+     },
+     "nodes": [
+      {
+       "id": "S0",
+       "frac": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      {
+       "id": "S1",
+       "frac": [
+        0.0,
+        0.2,
+        0.0
+       ]
+      },
+      {
+       "id": "S2",
+       "frac": [
+        0.0,
+        0.4,
+        0.0
+       ]
+      },
+      {
+       "id": "S3",
+       "frac": [
+        0.0,
+        0.6,
+        0.0
+       ]
+      },
+      {
+       "id": "S4",
+       "frac": [
+        0.0,
+        0.8,
+        0.0
+       ]
+      }
+     ],
+     "edges": [
+      {
+       "n1": "S0",
+       "n2": "S0",
+       "shift": [
+        1,
+        0,
+        0
+       ],
+       "radius_mm": 0.8
+      },
+      {
+       "n1": "S1",
+       "n2": "S1",
+       "shift": [
+        1,
+        0,
+        0
+       ],
+       "radius_mm": 0.8
+      },
+      {
+       "n1": "S2",
+       "n2": "S2",
+       "shift": [
+        1,
+        0,
+        0
+       ],
+       "radius_mm": 0.8
+      },
+      {
+       "n1": "S3",
+       "n2": "S3",
+       "shift": [
+        1,
+        0,
+        0
+       ],
+       "radius_mm": 0.8
+      },
+      {
+       "n1": "S4",
+       "n2": "S4",
+       "shift": [
+        1,
+        0,
+        0
+       ],
+       "radius_mm": 0.8
+      },
+      {
+       "n1": "S0",
+       "n2": "S1",
+       "shift": [
+        0,
+        0,
+        0
+       ],
+       "radius_mm": 0.51
+      },
+      {
+       "n1": "S1",
+       "n2": "S2",
+       "shift": [
+        0,
+        0,
+        0
+       ],
+       "radius_mm": 0.51
+      },
+      {
+       "n1": "S2",
+       "n2": "S3",
+       "shift": [
+        0,
+        0,
+        0
+       ],
+       "radius_mm": 0.51
+      },
+      {
+       "n1": "S3",
+       "n2": "S4",
+       "shift": [
+        0,
+        0,
+        0
+       ],
+       "radius_mm": 0.51
+      },
+      {
+       "n1": "S4",
+       "n2": "S0",
+       "shift": [
+        0,
+        1,
+        0
+       ],
+       "radius_mm": 0.51
+      },
+      {
+       "n1": "S0",
+       "n2": "S0",
+       "shift": [
+        0,
+        0,
+        1
+       ],
+       "radius_mm": 0.51
+      }
+     ],
+     "default_radius_mm": 0.8,
+     "lineage": {
+      "tier": "tier2",
+      "generator": "atlas-candidate-generator/D2-r2",
+      "source": "round-2 anti-overhang: horizontal slab of fused x-cylinders (pitch<r*sqrt2 so exposed bottom scallop normals stay within 45deg of straight-down = self-classified OK) + single vertical pillar for z-connectivity"
+     },
+     "free_params": {
+      "radius_mm": {
+       "value": 0.8,
+       "min": 0.5,
+       "max": 0.9,
+       "description": "slab cylinder radius; ties/pillar per-edge"
+      }
+     }
+    }
+   },
+   "rho_rel": 0.38102,
+   "rho_notes": {
+    "mesh_n1": 0.38102,
+    "mesh_n3": 0.33893,
+    "first_order_C5_at_default_r": 0.563,
+    "note": "同 r2c1;rs=0.80 加厚板条多埋竖柱根部, 换 rho +0.03"
+   },
+   "features": {
+    "note": "OOD 新图: 禁用 cell-DB 最近邻 surrogate, 力学裁判须物理计算(beam/shell-FEM 或均质化, HANDOFF s11);本层不做力学判断。spec margin_metric=comp_EA(design_value_with_fos=60.0)判定归 Evaluator"
+   },
+   "gates": {
+    "passed": true,
+    "hard_failures": [],
+    "detail": {
+     "C1": {
+      "pass": true,
+      "hard": true,
+      "value": {
+       "nodes": 5,
+       "edges": 11
+      },
+      "flags": []
+     },
+     "C2": {
+      "pass": true,
+      "hard": true,
+      "value": {
+       "min_node_distance_mm": 1.0,
+       "closest_pair": [
+        "S0",
+        "S4"
+       ],
+       "hard_limit_mm": 0.4
+      },
+      "flags": [
+       "节点对 ('S0', 'S4') 间距 1.000 < 2r(球互吞,合法但提示)"
+      ]
+     },
+     "C3": {
+      "pass": true,
+      "hard": true,
+      "value": {
+       "quotient_connected": true,
+       "cycle_lattice_index": 1,
+       "snf_diag_111": true,
+       "torus2_components": 1,
+       "torus3_components": 1,
+       "dual_track_consistent": true
+      },
+      "flags": []
+     },
+     "C4": {
+      "pass": true,
+      "hard": false,
+      "value": {
+       "maxwell_M": 2,
+       "tendency": "stretch-leaning",
+       "equilibrium_rank": 4,
+       "mechanisms_est": 8,
+       "self_stress_states": 7,
+       "caveat": "Maxwell/SVD 均为必要非充分,只输出倾向"
+      },
+      "flags": [
+       "pin-jointed 机构数 ≈ 8(铰接估计,实杆有节点弯刚,仅倾向)"
+      ]
+     },
+     "C5": {
+      "pass": true,
+      "hard": true,
+      "value": {
+       "rho_estimate_at_default_r": 0.563,
+       "total_strut_length_mm": 35.0
+      },
+      "flags": [
+       "一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式"
+      ]
+     },
+     "C6": {
+      "pass": true,
+      "hard": false,
+      "value": {
+       "contact_pairs": 82
+      },
+      "flags": [
+       "82 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)"
+      ]
+     },
+     "C7": {
+      "pass": true,
+      "hard": true,
+      "value": {
+       "min_strut_diameter_mm": 1.02,
+       "n_narrow_gaps": 52,
+       "min_gap_observed_mm": -1.6
+      },
+      "flags": [
+       "52 对杆净距 ∈ (0.05, 1.0) mm,排粉可行性以 B1 网格级检查为准"
+      ]
+     },
+     "C8": {
+      "pass": true,
+      "hard": true,
+      "value": {
+       "nodes": 5,
+       "edges": 11,
+       "limits": [
+        500,
+        2000
+       ]
+      },
+      "flags": []
+     }
+    },
+    "C9_realization": {
+     "engine": "atlas.geometry.realize_graph",
+     "n1": {
+      "ok": true,
+      "watertight": true,
+      "faces": 1604,
+      "volume_mm3": 47.6274
+     },
+     "n3": {
+      "ok": true,
+      "watertight": true,
+      "faces": 28090,
+      "volume_mm3": 1143.887
+     }
+    },
+    "flags_carryover": [
+     "C2: 节点对 ('S0', 'S4') 间距 1.000 < 2r(球互吞,合法但提示)",
+     "C4: pin-jointed 机构数 ≈ 8(铰接估计,实杆有节点弯刚,仅倾向)",
+     "C5: 一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式",
+     "C6: 82 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)",
+     "C7: 52 对杆净距 ∈ (0.05, 1.0) mm,排粉可行性以 B1 网格级检查为准"
+    ]
+   },
+   "novelty": {
+    "wl_hash": "b5dfc7e187404d75a784b9e17ca40bdaefc4ef2a815e9474aec8e5f663033646",
+    "duplicate_of": null,
+    "statement": "ATLAS 索引范围内未发现重复(WL 同构查重 vs seed 拓扑索引)",
+    "note": "与 r2c1 同一商图拓扑的参数兄弟(rs=0.80, r_tie/pillar=0.51), 作为对布尔噪声的鲁棒性备份"
+   },
+   "printability_measured_B1": {
+    "note": "B1 实测口径: printability.check_overhangs(process=LPBF, build_dir=(0,0,1)), 焊接 trimesh;n=1 = round-1 B1 检查口径(c1 0.2658 完全复现), n=3 = spec n_cells 口径;容限 0.05 为内部工程取值(inference, 输出须降级标注)",
+    "n1": {
+     "overhang_area_fraction": 0.10896,
+     "overhang_pass_vs_0.05": false,
+     "watertight_b1": true,
+     "min_feature_p5_mm": 1.0115,
+     "min_feature_pass": true,
+     "trapped_void_mm3": 0.0,
+     "powder_pass": true
+    },
+    "n3": {
+     "overhang_area_fraction": 0.05567,
+     "overhang_pass_vs_0.05": false,
+     "watertight_b1": true
+    }
+   },
+   "lineage": {
+    "tier": "tier2",
+    "generator": "atlas-candidate-generator/D2-round2",
+    "source": "r2c1 的参数变体(板条加厚 rs=0.80, 柱/tie r=0.51): 牺牲 rho 换竖柱暴露高度下降;同机理同脚本",
+    "measured_overhang_area_fraction": {
+     "n1": 0.10896,
+     "n3": 0.05567,
+     "vs_threshold_0.05": "n1 FAIL(2.2x); n3 FAIL(超 11%)"
+    },
+    "scripts": "atlas/reports/D2/lpbf_bracket/r2_scratch/t2_slab.py(变体 E_k5_rs080_r051)",
+    "maxwell_from_C4": {
+     "M": 2,
+     "tendency": "stretch-leaning",
+     "caveat": "必要非充分, 只说倾向;82 对杆熔合(C6), 按熔合后板-柱结构解读"
+    }
+   }
+  },
+  {
+   "id": "r2c3",
+   "tier": "1.5",
+   "geometry": {
+    "topology": "Cubic",
+    "slider": 0.0,
+    "radius_mm": 0.55,
+    "cell_size_mm": 5.0
+   },
+   "rho_rel": 0.4206,
+   "rho_notes": {
+    "mesh_n1_decorated": 0.4206,
+    "mesh_n3": 0.17885,
+    "note": "装饰胞边界杆被邻胞共享, n1 体积偏大;n3 0.17885 更接近周期真值;DB structures 行存在但 density_smoothed=NULL, 无库内值可引"
+   },
+   "features": {
+    "note": "DB 221 行 Cubic 样本存在, 但 comp_stiffness/comp_EA 静压特征全 NULL(round-1 检索杀的原因), 无库内特征可引;力学估算归 Surrogate(物理或跨族迁移路径), margin 判定归 Evaluator"
+   },
+   "gates": {
+    "applicable": false,
+    "note": "库内拓扑家族 A1 引擎实现(generate_cell, 默认 sphere_ratio), 生成期图门 C1-C8 不适用;实现自检: n1 双轨水密 True;n3 双轨水密 False(A1 引擎装饰胞平铺切相退化, 工程缺口留痕, 非本候选可调参数)"
+   },
+   "novelty": {
+    "applicable": false,
+    "note": "Tier-1.5 库内家族几何, 非新拓扑"
+   },
+   "printability_measured_B1": {
+    "note": "B1 实测口径: printability.check_overhangs(process=LPBF, build_dir=(0,0,1)), 焊接 trimesh;n=1 = round-1 B1 检查口径(c1 0.2658 完全复现), n=3 = spec n_cells 口径;容限 0.05 为内部工程取值(inference, 输出须降级标注)",
+    "n1": {
+     "rho_mesh": 0.4206,
+     "watertight_dualtrack": true,
+     "overhang_area_fraction": 0.17073,
+     "watertight_b1": true,
+     "min_feature_p5_mm": 1.0906,
+     "min_feature_pass": true,
+     "trapped_void_mm3": 0.0,
+     "powder_pass": true
+    },
+    "n3": {
+     "rho_mesh": 0.17885,
+     "watertight_dualtrack": false,
+     "overhang_area_fraction": 0.20648,
+     "watertight_b1": false
+    },
+    "caveat": "n3 overhang 0.20648 在非水密网格上测得, 仅供参考"
+   },
+   "lineage": {
+    "tier": "tier1.5",
+    "generator": "atlas-candidate-generator/D2-round2",
+    "source": "24 拓扑全家族 overhang 普查(slider 0/4, r=0.55, n=1, r2_scratch/survey1.py)最优者: Cubic 0.1707(次优 G7 0.2476, CBCC 0.2478;round-1 候选 Iso_truss 0.2658 复现)。竖杆面精确竖直不计 downward, 危险面 = 水平杆 45-90 度侧带(2/3 杆长水平所致), sphere_ratio 0.9-1.0 仅差 0.002;round-1 曾以 Tier-1 检索身份被杀(comp_stiffness 行数 0), 本轮按 round-2 目标以几何身份复活留痕",
+    "measured_overhang_area_fraction": {
+     "n1": 0.17073,
+     "n3": 0.20648,
+     "vs_threshold_0.05": "n1 FAIL(3.4x); n3 FAIL(4.1x, 非水密网格参考值)"
+    },
+    "role": "对照锚: 词汇表内可检索家族的悬垂下限, 供 Evaluator 量化新图收益(0.171 -> 0.050)"
+   }
+  }
+ ],
+ "killed": [
+  {
+   "proposal": "VWallGrid_XY / VWallComb_P(tier-2 竖壁族: 融合竖柱墙 + 埋入 tie)",
+   "tier": "2",
+   "reason": "设计假说成立但被实现层否决: 纯竖柱融合墙单基元实测 overhang=0.0(法向 z 精确为 0 不计 downward), 但 realize_graph 强制节点球(r = max incident x1.001, 恒大于柱棱柱内切半径)切割棱柱面, 重三角化引入 1e-4 级法向抖动, 约半数近竖直面翻成 downward-critical;实测 grid n1 0.26267(k5)/0.34079(k6), comb 0.27800;grid n3 实现非水密。全家族杀, 数字留痕防搜索偏置"
+  },
+  {
+   "proposal": "HSlabPillar k=6 变体(rs=0.68/0.70, r=0.52): 本轮 n=1 悬垂最优 0.09802/0.10214",
+   "tier": "2",
+   "reason": "n=3(spec n_cells)realize_graph 布尔非水密(双轨判据), C9@spec-n 杀;n=1 数字留痕: 0.09802 为全词汇表 n=1 实测最小值"
+  },
+  {
+   "proposal": "HSlabPillarMid(竖柱中点专用节点变体)",
+   "tier": "2",
+   "reason": "中点节点球污染两段柱面, 实测 n1 0.14691 / n3 0.09459, 被 r2c1 支配杀"
+  },
+  {
+   "proposal": "HSlabPillar k=4 粗板条变体(rs=0.85/0.90)",
+   "tier": "2",
+   "reason": "实测 n3 0.07277 / 0.05717 且 rho 0.39-0.42 更重, 被 r2c1/r2c2 支配杀"
+  },
+  {
+   "proposal": "TPMS sheet 全族 @rho0.3(gyroid/diamond/schwarz_p/iwp/neovius)+ schwarz_p sheet @0.4/0.5",
+   "tier": "1.75",
+   "reason": "实测 overhang 0.2930-0.3226(@0.3), 0.2794-0.3016(@0.4/0.5): 连续曲壁近竖直区天然带真实向下法向, 全族 >=0.28 杀;round-1 c5 的验证管线 TPMS 网格缺口本轮已绕开(直接对生成网格跑 B1)"
+  },
+  {
+   "proposal": "TPMS skeletal 族(schwarz_p@0.2-0.6: 0.1707->0.1241;neovius@0.2-0.6: 0.1546->0.1383;gyroid/iwp >=0.20)",
+   "tier": "1.75",
+   "reason": "悬垂全族 >0.12 已不达标, 且 LPBF min_feature 硬杀: schwarz_p@0.5 p5=0.706mm、@0.6 p5=0.663mm、neovius@0.5 p5=0.370mm, 远低于 1.0mm;另 schwarz_p@0.5 水密自检 fail-loudly 复现性依赖进程态(引擎 flake 留痕, 报 B2/B4)"
+  },
+  {
+   "proposal": "Cubic 以 Tier-1 检索身份入候选",
+   "tier": "1",
+   "reason": "cell_db 221 行存在但 density_smoothed 与 comp_* 特征全 NULL, Tier-1 合同(库内实测数值带源)无法满足, 检索杀;几何以 Tier-1.5 身份复活为 r2c3(留痕)"
+  },
+  {
+   "proposal": "24 拓扑家族普查其余 23 族(BCC/Octet/Kelvin/Auxetic/FCC/FCCZ/BCCZ/G7/CBCC 等, slider 0/4)",
+   "tier": "1",
+   "reason": "实测 overhang 0.2450(G7 s4)- 0.4245(Octahedron), 全部为容限 0.05 的 4.9 倍以上;数字在 r2_scratch/survey1.json 留痕"
+  }
+ ],
+ "notes": "诚实条款结论: 本词汇表(Tier-1 检索 24 族 / Tier-1.5 插值 / TPMS 5 族x2 / Tier-2 realize_graph 商图)内, 没有任何候选能在两种测量口径下稳健达到 overhang_area_fraction <= 0.05。全词汇表实测最好值: n=1 口径(round-1 B1 协议)0.09802(HSlabPillar k=6, 但其 n=3 非水密被杀), 有效候选最好 0.10896-0.10911;n=3 口径(spec n_cells=3)有效最好 0.05028(r2c1), 距容限差 0.00028(0.56%), 但同家族近邻参数散布 0.0503-0.0728 表明该值含 0.005 量级布尔重三角化噪声, 不能声称稳健达标。机理(实测确证, 脚本与中间数据在 r2_scratch/ 留痕): (1) check_overhangs 危险类 = 朝下且法向偏离正下方 >45 度的面: 圆柱侧面带按倾角贡献 25%(水平)-50%(>=45 度), 节点球带约 37%, 这是杆系族 0.17-0.47 的内禀来源, 与 round-1 六杀和 PSCZ(>=50 度自支撑设计反而 0.47)完全一致;(2) 法向 z 精确为 0 的竖直面不计 downward(竖柱单体实测 0.0), 但 realize_graph 强制节点球切割使近竖直面重三角化后产生 1e-4 级法向抖动, 约半数翻为危险, 竖壁策略因此失效;(3) 水平板条(融合水平圆柱, pitch < r*sqrt2)底面扇贝法向全落在正下 45 度锥内, 被分类为安全且对 (2) 免疫, HSlabPillar 家族因此成为词汇表内唯一逼近 0.05 的构型。语义备注(留给阈值层 B7, 本层不改判): 该分类把陡峭/竖直朝下面记危险、水平底面记安全, 方向与 LPBF 自支撑角 >=45 度的工程惯例相反;round-1/D1 全灭与本轮结果都是该 oracle 语义下的数学现实。给 Evaluator 的边界提示(非力学判断): 若以 n=3 口径并允许 >=0.6% 容差或鲁棒统计, r2c1 为边界可过候选;若严格 n=1 口径, 本案例在现词汇表内不可行, 需要板/壳基元词汇表扩展或构建方向/规则修订(均超出本层权限)。其余 B1 维度全部实测通过(r2c1/r2c2: 双轨水密 + B1 validate、min_feature p5 1.031/1.012 >= 1.0、困粉 0.0;r2c3: n=1 全过, n=3 非水密为 A1 引擎平铺缺口)。"
+}

@@ -1,0 +1,15 @@
+{
+  "identical": [
+    "c1.json",
+    "c2.json",
+    "c3.json",
+    "c4.json",
+    "c5.json",
+    "c6.json",
+    "c7.json",
+    "c8.json"
+  ],
+  "mismatched": [],
+  "missing_agent": [],
+  "consistent": true
+}

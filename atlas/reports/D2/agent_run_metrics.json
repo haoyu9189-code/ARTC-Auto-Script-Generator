@@ -1,0 +1,33 @@
+{
+  "_meta": {
+    "source": "Claude Code harness usage metadata, recorded by Orchestrator (main session) per real subagent dispatch, 2026-06-11",
+    "note": "P3-C benchmark raw data: real multi-agent dispatch vs in-process engine timings. verify_batch_s / judge_direct_s from time.perf_counter (d2.py).",
+    "agents": "atlas-generator / atlas-evaluator from .claude/agents (tool-whitelisted), dispatched via Agent tool"
+  },
+  "sls_absorber": {
+    "generator": {"duration_s": 848.6, "subagent_tokens": 111977, "tool_uses": 37, "candidates": 8, "killed": 1},
+    "evaluator": {"duration_s": 81.1, "subagent_tokens": 12031, "tool_uses": 7, "traces": 8},
+    "verify_batch_s": 1.125,
+    "judge_direct_s": 0.161,
+    "consistency": {"identical": 8, "mismatched": 0},
+    "k3": {"round1_repaired": 4, "round1_pass": 4, "outcome": "PASS",
+           "bug_found": "param_repair matcher never matched engine reason wording (fixed, regression test added)"}
+  },
+  "lpbf_bracket": {
+    "generator": {"duration_s": 792.4, "subagent_tokens": 85986, "tool_uses": 38, "candidates": 6, "killed": 3},
+    "evaluator": {"duration_s": 70.1, "subagent_tokens": 13203, "tool_uses": 5, "traces": 6},
+    "verify_batch_s": 1.007,
+    "judge_direct_s": 0.104,
+    "consistency": {"identical": 6, "mismatched": 0},
+    "k3": {"round1_repaired": 0, "reason": "overhang failures not param-repairable (topology-intrinsic: node spheres + strut undersides, 0.248-0.470 vs 0.05)", "round2": "real LLM regeneration dispatched (results pending)"}
+  },
+  "mjf_auxetic_pad": {
+    "generator": {"duration_s": 877.4, "subagent_tokens": 94178, "tool_uses": 44, "candidates": 8, "killed": 2},
+    "evaluator": {"duration_s": null, "note": "completed; usage metadata not captured (polled before notification); traces 8, all R3 n<3 downgrade present"},
+    "verify_batch_s": 1.211,
+    "judge_direct_s": 0.144,
+    "consistency": {"identical": 8, "mismatched": 0},
+    "k3": {"round1_repaired": 5, "round1_pass": 5, "outcome": "PASS",
+           "ood_unrepaired": ["c7", "c8"], "ood_note": "R2 no-margin FAIL correct (OOD red line); repair correctly not attempted (no margin to scale)"}
+  }
+}

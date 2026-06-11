@@ -1,0 +1,80 @@
+{
+ "slab_rs075_rp05": {
+  "name": "slab_rs075_rp05",
+  "gates_passed": true,
+  "hard_failures": [],
+  "C5": {
+   "rho_estimate_at_default_r": 0.4948,
+   "total_strut_length_mm": 35.0
+  },
+  "C4": {
+   "maxwell_M": 2,
+   "tendency": "stretch-leaning"
+  },
+  "n1": {
+   "realize_ok": true,
+   "rho": 0.34829,
+   "overhang": 0.11326,
+   "min_feature_p5": 0.992,
+   "trapped_void_mm3": 0.0,
+   "watertight_b1": true
+  },
+  "n3": {
+   "realize_ok": true,
+   "rho": 0.31352,
+   "overhang": 0.05172
+  }
+ },
+ "slab_rs065_k6": {
+  "name": "slab_rs065_k6",
+  "gates_passed": true,
+  "hard_failures": [],
+  "C5": {
+   "rho_estimate_at_default_r": 0.4247,
+   "total_strut_length_mm": 40.0
+  },
+  "C4": {
+   "maxwell_M": 1,
+   "tendency": "stretch-leaning"
+  },
+  "n1": {
+   "realize_ok": true,
+   "rho": 0.30417,
+   "overhang": 0.0995,
+   "min_feature_p5": 0.992,
+   "trapped_void_mm3": 0.0,
+   "watertight_b1": true
+  },
+  "n3": {
+   "realize_ok": true,
+   "rho": 0.27652,
+   "overhang": 0.04815
+  }
+ },
+ "slab_rs075_rp075": {
+  "name": "slab_rs075_rp075",
+  "gates_passed": true,
+  "hard_failures": [],
+  "C5": {
+   "rho_estimate_at_default_r": 0.4948,
+   "total_strut_length_mm": 35.0
+  },
+  "C4": {
+   "maxwell_M": 2,
+   "tendency": "stretch-leaning"
+  },
+  "n1": {
+   "realize_ok": true,
+   "rho": 0.38317,
+   "overhang": 0.15289,
+   "min_feature_p5": 1.487,
+   "trapped_void_mm3": 0.0,
+   "watertight_b1": true
+  },
+  "n3": {
+   "realize_ok": true,
+   "rho": 0.3445,
+   "overhang": 0.06796
+  }
+ }
+}

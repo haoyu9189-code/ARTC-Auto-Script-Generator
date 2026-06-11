@@ -78,6 +78,37 @@ def test_overhang_skipped_for_powder_bed(bcc):
     assert r['applicable'] is False and r['pass'] is True
 
 
+def test_overhang_known_cylinders_regression():
+    """E12 回归:三圆柱已知几何正交验证(D2 round-2 真 agent 发现带反)。
+
+    正确语义(朝下面倾角 = 法向与正下方夹角,<45° 需支撑):
+    - 竖直圆柱:仅底盖朝下(theta=0)→ frac ≈ cap/total ≈ 0.045
+    - 水平圆柱:下四分之一壳带 → frac ≈ 0.23
+    - 45° 斜柱:侧面 theta∈[45°,90°) 全自支撑,端盖恰在 45° 边界 → ≈ 0
+    反向实现的输出是 0.0 / 0.227 / 0.477(45° 比水平还差,物理不可能)。
+    """
+    import numpy as np
+    cyl = trimesh.creation.cylinder(radius=1.0, height=10.0, sections=64)
+    v = check_overhangs(cyl, process='LPBF')['value'][
+        'overhang_area_fraction']
+    assert 0.03 < v < 0.06, f'竖直柱应只数底盖 ~0.045,得 {v}'
+
+    h = cyl.copy()
+    h.apply_transform(trimesh.transformations.rotation_matrix(
+        np.pi / 2, [0, 1, 0]))
+    vh = check_overhangs(h, process='LPBF')['value'][
+        'overhang_area_fraction']
+    assert 0.18 < vh < 0.28, f'水平柱应 ~0.23(下四分壳),得 {vh}'
+
+    d = cyl.copy()
+    d.apply_transform(trimesh.transformations.rotation_matrix(
+        np.pi / 4, [0, 1, 0]))
+    vd = check_overhangs(d, process='LPBF')['value'][
+        'overhang_area_fraction']
+    assert vd < 0.05, f'45° 斜柱应 ~0(自支撑边界),得 {vd}'
+    assert vd < vh, '斜柱悬垂必须小于水平柱(反向实现在此必挂)'
+
+
 # ---- powder escape:开放点阵过;封皮腔体困粉;开排粉孔后过 ----
 
 def _skinned(with_vent):
