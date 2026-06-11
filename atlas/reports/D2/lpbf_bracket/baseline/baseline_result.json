@@ -1,0 +1,60 @@
+{
+  "candidates": [
+    {
+      "id": "C1_BCC_s8_r0.55",
+      "geometry": {"topology": "BCC", "slider": 8.0, "radius_mm": 0.55},
+      "my_verdict": "PASS",
+      "key_numbers": [
+        {"name": "comp_EA (库内同单位代理, 设计值60.0含FOS1.5)", "value": 190.87, "source": "cell_db.sqlite features BCC_5_0p5500000000000003_8, internal Abaqus FEA pipeline (extracted_features_smoothed.csv, mtime 2026-01-21)"},
+        {"name": "margin_ratio_vs_60", "value": 3.18, "source": "computed: 190.87 / 60.0"},
+        {"name": "comp_EA_lower_bound_r0.5_curve_backed", "value": 172.13, "source": "cell_db.sqlite BCC_5_0p5_8, quality_flag='ok' (含完整曲线); EA随r单调增"},
+        {"name": "comp_stiffness", "value": 62.31, "source": "cell_db.sqlite features"},
+        {"name": "comp_yield", "value": 2.22, "source": "cell_db.sqlite features"},
+        {"name": "relative_density_db", "value": 0.1921, "source": "cell_db.sqlite structures (density_source=fea)"},
+        {"name": "relative_density_mesh_n3", "value": 0.2195, "source": "atlas.geometry.cells.generate_cell n=3, mesh volume / 15^3"},
+        {"name": "min_strut_axis_angle_deg", "value": 35.26, "source": "parse_structure 杆轴角解析; 厂商自支撑带 [35,45]deg (vendor), 无水平杆, 最大跨距 4.33mm"},
+        {"name": "min_feature_p5_mm (阈值1.0)", "value": 1.0906, "source": "atlas.printability.checks.measure_min_feature, embree 射线测厚, n=600, PASS"},
+        {"name": "overhang_area_fraction_below_45deg (严格门限0.05)", "value": 0.1661, "source": "atlas.printability.checks.check_overhangs, 面法向分类, 严格门FAIL — 工程放行见下条"},
+        {"name": "overhang_area_fraction_below_35deg", "value": 0.0022, "source": "面法向分类@35deg厂商下限: 99.8%朝下面积在35-45deg自支撑带内, 附条件放行(downskin参数+首件打样)"},
+        {"name": "trapped_powder_mm3 (容差0.125)", "value": 0.0, "source": "atlas.printability.checks.check_powder_escape, 体素flood-fill pitch=0.25, PASS"},
+        {"name": "watertight_dual_track", "value": 1, "source": "manifold3d raw + trimesh welded 双轨, PASS"},
+        {"name": "gibson_ashby_exponent_E_vs_rho", "value": 1.79, "source": "computed from cell_db r=0.50/0.525/0.55 三点; ≈2 符合弯曲主导预期, 库数据自洽"}
+      ]
+    },
+    {
+      "id": "C2_Diamond_s3_r0.55",
+      "geometry": {"topology": "Diamond", "slider": 3.0, "radius_mm": 0.55},
+      "my_verdict": "PASS",
+      "key_numbers": [
+        {"name": "comp_EA (库内同单位代理, 设计值60.0含FOS1.5)", "value": 162.62, "source": "cell_db.sqlite features Diamond_5_0p5500000000000003_3, internal Abaqus FEA pipeline"},
+        {"name": "margin_ratio_vs_60", "value": 2.71, "source": "computed: 162.62 / 60.0"},
+        {"name": "comp_stiffness", "value": 46.11, "source": "cell_db.sqlite features"},
+        {"name": "comp_yield", "value": 1.61, "source": "cell_db.sqlite features"},
+        {"name": "relative_density_db", "value": 0.1824, "source": "cell_db.sqlite structures (density_source=fea); 通过候选中最轻, 较C1省约5%质量"},
+        {"name": "min_strut_axis_angle_deg", "value": 35.26, "source": "parse_structure 杆轴角解析; 全16杆35.3deg, 无水平杆"},
+        {"name": "max_strut_span_mm", "value": 2.17, "source": "parse_structure; 跨距为C1一半, downskin下垂风险更低, 作为C1打样失败时的首选回退"},
+        {"name": "min_feature_p5_mm (阈值1.0)", "value": 1.0906, "source": "embree 射线测厚, PASS"},
+        {"name": "overhang_area_fraction_below_45deg (严格门限0.05)", "value": 0.165, "source": "面法向分类, 严格门FAIL — 同C1工程放行逻辑"},
+        {"name": "overhang_area_fraction_below_35deg", "value": 0.0037, "source": "面法向分类@35deg厂商下限, 附条件放行"},
+        {"name": "trapped_powder_mm3 (容差0.125)", "value": 0.0, "source": "体素flood-fill, PASS"},
+        {"name": "watertight_dual_track", "value": 1, "source": "manifold3d raw + trimesh welded 双轨, PASS"}
+      ]
+    },
+    {
+      "id": "C3_Truncated_cube_s8_r0.5",
+      "geometry": {"topology": "Truncated_cube", "slider": 8.0, "radius_mm": 0.5},
+      "my_verdict": "FAIL",
+      "key_numbers": [
+        {"name": "comp_EA (库内同单位代理)", "value": 119.82, "source": "cell_db.sqlite Truncated_cube_5_0p5_8 (quality_flag='ok'); 力学代理本身达标(2.0x), 败在可打印性"},
+        {"name": "shear_EA", "value": 57.76, "source": "cell_db.sqlite features; <60, 剪切同单位代理不达标"},
+        {"name": "relative_density_db", "value": 0.1314, "source": "cell_db.sqlite structures; 纯查表下最诱人的EA/重量比 — 网格级核验否决"},
+        {"name": "n_horizontal_struts_per_cell", "value": 16, "source": "parse_structure 杆轴角解析; 0deg水平杆为拓扑固有, 远低于35deg厂商下限, 不可修复"},
+        {"name": "overhang_area_fraction_below_35deg", "value": 0.0715, "source": "面法向分类@35deg厂商下限仍7.2%>5%, FAIL"},
+        {"name": "trapped_powder_mm3 (容差0.125)", "value": 7.125, "source": "体素flood-fill pitch=0.25: 近闭合角隅困粉, FAIL"},
+        {"name": "min_feature_p5_mm (阈值1.0)", "value": 0.9914, "source": "embree 射线测厚: r=0.5设计Ø1.0恰压阈值, 面化后实测低于1.0, 零裕度FAIL"},
+        {"name": "watertight_dual_track", "value": 0, "source": "trimesh welded 形态 is_volume=False, 双轨水密FAIL"}
+      ]
+    }
+  ],
+  "recommendation": "推荐 C1 = BCC slider 8, r=0.55mm, cell 5mm, 3x3x3(comp_EA 190.9, 裕度3.18x; 全杆35.3deg无水平杆, 最小特征1.09mm, 无困粉)。备选 C2 = Diamond slider 3, r=0.55(最轻, 跨距2.17mm 局部打印风险更低, 裕度2.71x)。两者均附高风险条件: (1) 严格45deg/5%悬垂面积门(内部inference容限)未过, 放行依据为杆轴角处于厂商35-45deg自支撑带且<35deg面积≤0.4%, 必须用AlSi10Mg downskin优化参数并做首件打样验证(CT/切片查挂渣与实际杆径), 否则降回需支撑方案; (2) screening级置信, r=0.55行无原始曲线, 建议下一步对C1做n=3全模型FEA复核(r=0.5 'ok'曲线样本作锚)。C3 Truncated_cube 虽然纯查表EA/重量比最优, 但16根水平杆+困粉7.1mm3+最小特征零裕度+剪切代理57.8<60, 判FAIL — 体现了 generate-then-verify 的必要性。Rhombic s3 可打印但密度0.40过重, 不列入航空轻量化候选。"
+}

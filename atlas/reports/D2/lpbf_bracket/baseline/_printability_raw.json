@@ -1,0 +1,118 @@
+{
+ "BCC_s8_r0.55": {
+  "strut_axis_min_angle_deg": 35.26,
+  "strut_axis_angles": [
+   35.3
+  ],
+  "n_struts_per_cell": 8,
+  "max_strut_span_mm": 4.33,
+  "n_horizontal_struts": 0,
+  "mesh_relative_density_n3": 0.2195,
+  "watertight_dual": true,
+  "validate": {
+   "pass": true,
+   "value": {
+    "watertight": true,
+    "winding_consistent": true,
+    "is_volume": true,
+    "manifold3d_status": "Error.NoError",
+    "body_count": 1
+   }
+  },
+  "min_feature": {
+   "pass": true,
+   "p5_mm": 1.0906,
+   "min_mm": 1.0906,
+   "threshold_mm": 1.0
+  },
+  "overhang_45": {
+   "pass": false,
+   "fraction": 0.1661,
+   "threshold": 0.05
+  },
+  "overhang_35_fraction": 0.0022,
+  "powder": {
+   "pass": true,
+   "trapped_mm3": 0.0,
+   "tol_mm3": 0.125
+  }
+ },
+ "Diamond_s3_r0.55": {
+  "strut_axis_min_angle_deg": 35.26,
+  "strut_axis_angles": [
+   35.3
+  ],
+  "n_struts_per_cell": 16,
+  "max_strut_span_mm": 2.17,
+  "n_horizontal_struts": 0,
+  "mesh_relative_density_n3": 0.2223,
+  "watertight_dual": true,
+  "validate": {
+   "pass": true,
+   "value": {
+    "watertight": true,
+    "winding_consistent": true,
+    "is_volume": true,
+    "manifold3d_status": "Error.NoError",
+    "body_count": 1
+   }
+  },
+  "min_feature": {
+   "pass": true,
+   "p5_mm": 1.0906,
+   "min_mm": 1.0837,
+   "threshold_mm": 1.0
+  },
+  "overhang_45": {
+   "pass": false,
+   "fraction": 0.165,
+   "threshold": 0.05
+  },
+  "overhang_35_fraction": 0.0037,
+  "powder": {
+   "pass": true,
+   "trapped_mm3": 0.0,
+   "tol_mm3": 0.125
+  }
+ },
+ "Truncated_cube_s8_r0.5": {
+  "strut_axis_min_angle_deg": 0.0,
+  "strut_axis_angles": [
+   0.0,
+   45.0,
+   90.0
+  ],
+  "n_struts_per_cell": 36,
+  "max_strut_span_mm": 2.2,
+  "n_horizontal_struts": 16,
+  "mesh_relative_density_n3": 0.2034,
+  "watertight_dual": false,
+  "validate": {
+   "pass": false,
+   "value": {
+    "watertight": false,
+    "winding_consistent": true,
+    "is_volume": false,
+    "manifold3d_status": "Error.NoError",
+    "body_count": 1
+   }
+  },
+  "min_feature": {
+   "pass": false,
+   "p5_mm": 0.9914,
+   "min_mm": 0.9914,
+   "threshold_mm": 1.0
+  },
+  "overhang_45": {
+   "pass": false,
+   "fraction": 0.1096,
+   "threshold": 0.05
+  },
+  "overhang_35_fraction": 0.0715,
+  "powder": {
+   "pass": false,
+   "trapped_mm3": 7.125,
+   "tol_mm3": 0.125
+  }
+ }
+}

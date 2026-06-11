@@ -1,0 +1,47 @@
+{
+  "candidates": [
+    {
+      "id": "C1_max_auxetic",
+      "geometry": {"topology": "Auxetic", "slider": 0.0, "radius_mm": 0.45},
+      "my_verdict": "FAIL",
+      "key_numbers": [
+        {"name": "comp_EA_vs_design_40", "value": 332.66, "source": "cell_db.sqlite Auxetic_5_0p45_0 (qflag=ok)"},
+        {"name": "reentrant_angle_deg", "value": 23.7, "source": "几何解析 atan((2.5-2w)/2.5), w=0.7+0.04*slider"},
+        {"name": "min_strut_clearance_mm", "value": 0.50, "source": "图级线段-线段解析净距; 阈值 1.0 mm (HP MJF vendor, dfam_rules.json v1.1) → FAIL"},
+        {"name": "min_feature_p5_mm", "value": 0.898, "source": "embree 射线测厚 (atlas/printability/checks.py, 2x2x2, segments=48); 阈值 0.8"},
+        {"name": "cleanable_cell_layers_vs_need_2", "value": 2.94, "source": "Raz 2025 DOI 10.3390/polym17202804 内插 @rho_rel=0.270 (跨拓扑 inference)"},
+        {"name": "welded_watertight", "value": 0, "source": "checks.validate_mesh 双引擎; welded 轨不水密 (近距杆面焊接退化旁证)"}
+      ]
+    },
+    {
+      "id": "C2_balanced",
+      "geometry": {"topology": "Auxetic", "slider": 6.0, "radius_mm": 0.425},
+      "my_verdict": "PASS",
+      "key_numbers": [
+        {"name": "comp_EA_vs_design_40", "value": 229.19, "source": "cell_db.sqlite Auxetic_5_0p425_6 (qflag=csv_only_no_curves); 裕度 5.7x"},
+        {"name": "comp_stiffness", "value": 92.71, "source": "cell_db.sqlite; 三候选最低 → 缓冲柔顺性最好"},
+        {"name": "rho_rel", "value": 0.188, "source": "cell_db.sqlite; 三候选最低材料用量"},
+        {"name": "reentrant_angle_deg", "value": 13.9, "source": "几何解析; 通过者中最强 auxetic"},
+        {"name": "min_strut_clearance_mm", "value": 1.03, "source": "图级解析净距; 阈值 1.0 → PASS 但裕度仅 +3%, 建议胞元放大或首件实测"},
+        {"name": "min_feature_p5_mm", "value": 0.848, "source": "embree 射线测厚; 阈值 0.8 → PASS"},
+        {"name": "trapped_powder_mm3", "value": 0.0, "source": "体素 flood-fill (pitch 0.25, 2x2x2) → 无封闭困粉"},
+        {"name": "cleanable_cell_layers_vs_need_2", "value": 3.78, "source": "Raz 2025 内插 @rho_rel=0.188 (跨拓扑 inference)"}
+      ]
+    },
+    {
+      "id": "C3_stiff_backup",
+      "geometry": {"topology": "Auxetic", "slider": 7.0, "radius_mm": 0.45},
+      "my_verdict": "PASS",
+      "key_numbers": [
+        {"name": "comp_EA_vs_design_40", "value": 281.20, "source": "cell_db.sqlite Auxetic_5_0p45_7 (qflag=ok); 裕度 7.0x"},
+        {"name": "comp_stiffness", "value": 116.91, "source": "cell_db.sqlite; 比 C2 高 26%"},
+        {"name": "reentrant_angle_deg", "value": 12.2, "source": "几何解析; auxetic 较弱"},
+        {"name": "min_strut_clearance_mm", "value": 1.06, "source": "图级解析净距; 阈值 1.0 → PASS"},
+        {"name": "min_feature_p5_mm", "value": 0.898, "source": "embree 射线测厚; 阈值 0.8 → PASS"},
+        {"name": "trapped_powder_mm3", "value": 0.0, "source": "体素 flood-fill → 无封闭困粉"},
+        {"name": "cleanable_cell_layers_vs_need_2", "value": 3.74, "source": "Raz 2025 内插 @rho_rel=0.192 (跨拓扑 inference)"}
+      ]
+    }
+  ],
+  "recommendation": "首选 C2 (Auxetic, slider=6.0, r=0.425 mm, 5 mm 胞元): 通过全部 MJF DfAM 硬门 (杆径 0.848≥0.8, 净距 1.03≥1.0, 零困粉, 可清 3.78 层≥2 层), comp_EA=229.2 对含 FOS 设计值 40.0 留 5.7x 裕度, 且为通过者中刚度最低/密度最低/auxetic 内凹最强, 最符合缓冲垫柔顺吸能意图。备选 C3 (slider=7.0, r=0.45): 各项打印裕度与数据质量 (qflag=ok) 更稳健但刚度高 26%、auxetic 更弱。否决 C1 (slider=0, r=0.45): 最大 auxetic 但腰部杆间净距 0.50 mm 仅为 MJF 最小间隙 1.0 mm 的一半, 硬性 FAIL。注意: comp_EA 为库内同单位代理 (screening 级), 绝对吸能与泊松比需下一阶段 Tier-D/均质化或实验确认; C2 间隙裕度薄, 建议胞元整体放大 (如 5→6.25 mm) 或首件实测腰缝。"
+}

@@ -1,0 +1,59 @@
+{
+  "candidates": [
+    {
+      "id": "BCC_5_0p5_3",
+      "geometry": {"topology": "BCC", "slider": 3.0, "radius_mm": 0.5},
+      "my_verdict": "PASS",
+      "key_numbers": [
+        {"name": "comp_EA (库内同单位代理)", "value": 208.525, "source": "atlas/data/cell_db.sqlite features 表"},
+        {"name": "margin_vs_design_55", "value": 3.79, "source": "估算: comp_EA / 55.0(FOS 1.3 已计入 spec)"},
+        {"name": "relative_density", "value": 0.177, "source": "cell_db structures.density_smoothed"},
+        {"name": "EA_per_density", "value": 1177.6, "source": "估算: comp_EA / ρ_rel"},
+        {"name": "CFE (平台均值力/致密化前峰值)", "value": 0.825, "source": "估算: 库内 StaCompre 曲线, ε=位移/5mm, 平台 ε∈[0.05,0.584]"},
+        {"name": "densification_strain", "value": 0.584, "source": "cell_db features comp_densified"},
+        {"name": "dyna_peak (代理)", "value": 2.543, "source": "cell_db features dyna_peak"},
+        {"name": "watertight_dual_engine", "value": true, "source": "atlas/printability/checks.validate_mesh, 4x4x4 网格 (geometry/cells.generate_cell)"},
+        {"name": "min_feature_p5_mm", "value": 0.991, "source": "checks.measure_min_feature (embree 射线测厚), 阈值 0.8 (EOS PA12 vendor)"},
+        {"name": "trapped_powder_mm3", "value": 0.0, "source": "checks.check_powder_escape (体素 flood-fill, pitch 0.4)"},
+        {"name": "min_strut_clearance_mm", "value": 2.234, "source": "估算: 图级非邻接杆对线段距 − 2r (2x2x2 平铺)"}
+      ]
+    },
+    {
+      "id": "Kelvin_5_0p5_3",
+      "geometry": {"topology": "Kelvin", "slider": 3.0, "radius_mm": 0.5},
+      "my_verdict": "PASS",
+      "key_numbers": [
+        {"name": "comp_EA (库内同单位代理)", "value": 244.575, "source": "atlas/data/cell_db.sqlite features 表"},
+        {"name": "margin_vs_design_55", "value": 4.45, "source": "估算: comp_EA / 55.0"},
+        {"name": "relative_density", "value": 0.203, "source": "cell_db structures.density_smoothed"},
+        {"name": "EA_per_density", "value": 1205.3, "source": "估算: comp_EA / ρ_rel"},
+        {"name": "CFE (平台均值力/致密化前峰值)", "value": 0.824, "source": "估算: 库内 StaCompre 曲线, 平台 ε∈[0.05,0.609]"},
+        {"name": "densification_strain", "value": 0.609, "source": "cell_db features comp_densified(三候选中行程最长)"},
+        {"name": "dyna_peak (代理)", "value": 3.02, "source": "cell_db features dyna_peak"},
+        {"name": "watertight_dual_engine", "value": true, "source": "checks.validate_mesh, 4x4x4, segments=23(默认 24 触发已知采样相位退化, cells.py 根因记录)"},
+        {"name": "min_feature_p5_mm", "value": 0.986, "source": "checks.measure_min_feature, 阈值 0.8"},
+        {"name": "trapped_powder_mm3", "value": 0.0, "source": "checks.check_powder_escape (pitch 0.4)"},
+        {"name": "min_strut_clearance_mm", "value": 0.697, "source": "估算: 图级杆对净距; <1.0 仅记 flag(C7 口径: min_gap 为部件间规则, 排粉以困粉检查为权威)"}
+      ]
+    },
+    {
+      "id": "WeairePhelan_5_0p4_6",
+      "geometry": {"topology": "WeairePhelan", "slider": 6.0, "radius_mm": 0.4},
+      "my_verdict": "FAIL",
+      "key_numbers": [
+        {"name": "comp_EA (库内同单位代理)", "value": 598.3, "source": "atlas/data/cell_db.sqlite features 表"},
+        {"name": "margin_vs_design_55", "value": 10.88, "source": "估算: comp_EA / 55.0"},
+        {"name": "relative_density", "value": 0.306, "source": "cell_db structures.density_smoothed"},
+        {"name": "EA_per_density", "value": 1952.3, "source": "估算: comp_EA / ρ_rel(全库 quality=ok 中最高一族)"},
+        {"name": "CFE (平台均值力/致密化前峰值)", "value": 0.669, "source": "估算: 库内 StaCompre 曲线, 平台 ε∈[0.05,0.579]"},
+        {"name": "dyna_peak (代理)", "value": 5.64, "source": "cell_db features dyna_peak(三候选最高, 缓冲不利)"},
+        {"name": "min_feature_p5_mm", "value": 0.793, "source": "checks.measure_min_feature 实测 < 0.8 阈值 → 硬门不过(名义杆径 0.80 压线, 布尔/离散削薄)"},
+        {"name": "watertight_dual_engine", "value": false, "source": "checks.validate_mesh, 4x4x4 默认离散焊接后非水密"},
+        {"name": "min_strut_clearance_mm", "value": -0.15, "source": "估算: 图级杆对净距为负 → 非邻接杆互贯熔合, 有效拓扑改变"},
+        {"name": "trapped_powder_mm3", "value": 0.0, "source": "checks.check_powder_escape (pitch 0.4)"},
+        {"name": "remediation", "value": "r→0.45 (杆径 0.9mm, 12% 裕度) 后复检; 库内 0p45 一族 EA/ρ≈1962 仍最高", "source": "工程判断 + cell_db 邻近样本"}
+      ]
+    }
+  ],
+  "recommendation": "首选 BCC (slider=3.0, r=0.50mm, 5mm 胞元, 4x4x4): comp_EA 裕度 3.8x, CFE 0.825 平台最稳, 动态峰值最低, 最轻, SLS 可打印性四项全绿且裕度最大。备选 Kelvin (slider=3.0, r=0.50mm): 吸能与行程更高 (裕度 4.4x, ε_dens 0.609), 全部检查通过, 仅需出图固定 segments=23。WeairePhelan (r=0.40) 比吸能最高但实测杆径 p5=0.793mm 低于 SLS 0.8mm 硬门且杆互贯, 本参数判 FAIL; 如需其性能按 r=0.45 整改后再验证。注意: 所有力学量为库内同单位代理 (screening 置信级), 绝对承载需 PA12 本构仿真或实测确认。"
+}
