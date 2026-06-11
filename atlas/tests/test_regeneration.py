@@ -101,3 +101,25 @@ def test_dfam_repair_bumps_radius_to_process_floor():
         trace, {'process': 'MJF'})
     assert fixed['geometry']['radius_mm'] >= 0.41
     assert fixed['lineage']['parents'] == ['c9']
+
+
+def test_dfam_repair_matches_engine_reason_wording_with_thinning():
+    """P3-B 回归:C2 引擎实文 reason + 实测节点削薄补偿。
+
+    D2 真跑发现:引擎对 min-feature 失败的 reason 实文是
+    「硬性检查未过: printability/printability.measure_min_feature」,
+    原匹配词('杆径'/'min_strut')对不上 → 修补从未触发。
+    """
+    from atlas.orchestration.regenerate import default_param_repair
+    trace = {'verdict_reasons': [
+        '硬性检查未过: printability/printability.measure_min_feature'],
+        'margin': None,
+        'checks': [{'tool': 'printability.measure_min_feature',
+                    'value': {'min_mm': 0.7759}, 'pass': False}]}
+    fixed = default_param_repair(
+        {'id': 'c1', 'geometry': {'topology': 'BCC', 'radius_mm': 0.4}},
+        trace, {'process': 'SLS'})
+    assert fixed is not None, '引擎实文 reason 必须触发修补'
+    # 削薄 = 0.8-0.7759 = 0.0241 → r ≥ (0.8+0.0241)/2+0.01 ≈ 0.4221
+    assert fixed['geometry']['radius_mm'] >= 0.422
+    assert any('round-1' in n for n in fixed['lineage']['notes'])

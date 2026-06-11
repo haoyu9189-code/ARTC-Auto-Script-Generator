@@ -1,0 +1,228 @@
+{
+ "BCC_5_0p4_0": {
+  "structure": {
+   "sample_name": "BCC_5_0p4_0",
+   "json_name": "BCC_5_0p4_0",
+   "csv_name": "BCC_5_0p40000000000000013_0",
+   "topology": "BCC",
+   "cell_size": 5.0,
+   "strut_radius": 0.4,
+   "slider": 0.0,
+   "topology_class": "bending",
+   "density": 0.108986088043185,
+   "density_fea": 0.108986088043185,
+   "density_smoothed": 0.11462,
+   "density_source": "fea",
+   "in_json": 1,
+   "in_csv": 1,
+   "quality_flag": "ok",
+   "source": "internal FEA: ARTC-Auto-Script pipeline (model templates -> Abaqus -> GeJsonl.py), PA12/MJF, material props = config.py; file = data_package/feature_data.json (mtime 2026-01-21)",
+   "source_type": "internal_fea",
+   "method": "Abaqus FEA (quasi-static/dynamic explicit)",
+   "date": "2026-01-21"
+  },
+  "comp_EA": {
+   "sample_name": "BCC_5_0p4_0",
+   "feature": "comp_EA",
+   "value": 89.864794,
+   "load_mode": "static_compression",
+   "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline"
+  }
+ },
+ "Kelvin_5_0p4_5": {
+  "structure": {
+   "sample_name": "Kelvin_5_0p4_5",
+   "json_name": "Kelvin_5_0p4_5",
+   "csv_name": "Kelvin_5_0p40000000000000013_5",
+   "topology": "Kelvin",
+   "cell_size": 5.0,
+   "strut_radius": 0.4,
+   "slider": 5.0,
+   "topology_class": "bending",
+   "density": 0.139713433571385,
+   "density_fea": 0.139713433571385,
+   "density_smoothed": 0.142157,
+   "density_source": "fea",
+   "in_json": 1,
+   "in_csv": 1,
+   "quality_flag": "ok",
+   "source": "internal FEA: ARTC-Auto-Script pipeline (model templates -> Abaqus -> GeJsonl.py), PA12/MJF, material props = config.py; file = data_package/feature_data.json (mtime 2026-01-21)",
+   "source_type": "internal_fea",
+   "method": "Abaqus FEA (quasi-static/dynamic explicit)",
+   "date": "2026-01-21"
+  },
+  "comp_EA": {
+   "sample_name": "Kelvin_5_0p4_5",
+   "feature": "comp_EA",
+   "value": 144.575647,
+   "load_mode": "static_compression",
+   "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline"
+  }
+ },
+ "FCC_5_0p4_8": {
+  "structure": {
+   "sample_name": "FCC_5_0p4_8",
+   "json_name": "FCC_5_0p4_8",
+   "csv_name": "FCC_5_0p40000000000000013_8",
+   "topology": "FCC",
+   "cell_size": 5.0,
+   "strut_radius": 0.4,
+   "slider": 8.0,
+   "topology_class": "bending",
+   "density": 0.0977268531811971,
+   "density_fea": 0.0977268531811971,
+   "density_smoothed": 0.114743,
+   "density_source": "fea",
+   "in_json": 1,
+   "in_csv": 1,
+   "quality_flag": "ok",
+   "source": "internal FEA: ARTC-Auto-Script pipeline (model templates -> Abaqus -> GeJsonl.py), PA12/MJF, material props = config.py; file = data_package/feature_data.json (mtime 2026-01-21)",
+   "source_type": "internal_fea",
+   "method": "Abaqus FEA (quasi-static/dynamic explicit)",
+   "date": "2026-01-21"
+  },
+  "comp_EA": {
+   "sample_name": "FCC_5_0p4_8",
+   "feature": "comp_EA",
+   "value": 105.583052,
+   "load_mode": "static_compression",
+   "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline"
+  }
+ },
+ "Octet_truss_5_0p4_0": {
+  "structure": {
+   "sample_name": "Octet_truss_5_0p4_0",
+   "json_name": "Octet_truss_5_0p4_0",
+   "csv_name": "Octet_truss_5_0p40000000000000013_0",
+   "topology": "Octet_truss",
+   "cell_size": 5.0,
+   "strut_radius": 0.4,
+   "slider": 0.0,
+   "topology_class": "stretch",
+   "density": 0.22081074294802,
+   "density_fea": 0.22081074294802,
+   "density_smoothed": 0.236509,
+   "density_source": "fea",
+   "in_json": 1,
+   "in_csv": 1,
+   "quality_flag": "ok",
+   "source": "internal FEA: ARTC-Auto-Script pipeline (model templates -> Abaqus -> GeJsonl.py), PA12/MJF, material props = config.py; file = data_package/feature_data.json (mtime 2026-01-21)",
+   "source_type": "internal_fea",
+   "method": "Abaqus FEA (quasi-static/dynamic explicit)",
+   "date": "2026-01-21"
+  },
+  "comp_EA": {
+   "sample_name": "Octet_truss_5_0p4_0",
+   "feature": "comp_EA",
+   "value": 188.289162,
+   "load_mode": "static_compression",
+   "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline"
+  }
+ },
+ "kelvin_slider5_series": [
+  {
+   "sample_name": "Kelvin_5_0p25_5",
+   "strut_radius": 0.25,
+   "density": 0.061687,
+   "density_source": "smoothed",
+   "quality_flag": "csv_only_no_curves",
+   "comp_EA": 15.593666
+  },
+  {
+   "sample_name": "Kelvin_5_0p275_5",
+   "strut_radius": 0.275,
+   "density": 0.069076,
+   "density_source": "smoothed",
+   "quality_flag": "csv_only_no_curves",
+   "comp_EA": 27.417447
+  },
+  {
+   "sample_name": "Kelvin_5_0p3_5",
+   "strut_radius": 0.3,
+   "density": 0.0829339138173535,
+   "density_source": "fea",
+   "quality_flag": "ok",
+   "comp_EA": 47.203759
+  },
+  {
+   "sample_name": "Kelvin_5_0p32500000000000007_5",
+   "strut_radius": 0.325,
+   "density": 0.096039,
+   "density_source": "smoothed",
+   "quality_flag": "csv_only_no_curves",
+   "comp_EA": 70.591323
+  },
+  {
+   "sample_name": "Kelvin_5_0p35_5",
+   "strut_radius": 0.35,
+   "density": 0.109925010795045,
+   "density_source": "fea",
+   "quality_flag": "ok",
+   "comp_EA": 95.075658
+  },
+  {
+   "sample_name": "Kelvin_5_0p3750000000000001_5",
+   "strut_radius": 0.375,
+   "density": 0.126725,
+   "density_source": "smoothed",
+   "quality_flag": "csv_only_no_curves",
+   "comp_EA": 119.798573
+  },
+  {
+   "sample_name": "Kelvin_5_0p4_5",
+   "strut_radius": 0.4,
+   "density": 0.139713433571385,
+   "density_source": "fea",
+   "quality_flag": "ok",
+   "comp_EA": 144.575647
+  },
+  {
+   "sample_name": "Kelvin_5_0p42500000000000016_5",
+   "strut_radius": 0.425,
+   "density": 0.157593,
+   "density_source": "smoothed",
+   "quality_flag": "csv_only_no_curves",
+   "comp_EA": 169.3747
+  },
+  {
+   "sample_name": "Kelvin_5_0p45_5",
+   "strut_radius": 0.45,
+   "density": 0.171936981851368,
+   "density_source": "fea",
+   "quality_flag": "ok",
+   "comp_EA": 194.157808
+  },
+  {
+   "sample_name": "Kelvin_5_0p4750000000000002_5",
+   "strut_radius": 0.475,
+   "density": 0.188306,
+   "density_source": "smoothed",
+   "quality_flag": "csv_only_no_curves",
+   "comp_EA": 218.725191
+  },
+  {
+   "sample_name": "Kelvin_5_0p5_5",
+   "strut_radius": 0.5,
+   "density": 0.206234119405719,
+   "density_source": "fea",
+   "quality_flag": "ok",
+   "comp_EA": 242.198589
+  },
+  {
+   "sample_name": "Kelvin_5_0p5250000000000002_5",
+   "strut_radius": 0.525,
+   "density": 0.215299,
+   "density_source": "smoothed",
+   "quality_flag": "csv_only_no_curves",
+   "comp_EA": 262.054462
+  },
+  {
+   "sample_name": "Kelvin_5_0p5500000000000003_5",
+   "strut_radius": 0.55,
+   "density": 0.222695,
+   "density_source": "smoothed",
+   "quality_flag": "csv_only_no_curves",
+   "comp_EA": 273.917069
+  }
+ ]
+}

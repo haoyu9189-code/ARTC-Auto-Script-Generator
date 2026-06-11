@@ -1,0 +1,15 @@
+{
+  "key": "lpbf_bracket",
+  "title": "LPBF AlSi10Mg 航空支架点阵填充",
+  "spec": {
+    "process": "LPBF",
+    "material": "AlSi10Mg",
+    "n_cells": 3,
+    "fos_already_applied": true,
+    "fos": 1.5,
+    "confidence_level": "screening",
+    "margin_metric": "comp_EA(库内同单位代理)",
+    "design_value_with_fos": 60.0
+  },
+  "high_risk": true
+}

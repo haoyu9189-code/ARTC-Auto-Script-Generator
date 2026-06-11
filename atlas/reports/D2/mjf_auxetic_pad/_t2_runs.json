@@ -1,0 +1,474 @@
+{
+ "doc1": {
+  "name": "reentrant_xcolumn_pad",
+  "gates": {
+   "passed": true,
+   "gates": {
+    "C1": {
+     "pass": true,
+     "value": {
+      "nodes": 2,
+      "edges": 6
+     },
+     "reason": null,
+     "flags": [],
+     "hard": true
+    },
+    "C2": {
+     "pass": true,
+     "value": {
+      "min_node_distance_mm": 2.0,
+      "closest_pair": [
+       "V0",
+       "V1"
+      ],
+      "hard_limit_mm": 0.225
+     },
+     "reason": null,
+     "flags": [],
+     "hard": true
+    },
+    "C3": {
+     "pass": true,
+     "value": {
+      "quotient_connected": true,
+      "cycle_lattice_index": 1,
+      "snf_diag_111": true,
+      "torus2_components": 1,
+      "torus3_components": 1,
+      "dual_track_consistent": true
+     },
+     "reason": null,
+     "flags": [],
+     "hard": true
+    },
+    "C4": {
+     "pass": true,
+     "value": {
+      "maxwell_M": 6,
+      "tendency": "stretch-leaning",
+      "equilibrium_rank": 3,
+      "mechanisms_est": 0,
+      "self_stress_states": 3,
+      "caveat": "Maxwell/SVD 均为必要非充分,只输出倾向"
+     },
+     "reason": null,
+     "flags": [],
+     "hard": false
+    },
+    "C5": {
+     "pass": true,
+     "value": {
+      "rho_estimate_at_default_r": 0.1351,
+      "total_strut_length_mm": 26.541
+     },
+     "reason": null,
+     "flags": [
+      "一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式"
+     ],
+     "hard": true
+    },
+    "C6": {
+     "pass": true,
+     "value": {
+      "contact_pairs": 15
+     },
+     "reason": null,
+     "flags": [
+      "15 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)"
+     ],
+     "hard": false
+    },
+    "C7": {
+     "pass": true,
+     "value": {
+      "min_strut_diameter_mm": 0.9,
+      "n_narrow_gaps": 24,
+      "min_gap_observed_mm": -0.9
+     },
+     "reason": null,
+     "flags": [
+      "24 对杆净距 ∈ (0.05, 1.0) mm,排粉可行性以 B1 网格级检查为准"
+     ],
+     "hard": true
+    },
+    "C8": {
+     "pass": true,
+     "value": {
+      "nodes": 2,
+      "edges": 6,
+      "limits": [
+       500,
+       2000
+      ]
+     },
+     "reason": null,
+     "flags": [],
+     "hard": true
+    }
+   },
+   "flags": [
+    "C5: 一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式",
+    "C6: 15 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)",
+    "C7: 24 对杆净距 ∈ (0.05, 1.0) mm,排粉可行性以 B1 网格级检查为准"
+   ],
+   "hard_failures": []
+  },
+  "c9": {
+   "gate": "C9_realize",
+   "pass": true,
+   "reason": null,
+   "stats": {
+    "nodes": 2,
+    "edges": 6,
+    "degenerate_edges": 0,
+    "faces": 822,
+    "volume_mm3": 15.7919,
+    "rho_rel": 0.12633
+   },
+   "elapsed_s": 0.0178,
+   "source": "atlas.geometry.realize_graph(manifold3d,双轨水密判据)"
+  },
+  "novelty": {
+   "wl_hash": "90acc0d531ca40071744a2538a375117da681e3e0e84b68356e6282a11d8294d",
+   "duplicate_of": null
+  },
+  "doc": {
+   "schema": "atlas-cell-graph/1.0",
+   "name": "reentrant_xcolumn_pad",
+   "cell": {
+    "size_mm": 5.0
+   },
+   "nodes": [
+    {
+     "id": "V0",
+     "frac": [
+      0.0,
+      0.0,
+      0.3
+     ]
+    },
+    {
+     "id": "V1",
+     "frac": [
+      0.0,
+      0.0,
+      0.7
+     ]
+    }
+   ],
+   "edges": [
+    {
+     "n1": "V0",
+     "n2": "V1",
+     "shift": [
+      0,
+      0,
+      0
+     ],
+     "radius_mm": 0.45
+    },
+    {
+     "n1": "V1",
+     "n2": "V0",
+     "shift": [
+      0,
+      0,
+      1
+     ],
+     "radius_mm": 0.45
+    },
+    {
+     "n1": "V1",
+     "n2": "V0",
+     "shift": [
+      1,
+      0,
+      0
+     ],
+     "radius_mm": 0.45
+    },
+    {
+     "n1": "V1",
+     "n2": "V0",
+     "shift": [
+      -1,
+      0,
+      0
+     ],
+     "radius_mm": 0.45
+    },
+    {
+     "n1": "V1",
+     "n2": "V0",
+     "shift": [
+      0,
+      1,
+      0
+     ],
+     "radius_mm": 0.45
+    },
+    {
+     "n1": "V1",
+     "n2": "V0",
+     "shift": [
+      0,
+      -1,
+      0
+     ],
+     "radius_mm": 0.45
+    }
+   ],
+   "default_radius_mm": 0.45,
+   "free_params": {
+    "radius_mm": {
+     "value": 0.45,
+     "min": 0.4,
+     "max": 0.6,
+     "description": "全局杆半径(MJF d>=0.8 => r>=0.4)"
+    }
+   },
+   "lineage": {
+    "tier": "tier2",
+    "generator": "claude-candidate-generator(D2 mjf_auxetic_pad)",
+    "source": "再入(re-entrant)X 柱胞:角部竖向短柱 + 相邻柱间下行交叉斜杆(bowtie 动机)"
+   }
+  }
+ },
+ "doc2": {
+  "name": "tilted_xcolumn_pad",
+  "gates": {
+   "passed": true,
+   "gates": {
+    "C1": {
+     "pass": true,
+     "value": {
+      "nodes": 2,
+      "edges": 6
+     },
+     "reason": null,
+     "flags": [],
+     "hard": true
+    },
+    "C2": {
+     "pass": true,
+     "value": {
+      "min_node_distance_mm": 2.263846,
+      "closest_pair": [
+       "V0",
+       "V1"
+      ],
+      "hard_limit_mm": 0.225
+     },
+     "reason": null,
+     "flags": [],
+     "hard": true
+    },
+    "C3": {
+     "pass": true,
+     "value": {
+      "quotient_connected": true,
+      "cycle_lattice_index": 1,
+      "snf_diag_111": true,
+      "torus2_components": 1,
+      "torus3_components": 1,
+      "dual_track_consistent": true
+     },
+     "reason": null,
+     "flags": [],
+     "hard": true
+    },
+    "C4": {
+     "pass": true,
+     "value": {
+      "maxwell_M": 6,
+      "tendency": "stretch-leaning",
+      "equilibrium_rank": 3,
+      "mechanisms_est": 0,
+      "self_stress_states": 3,
+      "caveat": "Maxwell/SVD 均为必要非充分,只输出倾向"
+     },
+     "reason": null,
+     "flags": [],
+     "hard": false
+    },
+    "C5": {
+     "pass": true,
+     "value": {
+      "rho_estimate_at_default_r": 0.1386,
+      "total_strut_length_mm": 27.227
+     },
+     "reason": null,
+     "flags": [
+      "一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式"
+     ],
+     "hard": true
+    },
+    "C6": {
+     "pass": true,
+     "value": {
+      "contact_pairs": 15
+     },
+     "reason": null,
+     "flags": [
+      "15 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)"
+     ],
+     "hard": false
+    },
+    "C7": {
+     "pass": true,
+     "value": {
+      "min_strut_diameter_mm": 0.9,
+      "n_narrow_gaps": 14,
+      "min_gap_observed_mm": -0.9
+     },
+     "reason": null,
+     "flags": [
+      "14 对杆净距 ∈ (0.05, 1.0) mm,排粉可行性以 B1 网格级检查为准"
+     ],
+     "hard": true
+    },
+    "C8": {
+     "pass": true,
+     "value": {
+      "nodes": 2,
+      "edges": 6,
+      "limits": [
+       500,
+       2000
+      ]
+     },
+     "reason": null,
+     "flags": [],
+     "hard": true
+    }
+   },
+   "flags": [
+    "C5: 一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式",
+    "C6: 15 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)",
+    "C7: 14 对杆净距 ∈ (0.05, 1.0) mm,排粉可行性以 B1 网格级检查为准"
+   ],
+   "hard_failures": []
+  },
+  "c9": {
+   "gate": "C9_realize",
+   "pass": true,
+   "reason": null,
+   "stats": {
+    "nodes": 2,
+    "edges": 6,
+    "degenerate_edges": 0,
+    "faces": 912,
+    "volume_mm3": 16.1498,
+    "rho_rel": 0.1292
+   },
+   "elapsed_s": 0.0198,
+   "source": "atlas.geometry.realize_graph(manifold3d,双轨水密判据)"
+  },
+  "novelty": {
+   "wl_hash": "1e1904008d2dc616e9bf2ba1dff134451de9564fc9fe36023f479cd76af95be2",
+   "duplicate_of": null
+  },
+  "doc": {
+   "schema": "atlas-cell-graph/1.0",
+   "name": "tilted_xcolumn_pad",
+   "cell": {
+    "size_mm": 5.0
+   },
+   "nodes": [
+    {
+     "id": "V0",
+     "frac": [
+      0.0,
+      0.0,
+      0.3
+     ]
+    },
+    {
+     "id": "V1",
+     "frac": [
+      0.15,
+      0.15,
+      0.7
+     ]
+    }
+   ],
+   "edges": [
+    {
+     "n1": "V0",
+     "n2": "V1",
+     "shift": [
+      0,
+      0,
+      0
+     ],
+     "radius_mm": 0.45
+    },
+    {
+     "n1": "V1",
+     "n2": "V0",
+     "shift": [
+      0,
+      0,
+      1
+     ],
+     "radius_mm": 0.45
+    },
+    {
+     "n1": "V1",
+     "n2": "V0",
+     "shift": [
+      1,
+      0,
+      0
+     ],
+     "radius_mm": 0.45
+    },
+    {
+     "n1": "V1",
+     "n2": "V0",
+     "shift": [
+      -1,
+      0,
+      0
+     ],
+     "radius_mm": 0.45
+    },
+    {
+     "n1": "V1",
+     "n2": "V0",
+     "shift": [
+      0,
+      1,
+      0
+     ],
+     "radius_mm": 0.45
+    },
+    {
+     "n1": "V1",
+     "n2": "V0",
+     "shift": [
+      0,
+      -1,
+      0
+     ],
+     "radius_mm": 0.45
+    }
+   ],
+   "default_radius_mm": 0.45,
+   "free_params": {
+    "radius_mm": {
+     "value": 0.45,
+     "min": 0.4,
+     "max": 0.6,
+     "description": "全局杆半径(MJF d>=0.8 => r>=0.4)"
+    }
+   },
+   "lineage": {
+    "tier": "tier2",
+    "generator": "claude-candidate-generator(D2 mjf_auxetic_pad)",
+    "source": "再入 X 柱胞偏轴变体:柱沿(110)倾斜 (0,0,.3)->(.15,.15,.7),斜杆长度非对称(手性化动机)"
+   }
+  }
+ }
+}

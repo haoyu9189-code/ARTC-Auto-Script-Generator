@@ -29,12 +29,25 @@ def default_param_repair(candidate, trace, spec):
             scale = min(1.5, (1.05 / ratio) ** 0.5)
             geo['radius_mm'] = round(geo.get('radius_mm', 0.5) * scale, 4)
             repaired = True
-    # DfAM 杆径不足 → 抬到工艺下限
-    if '杆径' in reasons or 'min_strut' in reasons:
+    # DfAM 杆径不足 → 抬到工艺下限(含实测节点削薄补偿)
+    # 注意:C2 引擎对该失败的 reason 实文是「硬性检查未过: printability/
+    # printability.measure_min_feature」——D2 真跑发现原匹配词
+    # ('杆径'/'min_strut')对不上引擎口径,修补从未触发(P3-B 修复)。
+    if ('杆径' in reasons or 'min_strut' in reasons
+            or 'measure_min_feature' in reasons):
         from atlas.printability import load_dfam_rules
         process = spec.get('process', 'MJF')
         min_d = load_dfam_rules()[process]['min_strut_diameter_mm']['value']
-        geo['radius_mm'] = max(geo.get('radius_mm', 0.5), min_d / 2 + 0.01)
+        base = geo.get('radius_mm', 0.5)
+        measured = None
+        for ch in trace.get('checks', []):
+            if (ch.get('tool', '').endswith('measure_min_feature')
+                    and isinstance(ch.get('value'), dict)):
+                measured = ch['value'].get('min_mm')
+        # 名义直径 2r 与射线实测 min 的差 = 节点削薄,修补时一并补偿
+        thinning = max(0.0, 2 * base - measured) if measured else 0.0
+        geo['radius_mm'] = round(
+            max(base, (min_d + thinning) / 2 + 0.01), 4)
         repaired = True
     if not repaired:
         return None

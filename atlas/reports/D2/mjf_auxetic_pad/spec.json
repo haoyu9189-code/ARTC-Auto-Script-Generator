@@ -1,0 +1,15 @@
+{
+  "key": "mjf_auxetic_pad",
+  "title": "MJF PA12 auxetic 缓冲垫",
+  "spec": {
+    "process": "MJF",
+    "material": "PA12",
+    "n_cells": 2,
+    "fos_already_applied": true,
+    "fos": 1.3,
+    "confidence_level": "screening",
+    "margin_metric": "comp_EA(库内同单位代理)",
+    "design_value_with_fos": 40.0
+  },
+  "high_risk": false
+}

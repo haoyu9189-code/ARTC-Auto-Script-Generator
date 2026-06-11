@@ -1,0 +1,189 @@
+{
+ "tier1_watertight": {
+  "BCC_s0.0_r0.4": true,
+  "Kelvin_s5.0_r0.4": true,
+  "FCC_s8.0_r0.4": true,
+  "Octet_truss_s0.0_r0.4": true
+ },
+ "tier15": {
+  "watertight": true,
+  "volume_mm3": 35.371385785801166,
+  "rho_geom": 0.2829710862864093,
+  "cellmesh_attrs": [
+   "cell_size",
+   "is_watertight",
+   "manifold",
+   "n",
+   "radius",
+   "slider",
+   "topology",
+   "trimesh",
+   "trimesh_raw",
+   "volume"
+  ]
+ },
+ "tpms": {
+  "ok": true,
+  "watertight": true,
+  "threshold_t": 0.6230337854003908,
+  "rho_achieved": 0.2001202528808202,
+  "elapsed_s": 1.4
+ },
+ "tier2": {
+  "hourglass_bcc_absorber": {
+   "gates": {
+    "passed": true,
+    "per_gate": {
+     "C1": true,
+     "C2": true,
+     "C3": true,
+     "C4": true,
+     "C5": true,
+     "C6": true,
+     "C7": true,
+     "C8": true
+    },
+    "hard_failures": [],
+    "flags": [
+     "C5: 一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式",
+     "C6: 28 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)"
+    ],
+    "C4_value": {
+     "maxwell_M": 6,
+     "tendency": "stretch-leaning",
+     "equilibrium_rank": 6,
+     "mechanisms_est": 0,
+     "self_stress_states": 3,
+     "caveat": "Maxwell/SVD 均为必要非充分,只输出倾向"
+    },
+    "C5_value": {
+     "rho_estimate_at_default_r": 0.1654,
+     "total_strut_length_mm": 32.5
+    },
+    "C7_value": {
+     "min_strut_diameter_mm": 0.9,
+     "n_narrow_gaps": 0,
+     "min_gap_observed_mm": -0.9
+    },
+    "C7_reason": null
+   },
+   "C9": {
+    "gate": "C9_realize",
+    "pass": true,
+    "reason": null,
+    "stats": {
+     "nodes": 3,
+     "edges": 9,
+     "degenerate_edges": 0,
+     "faces": 1188,
+     "volume_mm3": 19.1696,
+     "rho_rel": 0.15336
+    },
+    "elapsed_s": 0.0209,
+    "source": "atlas.geometry.realize_graph(manifold3d,双轨水密判据)"
+   },
+   "rho_geom": 0.1533567279699449,
+   "novelty": {
+    "wl_hash": "b50abd10ab68ce36bd6f74846950ce8f9e6f74821b21b911160371f9394ba151",
+    "duplicate_of": null
+   }
+  },
+  "chiral_offset_hourglass": {
+   "gates": {
+    "passed": true,
+    "per_gate": {
+     "C1": true,
+     "C2": true,
+     "C3": true,
+     "C4": true,
+     "C5": true,
+     "C6": true,
+     "C7": true,
+     "C8": true
+    },
+    "hard_failures": [],
+    "flags": [
+     "C5: 一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式",
+     "C6: 28 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)",
+     "C7: 7 对杆净距 ∈ (0.05, 1.0) mm,排粉可行性以 B1 网格级检查为准"
+    ],
+    "C4_value": {
+     "maxwell_M": 6,
+     "tendency": "stretch-leaning",
+     "equilibrium_rank": 6,
+     "mechanisms_est": 0,
+     "self_stress_states": 3,
+     "caveat": "Maxwell/SVD 均为必要非充分,只输出倾向"
+    },
+    "C5_value": {
+     "rho_estimate_at_default_r": 0.1727,
+     "total_strut_length_mm": 33.939
+    },
+    "C7_value": {
+     "min_strut_diameter_mm": 0.9,
+     "n_narrow_gaps": 7,
+     "min_gap_observed_mm": -0.9
+    },
+    "C7_reason": null
+   },
+   "C9": {
+    "gate": "C9_realize",
+    "pass": true,
+    "reason": null,
+    "stats": {
+     "nodes": 3,
+     "edges": 9,
+     "degenerate_edges": 0,
+     "faces": 1196,
+     "volume_mm3": 19.9376,
+     "rho_rel": 0.1595
+    },
+    "elapsed_s": 0.0211,
+    "source": "atlas.geometry.realize_graph(manifold3d,双轨水密判据)"
+   },
+   "rho_geom": 0.15950082794795992,
+   "novelty": {
+    "wl_hash": "4cd6c46d8da1c4a23b4448db8df2dd2065f3efd0a7e139f7671d4347b657816f",
+    "duplicate_of": null
+   }
+  },
+  "hourglass_lowrho_r035": {
+   "gates": {
+    "passed": false,
+    "per_gate": {
+     "C1": true,
+     "C2": true,
+     "C3": true,
+     "C4": true,
+     "C5": true,
+     "C6": true,
+     "C7": false,
+     "C8": true
+    },
+    "hard_failures": [
+     "C7"
+    ],
+    "flags": [
+     "C5: 一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式",
+     "C6: 28 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)"
+    ],
+    "C4_value": {
+     "maxwell_M": 6,
+     "tendency": "stretch-leaning",
+     "equilibrium_rank": 6,
+     "mechanisms_est": 0,
+     "self_stress_states": 3,
+     "caveat": "Maxwell/SVD 均为必要非充分,只输出倾向"
+    },
+    "C5_value": {
+     "rho_estimate_at_default_r": 0.1001,
+     "total_strut_length_mm": 32.5
+    },
+    "C7_value": {
+     "min_strut_diameter_mm": 0.7
+    },
+    "C7_reason": "杆径 0.70 < SLS 最小 0.8"
+   }
+  }
+ }
+}

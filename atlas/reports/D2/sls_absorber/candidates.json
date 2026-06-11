@@ -1,0 +1,668 @@
+{
+  "candidates": [
+    {
+      "id": "c1",
+      "tier": "1",
+      "geometry": {
+        "topology": "BCC",
+        "slider": 0.0,
+        "radius_mm": 0.4
+      },
+      "rho_rel": 0.108986,
+      "gates": {
+        "applicable": false,
+        "note": "Tier-1 库内结构,C1-C8 图门不适用;generate_cell(n=1) 实现水密=true(本次实测,双轨判据)",
+        "watertight": true
+      },
+      "novelty": {
+        "applicable": false,
+        "note": "库内已知结构(检索复用,非新拓扑)",
+        "duplicate_of": "BCC_5_0p4_0"
+      },
+      "lineage": {
+        "tier": "tier1",
+        "generator": "atlas.retriever.core.query_cell_db(feature=comp_EA, load_mode=static_compression)",
+        "source": "cell DB sample BCC_5_0p4_0",
+        "topology_class_db": "bending",
+        "rho_rel_source": "cell DB structures.density=0.108986 (density_source=fea, quality_flag=ok), sample BCC_5_0p4_0",
+        "margin_metric_evidence": {
+          "metric": "comp_EA(库内同单位代理)",
+          "library_value": 89.8648,
+          "design_value_with_fos": 55.0,
+          "load_mode": "static_compression",
+          "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline",
+          "note": "仅检索值原样转录;力学裁决归 Surrogate/Evaluator"
+        }
+      }
+    },
+    {
+      "id": "c2",
+      "tier": "1",
+      "geometry": {
+        "topology": "Kelvin",
+        "slider": 5.0,
+        "radius_mm": 0.4
+      },
+      "rho_rel": 0.139713433571385,
+      "gates": {
+        "applicable": false,
+        "note": "Tier-1 库内结构,C1-C8 图门不适用;generate_cell(n=1) 实现水密=true(本次实测,双轨判据)",
+        "watertight": true
+      },
+      "novelty": {
+        "applicable": false,
+        "note": "库内已知结构(检索复用,非新拓扑)",
+        "duplicate_of": "Kelvin_5_0p4_5"
+      },
+      "lineage": {
+        "tier": "tier1",
+        "generator": "atlas.retriever.core.query_cell_db(feature=comp_EA, load_mode=static_compression)",
+        "source": "cell DB sample Kelvin_5_0p4_5",
+        "topology_class_db": "bending",
+        "rho_rel_source": "cell DB structures.density=0.139713433571385 (density_source=fea, quality_flag=ok), sample Kelvin_5_0p4_5",
+        "margin_metric_evidence": {
+          "metric": "comp_EA(库内同单位代理)",
+          "library_value": 144.575647,
+          "design_value_with_fos": 55.0,
+          "load_mode": "static_compression",
+          "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline",
+          "note": "仅检索值原样转录;力学裁决归 Surrogate/Evaluator"
+        }
+      }
+    },
+    {
+      "id": "c3",
+      "tier": "1",
+      "geometry": {
+        "topology": "FCC",
+        "slider": 8.0,
+        "radius_mm": 0.4
+      },
+      "rho_rel": 0.097727,
+      "gates": {
+        "applicable": false,
+        "note": "Tier-1 库内结构,C1-C8 图门不适用;generate_cell(n=1) 实现水密=true(本次实测,双轨判据)",
+        "watertight": true
+      },
+      "novelty": {
+        "applicable": false,
+        "note": "库内已知结构(检索复用,非新拓扑)",
+        "duplicate_of": "FCC_5_0p4_8"
+      },
+      "lineage": {
+        "tier": "tier1",
+        "generator": "atlas.retriever.core.query_cell_db(feature=comp_EA, load_mode=static_compression)",
+        "source": "cell DB sample FCC_5_0p4_8",
+        "topology_class_db": "bending",
+        "rho_rel_source": "cell DB structures.density=0.097727 (density_source=fea, quality_flag=ok), sample FCC_5_0p4_8",
+        "margin_metric_evidence": {
+          "metric": "comp_EA(库内同单位代理)",
+          "library_value": 105.5831,
+          "design_value_with_fos": 55.0,
+          "load_mode": "static_compression",
+          "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline",
+          "note": "仅检索值原样转录;力学裁决归 Surrogate/Evaluator"
+        }
+      }
+    },
+    {
+      "id": "c4",
+      "tier": "1",
+      "geometry": {
+        "topology": "Octet_truss",
+        "slider": 0.0,
+        "radius_mm": 0.4
+      },
+      "rho_rel": 0.220811,
+      "gates": {
+        "applicable": false,
+        "note": "Tier-1 库内结构,C1-C8 图门不适用;generate_cell(n=1) 实现水密=true(本次实测,双轨判据)",
+        "watertight": true
+      },
+      "novelty": {
+        "applicable": false,
+        "note": "库内已知结构(检索复用,非新拓扑)",
+        "duplicate_of": "Octet_truss_5_0p4_0"
+      },
+      "lineage": {
+        "tier": "tier1",
+        "generator": "atlas.retriever.core.query_cell_db(feature=comp_EA, load_mode=static_compression)",
+        "source": "cell DB sample Octet_truss_5_0p4_0",
+        "topology_class_db": "stretch",
+        "rho_rel_source": "cell DB structures.density=0.220811 (density_source=fea, quality_flag=ok), sample Octet_truss_5_0p4_0",
+        "margin_metric_evidence": {
+          "metric": "comp_EA(库内同单位代理)",
+          "library_value": 188.2892,
+          "design_value_with_fos": 55.0,
+          "load_mode": "static_compression",
+          "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline",
+          "note": "仅检索值原样转录;力学裁决归 Surrogate/Evaluator"
+        }
+      }
+    },
+    {
+      "id": "c5",
+      "tier": "1.5",
+      "geometry": {
+        "topology": "Kelvin",
+        "slider": 5.0,
+        "radius_mm": 0.4375
+      },
+      "rho_rel": 0.1647,
+      "gates": {
+        "applicable": false,
+        "note": "Tier-1.5 连续插值(free_params.radius_mm 域 [0.25,0.55] 内);generate_cell(Kelvin, slider=5.0, radius=0.4375, n=1) 实现水密=true(本次实测,双轨判据)",
+        "watertight": true
+      },
+      "novelty": {
+        "applicable": false,
+        "note": "已知拓扑的连续参数插值,非新拓扑(半径不入 WL 哈希)",
+        "duplicate_of": null
+      },
+      "lineage": {
+        "tier": "tier1.5",
+        "generator": "atlas.geometry.generate_cell 半径插值(库网格 0.425/0.45 之间的离网点)",
+        "source": "atlas.retriever.core nearest neighbors (topology=Kelvin, slider=5.0)",
+        "rho_rel_source": "r^2 标度线性插值于库内邻点:Kelvin_5_0p42500000000000016_5 density=0.157593 (smoothed, csv_only_no_curves) 与 Kelvin_5_0p45_5 density=0.171936981851368 (fea, ok) => rho(0.4375)~0.1647;括号 [0.1576, 0.1719]",
+        "margin_metric_evidence": {
+          "metric": "comp_EA(库内同单位代理)",
+          "library_bracket": [
+            169.3747,
+            194.157808
+          ],
+          "bracket_samples": [
+            "Kelvin_5_0p42500000000000016_5 (smoothed)",
+            "Kelvin_5_0p45_5 (fea/ok)"
+          ],
+          "design_value_with_fos": 55.0,
+          "source": "internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline",
+          "note": "仅给库内括号值,插值点 EA 由 Surrogate 评估"
+        },
+        "caveat": "n=1 未裁剪网格体积分数不可比(边界节点外凸),故 rho_rel 取库内插值而非网格实测"
+      }
+    },
+    {
+      "id": "c6",
+      "tier": "1.75",
+      "geometry": {
+        "tpms": {
+          "type": "gyroid",
+          "variant": "sheet",
+          "rho_target": 0.2,
+          "threshold_t": 0.6230337854003908,
+          "cell_size_mm": 5.0
+        }
+      },
+      "rho_rel": 0.2001202528808202,
+      "gates": {
+        "applicable": false,
+        "note": "TPMS 走定标管线而非图门;generate_tpms_at_density(gyroid, sheet, 0.20) 定标误差 0.06% (<2% tol),实现水密=true(双轨判据);sheet 定标域 rho>=0.15 满足",
+        "watertight": true,
+        "density_calibration": {
+          "rho_target": 0.2,
+          "rho_achieved": 0.2001202528808202,
+          "tol": 0.02
+        }
+      },
+      "novelty": {
+        "applicable": false,
+        "note": "已知 TPMS 族(gyroid/sheet,5 族 x 2 变体词汇表内),非新拓扑",
+        "duplicate_of": null
+      },
+      "lineage": {
+        "tier": "tier1.75",
+        "generator": "atlas.geometry.tpms.generate_tpms_at_density",
+        "source": "TPMS 公式为标准形式(Schoen 1970);PA12 TPMS 文献对照锚 Chen 2023 (DOI 10.1039/D2MA00972B)",
+        "rho_rel_source": "定标管线 rho_achieved=0.20012(manifold3d level_set 体积分数,确定性)",
+        "margin_metric_evidence": {
+          "metric": "comp_EA(库内同单位代理)",
+          "library_value": null,
+          "design_value_with_fos": 55.0,
+          "note": "TPMS 不在 cell DB(OOD,nearest_by_density 显式拒绝);无库内代理值,力学评估归物理计算裁判"
+        }
+      }
+    },
+    {
+      "id": "c7",
+      "tier": "2",
+      "geometry": {
+        "graph_doc": {
+          "schema": "atlas-cell-graph/1.0",
+          "name": "hourglass_bcc_absorber",
+          "cell": {
+            "size_mm": 5.0
+          },
+          "nodes": [
+            {
+              "id": "A",
+              "frac": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "id": "B1",
+              "frac": [
+                0.5,
+                0.5,
+                0.25
+              ]
+            },
+            {
+              "id": "B2",
+              "frac": [
+                0.5,
+                0.5,
+                0.75
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "n1": "B1",
+              "n2": "A",
+              "shift": [
+                0,
+                0,
+                0
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B1",
+              "n2": "A",
+              "shift": [
+                1,
+                0,
+                0
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B1",
+              "n2": "A",
+              "shift": [
+                0,
+                1,
+                0
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B1",
+              "n2": "A",
+              "shift": [
+                1,
+                1,
+                0
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B2",
+              "n2": "A",
+              "shift": [
+                0,
+                0,
+                1
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B2",
+              "n2": "A",
+              "shift": [
+                1,
+                0,
+                1
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B2",
+              "n2": "A",
+              "shift": [
+                0,
+                1,
+                1
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B2",
+              "n2": "A",
+              "shift": [
+                1,
+                1,
+                1
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B1",
+              "n2": "B2",
+              "shift": [
+                0,
+                0,
+                0
+              ],
+              "radius_mm": 0.45
+            }
+          ],
+          "default_radius_mm": 0.45,
+          "free_params": {
+            "radius_mm": {
+              "value": 0.45,
+              "min": 0.4,
+              "max": 0.6,
+              "description": "全局杆半径(SLS d>=0.8 => r>=0.4)"
+            }
+          },
+          "lineage": {
+            "tier": "tier2",
+            "generator": "claude-candidate-generator(D2 sls_absorber)",
+            "source": "沙漏(双锥)胞:上下各4根斜杆汇聚于轴向短柱;中心节点沿z拆分为双节点的新四方点列(非BCC变形)"
+          },
+          "novelty": {
+            "wl_hash": "b50abd10ab68ce36bd6f74846950ce8f9e6f74821b21b911160371f9394ba151",
+            "duplicate_of": null
+          }
+        }
+      },
+      "rho_rel": 0.15336,
+      "gates": {
+        "passed": true,
+        "per_gate": {
+          "C1": true,
+          "C2": true,
+          "C3": true,
+          "C4": true,
+          "C5": true,
+          "C6": true,
+          "C7": true,
+          "C8": true
+        },
+        "hard_failures": [],
+        "flags": [
+          "C5: 一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式",
+          "C6: 28 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)"
+        ],
+        "C4_tendency": {
+          "maxwell_M": 6,
+          "tendency": "stretch-leaning",
+          "mechanisms_est": 0,
+          "self_stress_states": 3,
+          "caveat": "Maxwell/SVD 均为必要非充分,只输出倾向(gate 原话转录,非本 agent 力学判断)"
+        },
+        "C5_rho_estimate_at_default_r": 0.1654,
+        "C7": {
+          "min_strut_diameter_mm": 0.9,
+          "process": "SLS",
+          "n_narrow_gaps": 0
+        },
+        "C9_realize": {
+          "pass": true,
+          "watertight": true,
+          "faces": 1188,
+          "volume_mm3": 19.1696,
+          "rho_rel": 0.15336,
+          "source": "atlas.geometry.realize_graph(manifold3d,双轨水密判据)"
+        }
+      },
+      "novelty": {
+        "wl_hash": "b50abd10ab68ce36bd6f74846950ce8f9e6f74821b21b911160371f9394ba151",
+        "duplicate_of": null,
+        "wording": "ATLAS 索引范围内未发现重复(24 种子 + 既有 proposals 已注册;WL 为必要非充分判据)"
+      },
+      "lineage": {
+        "tier": "tier2",
+        "generator": "claude-candidate-generator(D2 sls_absorber)",
+        "rho_rel_source": "realize_graph C9 stats rho_rel=0.15336(n=1 网格体积分数,manifold3d)",
+        "margin_metric_evidence": {
+          "metric": "comp_EA(库内同单位代理)",
+          "library_value": null,
+          "design_value_with_fos": 55.0,
+          "note": "新图不在 cell DB(OOD);无库内代理值,力学评估归物理计算裁判"
+        },
+        "source": "沙漏(双锥)胞:中心节点沿 z 拆分为双节点,上下各 4 斜杆 + 轴向短柱"
+      }
+    },
+    {
+      "id": "c8",
+      "tier": "2",
+      "geometry": {
+        "graph_doc": {
+          "schema": "atlas-cell-graph/1.0",
+          "name": "chiral_offset_hourglass",
+          "cell": {
+            "size_mm": 5.0
+          },
+          "nodes": [
+            {
+              "id": "A",
+              "frac": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "id": "B1",
+              "frac": [
+                0.35,
+                0.35,
+                0.25
+              ]
+            },
+            {
+              "id": "B2",
+              "frac": [
+                0.65,
+                0.65,
+                0.75
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "n1": "B1",
+              "n2": "A",
+              "shift": [
+                0,
+                0,
+                0
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B1",
+              "n2": "A",
+              "shift": [
+                1,
+                0,
+                0
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B1",
+              "n2": "A",
+              "shift": [
+                0,
+                1,
+                0
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B1",
+              "n2": "A",
+              "shift": [
+                1,
+                1,
+                0
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B2",
+              "n2": "A",
+              "shift": [
+                0,
+                0,
+                1
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B2",
+              "n2": "A",
+              "shift": [
+                1,
+                0,
+                1
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B2",
+              "n2": "A",
+              "shift": [
+                0,
+                1,
+                1
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B2",
+              "n2": "A",
+              "shift": [
+                1,
+                1,
+                1
+              ],
+              "radius_mm": 0.45
+            },
+            {
+              "n1": "B1",
+              "n2": "B2",
+              "shift": [
+                0,
+                0,
+                0
+              ],
+              "radius_mm": 0.45
+            }
+          ],
+          "default_radius_mm": 0.45,
+          "free_params": {
+            "radius_mm": {
+              "value": 0.45,
+              "min": 0.4,
+              "max": 0.6,
+              "description": "全局杆半径(SLS d>=0.8 => r>=0.4)"
+            }
+          },
+          "lineage": {
+            "tier": "tier2",
+            "generator": "claude-candidate-generator(D2 sls_absorber)",
+            "source": "沙漏胞偏轴变体:双中心节点沿(110)方向错位,杆长非对称分布 2.77-4.76mm,WL哈希独立于对称沙漏",
+            "parents": [
+              "hourglass_bcc_absorber"
+            ]
+          },
+          "novelty": {
+            "wl_hash": "4cd6c46d8da1c4a23b4448db8df2dd2065f3efd0a7e139f7671d4347b657816f",
+            "duplicate_of": null
+          }
+        }
+      },
+      "rho_rel": 0.1595,
+      "gates": {
+        "passed": true,
+        "per_gate": {
+          "C1": true,
+          "C2": true,
+          "C3": true,
+          "C4": true,
+          "C5": true,
+          "C6": true,
+          "C7": true,
+          "C8": true
+        },
+        "hard_failures": [],
+        "flags": [
+          "C5: 一阶估算忽略节点重叠(高估),定稿密度用 mesh 模式",
+          "C6: 28 对杆贴合/交叉(熔合,改变有效拓扑,Maxwell/力学倾向按熔合后解读)",
+          "C7: 7 对杆净距 in (0.05, 1.0) mm,排粉可行性以 B1 网格级检查为准"
+        ],
+        "C4_tendency": {
+          "maxwell_M": 6,
+          "tendency": "stretch-leaning",
+          "mechanisms_est": 0,
+          "self_stress_states": 3,
+          "caveat": "Maxwell/SVD 均为必要非充分,只输出倾向(gate 原话转录,非本 agent 力学判断)"
+        },
+        "C5_rho_estimate_at_default_r": 0.1727,
+        "C7": {
+          "min_strut_diameter_mm": 0.9,
+          "process": "SLS",
+          "n_narrow_gaps": 7
+        },
+        "C9_realize": {
+          "pass": true,
+          "watertight": true,
+          "faces": 1196,
+          "volume_mm3": 19.9376,
+          "rho_rel": 0.1595,
+          "source": "atlas.geometry.realize_graph(manifold3d,双轨水密判据)"
+        }
+      },
+      "novelty": {
+        "wl_hash": "4cd6c46d8da1c4a23b4448db8df2dd2065f3efd0a7e139f7671d4347b657816f",
+        "duplicate_of": null,
+        "wording": "ATLAS 索引范围内未发现重复(24 种子 + 既有 proposals + 本批 c7 已注册;WL 为必要非充分判据)"
+      },
+      "lineage": {
+        "tier": "tier2",
+        "generator": "claude-candidate-generator(D2 sls_absorber)",
+        "rho_rel_source": "realize_graph C9 stats rho_rel=0.1595(n=1 网格体积分数,manifold3d)",
+        "margin_metric_evidence": {
+          "metric": "comp_EA(库内同单位代理)",
+          "library_value": null,
+          "design_value_with_fos": 55.0,
+          "note": "新图不在 cell DB(OOD);无库内代理值,力学评估归物理计算裁判"
+        },
+        "source": "沙漏胞偏轴变体:双中心沿 (110) 错位,杆长非对称 2.77-4.76mm",
+        "parents": [
+          "c7/hourglass_bcc_absorber"
+        ]
+      }
+    }
+  ],
+  "killed": [
+    {
+      "proposal": "hourglass_lowrho_r035(沙漏胞 r=0.35mm,目标 rho~0.10 追低密度)",
+      "reason": "C7 硬门杀:杆径 0.70 < SLS 最小 0.8(min_strut_diameter_mm=0.8,d=2r=0.7mm);C5 一阶密度 0.1001 表明该拓扑达 rho~0.10 必须 r=0.35,与 SLS DfAM 下限冲突——该密度区间对本拓扑在 SLS 不可达",
+      "tier_attempted": "2",
+      "gates": {
+        "passed": false,
+        "hard_failures": [
+          "C7"
+        ],
+        "per_gate": {
+          "C1": true,
+          "C2": true,
+          "C3": true,
+          "C4": true,
+          "C5": true,
+          "C6": true,
+          "C7": false,
+          "C8": true
+        }
+      }
+    }
+  ]
+}

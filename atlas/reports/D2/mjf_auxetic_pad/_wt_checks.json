@@ -1,0 +1,86 @@
+{
+ "Auxetic_8.0_0.4": {
+  "n1": {
+   "watertight_dual": true,
+   "manifold_ok": true,
+   "raw_wt": true,
+   "welded_wt": true
+  },
+  "n2": {
+   "watertight_dual": false,
+   "manifold_ok": true,
+   "raw_wt": true,
+   "welded_wt": false
+  }
+ },
+ "Auxetic_5.0_0.4": {
+  "n1": {
+   "watertight_dual": true,
+   "manifold_ok": true,
+   "raw_wt": true,
+   "welded_wt": true
+  },
+  "n2": {
+   "watertight_dual": false,
+   "manifold_ok": true,
+   "raw_wt": true,
+   "welded_wt": false
+  }
+ },
+ "Diamond_8.0_0.4": {
+  "n1": {
+   "watertight_dual": true,
+   "manifold_ok": true,
+   "raw_wt": true,
+   "welded_wt": true
+  },
+  "n2": {
+   "watertight_dual": true,
+   "manifold_ok": true,
+   "raw_wt": true,
+   "welded_wt": true
+  }
+ },
+ "Truncated_cube_7.0_0.4": {
+  "n1": {
+   "watertight_dual": true,
+   "manifold_ok": true,
+   "raw_wt": true,
+   "welded_wt": true
+  },
+  "n2": {
+   "watertight_dual": false,
+   "manifold_ok": true,
+   "raw_wt": true,
+   "welded_wt": false
+  }
+ },
+ "BCC_0.0_0.4": {
+  "n1": {
+   "watertight_dual": true,
+   "manifold_ok": true,
+   "raw_wt": true,
+   "welded_wt": true
+  },
+  "n2": {
+   "watertight_dual": true,
+   "manifold_ok": true,
+   "raw_wt": true,
+   "welded_wt": true
+  }
+ },
+ "Auxetic_8.0_0.4125": {
+  "n1": {
+   "watertight_dual": true,
+   "manifold_ok": true,
+   "raw_wt": true,
+   "welded_wt": true
+  },
+  "n2": {
+   "watertight_dual": true,
+   "manifold_ok": true,
+   "raw_wt": true,
+   "welded_wt": true
+  }
+ }
+}

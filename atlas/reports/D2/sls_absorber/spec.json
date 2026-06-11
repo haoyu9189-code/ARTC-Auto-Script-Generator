@@ -1,0 +1,15 @@
+{
+  "key": "sls_absorber",
+  "title": "SLS PA12 吸能缓冲块",
+  "spec": {
+    "process": "SLS",
+    "material": "PA12",
+    "n_cells": 4,
+    "fos_already_applied": true,
+    "fos": 1.3,
+    "confidence_level": "screening",
+    "margin_metric": "comp_EA(库内同单位代理)",
+    "design_value_with_fos": 55.0
+  },
+  "high_risk": false
+}
