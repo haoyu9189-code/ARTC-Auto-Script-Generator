@@ -15,7 +15,7 @@ export PYTHONDONTWRITEBYTECODE=1
 #   qsub run.pbs
 # ============================================================
 JOB_NAME="twin_offset_web_5_0p5_4_StaCompre"
-WORK_DIR="atlas\reports\tier_d_jobs\twin_offset_web"
+WORK_DIR="D:\ARTC\ARTC-Auto-Script\atlas\reports\tier_d_jobs\twin_offset_web"
 
 cd "$WORK_DIR"
 

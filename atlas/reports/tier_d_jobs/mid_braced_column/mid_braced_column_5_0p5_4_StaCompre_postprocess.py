@@ -158,7 +158,7 @@ try:
 
     xy_combined = combine(abs(xy_disp), abs(xy_force))
 
-    os.chdir(r"atlas\reports\tier_d_jobs\mid_braced_column")
+    os.chdir(r"D:\ARTC\ARTC-Auto-Script\atlas\reports\tier_d_jobs\mid_braced_column")
 
     density = 0.0
     try:

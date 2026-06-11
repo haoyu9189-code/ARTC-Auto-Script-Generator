@@ -1,0 +1,22 @@
+﻿# ABAQUS 求解过程产物(本地运行,不入库;结果文件 feature_data/energy_data 保留追踪)
+*.odb
+*.inp
+*.sta
+*.msg
+*.prt
+*.com
+*.sim
+*.stt
+*.abq
+*.pac
+*.res
+*.sel
+*.dat
+*.lck
+*.log
+*.rpy*
+*.rec
+*.023
+*.mdl
+density_temp.txt
+abaqus_*.env

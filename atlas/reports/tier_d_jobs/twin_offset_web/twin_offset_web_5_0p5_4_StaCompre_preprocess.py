@@ -583,7 +583,7 @@ mdb.models['Model-1'].fieldOutputRequests['F-Output-1'].setValues(frequency=3)
 
 JOB_NAME = 'twin_offset_web_5_0p5_4_StaCompre'
 
-os.chdir(r"atlas\reports\tier_d_jobs\twin_offset_web")
+os.chdir(r"D:\ARTC\ARTC-Auto-Script\atlas\reports\tier_d_jobs\twin_offset_web")
 
 mdb.Job(name=JOB_NAME, model='Model-1', description='', type=ANALYSIS,
     atTime=None, waitMinutes=0, waitHours=0, queue=None, memory=90,

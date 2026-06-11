@@ -20,6 +20,6 @@ checks = results_to_checks(job_dir, spec)  # → judge() 可消费
 
 ## 已知限定
 
-- 管线为单半径:CMA-ES polish 的 radii_groups 不可表示,按均匀 default_radius_mm=0.5 生成——冠军分数中的逐组半径增益不在本次 Tier-D 测试内
-- 管线为单半径:CMA-ES polish 的 radii_groups 不可表示,按均匀 default_radius_mm=0.5 生成——冠军分数中的逐组半径增益不在本次 Tier-D 测试内
-- 管线为单半径:CMA-ES polish 的 radii_groups 不可表示,按均匀 default_radius_mm=0.5 生成——冠军分数中的逐组半径增益不在本次 Tier-D 测试内
+- 管线为单半径:逐杆/逐组半径不可表示,按均匀 default_radius_mm=0.5 生成
+- 管线为单半径:逐杆/逐组半径不可表示,按均匀 default_radius_mm=0.5 生成
+- 管线为单半径:逐杆/逐组半径不可表示,按均匀 default_radius_mm=0.5 生成

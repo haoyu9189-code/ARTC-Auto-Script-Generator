@@ -576,7 +576,7 @@ mdb.models['Model-1'].fieldOutputRequests['F-Output-1'].setValues(frequency=3)
 
 JOB_NAME = 'PSCZ_pillar_steepcross_5_0p588_4_StaCompre'
 
-os.chdir(r"atlas\reports\tier_d_jobs\pscz_lpbf")
+os.chdir(r"D:\ARTC\ARTC-Auto-Script\atlas\reports\tier_d_jobs\pscz_lpbf")
 
 mdb.Job(name=JOB_NAME, model='Model-1', description='', type=ANALYSIS,
     atTime=None, waitMinutes=0, waitHours=0, queue=None, memory=90,

@@ -15,7 +15,7 @@ export PYTHONDONTWRITEBYTECODE=1
 #   qsub run.pbs
 # ============================================================
 JOB_NAME="mid_braced_column_5_0p5_4_StaCompre"
-WORK_DIR="atlas\reports\tier_d_jobs\mid_braced_column"
+WORK_DIR="D:\ARTC\ARTC-Auto-Script\atlas\reports\tier_d_jobs\mid_braced_column"
 
 cd "$WORK_DIR"
 

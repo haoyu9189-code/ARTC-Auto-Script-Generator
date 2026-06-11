@@ -1,0 +1,48 @@
+[
+  {
+    "dimension": "mechanics",
+    "tool": "abaqus.energy_gate",
+    "value": 0.001634,
+    "threshold": 0.05,
+    "pass": true,
+    "source": "Abaqus Analysis User's Guide — quasi-static energy balance criterion(ALLKE ≤ ~5% ALLIE)",
+    "source_type": "vendor",
+    "status": "computed",
+    "caveats": [
+      "ratio 仅在 ALLIE≥1% 终值区间取最大(初期噪声不计)"
+    ]
+  },
+  {
+    "dimension": "mechanics",
+    "tool": "abaqus.sta_compre.stiffness",
+    "value": 33.390486,
+    "threshold": null,
+    "pass": null,
+    "source": "ABAQUS Tier-D StaCompre ODB(twin_offset_web_5_0p5_4_StaCompre),0–0.1mm 窗与 P2-1c 标定同口径",
+    "source_type": "abaqus_fea",
+    "status": "computed",
+    "caveats": [
+      "管线为单半径:逐杆/逐组半径不可表示,按均匀 default_radius_mm=0.5 生成",
+      "analysis_type=StaCompre;剪切需 X 旋转适配,不支持",
+      "polish.radii_groups 共 2 组,已忽略——冠军分数中的逐组半径增益不在本次测试内"
+    ],
+    "margin_eligible": true
+  },
+  {
+    "dimension": "mechanics",
+    "tool": "abaqus.sta_compre.comp_EA",
+    "value": 54.064127,
+    "threshold": null,
+    "pass": null,
+    "source": "ABAQUS Tier-D StaCompre ODB(twin_offset_web_5_0p5_4_StaCompre),∫F·dδ 全可用曲线(末位移 3.001mm)",
+    "source_type": "abaqus_fea",
+    "status": "computed",
+    "caveats": [
+      "管线为单半径:逐杆/逐组半径不可表示,按均匀 default_radius_mm=0.5 生成",
+      "analysis_type=StaCompre;剪切需 X 旋转适配,不支持",
+      "polish.radii_groups 共 2 组,已忽略——冠军分数中的逐组半径增益不在本次测试内",
+      "积分窗=可用曲线全程,与 DB comp_EA 窗口径需对照后比较"
+    ],
+    "margin_eligible": false
+  }
+]
