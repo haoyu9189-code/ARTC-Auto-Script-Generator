@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>ATLAS 选型报告 · __CASE_TITLE__</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Big+Shoulders+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --amber:#b87700; --amber-bright:#e09600; --ink:#1a2129; --dim:#5a6772;
+  --faint:#9aa6b0; --line:#d8dde2; --line2:#eceff2; --green:#1e8a5f;
+  --red:#c43d3d; --bg-soft:#f7f8f9;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+  --disp:'Big Shoulders Display',var(--sans);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+@page{size:A4;margin:0}
+html,body{background:#e8eaec}
+.sheet{
+  width:210mm;min-height:297mm;margin:8mm auto;background:#fff;
+  padding:11mm 12mm 9mm;position:relative;color:var(--ink);
+  font-family:var(--sans);font-size:8.6pt;line-height:1.4;
+  box-shadow:0 2px 18px rgba(0,0,0,.18);
+  display:flex;flex-direction:column;
+}
+@media print{
+  html,body{background:#fff}
+  .sheet{margin:0;box-shadow:none;width:auto;min-height:auto}
+}
+/* ── 抬头 ── */
+.mast{display:flex;align-items:flex-start;gap:6mm;border-bottom:1.2pt solid var(--ink);padding-bottom:3mm}
+.mast .logo{font-family:var(--disp);font-weight:900;font-size:23pt;color:var(--amber);line-height:.85}
+.mast .logo small{display:block;font-family:var(--mono);font-weight:400;font-size:5pt;letter-spacing:.26em;color:var(--dim);margin-top:1.2mm}
+.mast .title{flex:1}
+.mast .title h1{font-size:13pt;font-weight:600;letter-spacing:.01em}
+.mast .title .specline{font-family:var(--mono);font-size:6.6pt;color:var(--dim);margin-top:1mm;letter-spacing:.04em}
+.mast .meta{text-align:right;font-family:var(--mono);font-size:6.4pt;color:var(--dim);line-height:1.7}
+.badge-risk{display:inline-block;font-family:var(--mono);font-size:6.5pt;color:var(--red);border:1pt solid var(--red);padding:.6mm 2mm;letter-spacing:.12em;margin-top:1mm}
+/* ── 栅格 ── */
+.grid{display:grid;grid-template-columns:7fr 5fr;gap:5mm;margin-top:4mm}
+h2{font-family:var(--mono);font-weight:600;font-size:7pt;letter-spacing:.2em;color:var(--amber);border-bottom:.6pt solid var(--line);padding-bottom:1mm;margin-bottom:2mm}
+h2 i{font-style:normal;float:right;color:var(--faint);letter-spacing:.06em}
+/* 推荐表 */
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:7pt}
+th{text-align:left;color:var(--dim);font-weight:500;letter-spacing:.06em;border-bottom:.7pt solid var(--ink);padding:.8mm 1mm}
+td{padding:1.2mm 1mm;border-bottom:.4pt solid var(--line2);vertical-align:middle}
+tr.winner td{background:rgba(224,150,0,.07)}
+.vd{font-size:6.2pt;letter-spacing:.1em;padding:.4mm 1.6mm;border:.7pt solid}
+.vd.PASS{color:var(--green);border-color:var(--green)}
+.vd.FAIL{color:var(--red);border-color:var(--red)}
+.vd.SCREENING_PASS{color:var(--amber);border-color:var(--amber)}
+.mbar{width:22mm;height:2.2mm;background:var(--line2);position:relative;display:inline-block;vertical-align:middle}
+.mbar i{position:absolute;inset:0 auto 0 0;display:block}
+.mbar b{position:absolute;top:-0.7mm;bottom:-0.7mm;left:50%;width:.5pt;background:var(--ink)}
+.note{font-size:6.6pt;color:var(--dim);margin-top:1.5mm;line-height:1.45}
+/* 线框图 */
+.wire{border:.6pt solid var(--line);background:var(--bg-soft);padding:2mm;text-align:center}
+.wire svg{width:100%;height:46mm}
+.wire .cap{font-family:var(--mono);font-size:6.2pt;color:var(--dim);margin-top:1mm;letter-spacing:.06em}
+/* 机理表 */
+.kv{display:flex;justify-content:space-between;font-family:var(--mono);font-size:6.8pt;padding:1mm 0;border-bottom:.4pt solid var(--line2)}
+.kv .k{color:var(--dim)}
+.kv .v b{color:var(--amber);font-weight:600}
+/* trace */
+.trace{margin-top:4mm}
+.trace table{font-size:6.2pt}
+.trace td{padding:.8mm 1mm}
+.trace .src{color:var(--faint);font-size:5.8pt}
+.ok{color:var(--green)}.no{color:var(--red)}.info{color:var(--faint)}
+/* 来源 */
+.sources{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3mm;margin-top:4mm;font-size:6.2pt}
+.sources h3{font-family:var(--mono);font-size:6.2pt;letter-spacing:.14em;color:var(--dim);margin-bottom:1mm}
+.sources ul{list-style:none}
+.sources li{padding:.5mm 0;border-bottom:.3pt dotted var(--line);color:var(--ink);line-height:1.35}
+.sources .inf li{color:var(--red)}
+/* 页脚 */
+footer{margin-top:auto;border-top:1.2pt solid var(--ink);padding-top:2mm;
+  font-family:var(--mono);font-size:5.9pt;color:var(--dim);line-height:1.7;
+  display:flex;gap:5mm;align-items:flex-end}
+footer .disc{flex:1}
+footer .disc b{color:var(--ink)}
+footer .pg{white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="mast">
+    <div class="logo">ATLAS<small>LATTICE SELECTION REPORT</small></div>
+    <div class="title">
+      <h1>__CASE_TITLE__</h1>
+      <div class="specline">__SPEC_LINE__</div>
+      __RISK_BADGE__
+    </div>
+    <div class="meta">REPORT __CASE_KEY__<br>DATE __DATE__<br>PIPELINE D1-ACCEPT · 257+ TESTS</div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <h2>推荐表 <i>MARGIN = PRED / DESIGN(已含 FoS,不二次乘)· GATE 1.0</i></h2>
+      <table>
+        <tr><th>候选</th><th>Tier</th><th>拓扑</th><th>ρ̄</th><th>margin</th><th></th><th>判决</th></tr>
+        __CAND_ROWS__
+      </table>
+      <div class="note">__MARGIN_NOTE__</div>
+      <div class="trace">
+        <h2>验证 TRACE(冠选候选,每个数字可溯源)<i>__TRACE_WHO__</i></h2>
+        <table>
+          <tr><th>维度</th><th>工具</th><th>值</th><th></th><th>来源</th></tr>
+          __TRACE_ROWS__
+        </table>
+      </div>
+    </div>
+    <div>
+      <h2>几何 <i>__WIRE_NAME__</i></h2>
+      <div class="wire">__WIRE_SVG__<div class="cap">__WIRE_CAP__</div></div>
+      <h2 style="margin-top:3mm">力学要点 <i>SCREENING</i></h2>
+      __KV_ROWS__
+    </div>
+  </div>
+
+  <div class="sources">
+    <div><h3>学术文献(DOI)</h3><ul>__SRC_DOI__</ul></div>
+    <div><h3>厂商标准 / 内部数据</h3><ul>__SRC_VENDOR__</ul></div>
+    <div class="inf"><h3>标记推测(已降级)</h3><ul>__SRC_INF__</ul></div>
+  </div>
+
+  <footer>
+    <div class="disc"><b>免责声明</b> 本报告为计算与数据库辅助选型,最终设计须经实物压缩测试验证。推荐为 <b>database-wide(数据库范围内)</b>最优,不主张绝对全局最优;快速档数值为 screening 级;Tier-2 库外生成结论与库内检索分层呈现。__EXTRA_FOOT__</div>
+    <div class="pg">PAGE 1 / 1<br>ATLAS · NTU SC3DP × A*STAR ARTC</div>
+  </footer>
+</div>
+</body>
+</html>
