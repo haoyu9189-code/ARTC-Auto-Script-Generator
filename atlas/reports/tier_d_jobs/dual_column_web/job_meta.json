@@ -1,0 +1,27 @@
+{
+  "name": "dual_column_web",
+  "analysis_type": "StaCompre",
+  "lattice_array": [
+    1,
+    1,
+    1
+  ],
+  "radius_mm": 0.5,
+  "cell_size_mm": 5.0,
+  "adapter_stats": {
+    "points": 11,
+    "segments": 9,
+    "quotient_edges": 5
+  },
+  "energy_gate": {
+    "threshold": 0.05,
+    "source": "Abaqus Analysis User's Guide — quasi-static energy balance criterion(ALLKE ≤ ~5% ALLIE)",
+    "source_type": "vendor"
+  },
+  "caveats": [
+    "管线为单半径:CMA-ES polish 的 radii_groups 不可表示,按均匀 default_radius_mm=0.5 生成——冠军分数中的逐组半径增益不在本次 Tier-D 测试内",
+    "analysis_type=StaCompre;剪切需 X 旋转适配,不支持",
+    "polish.radii_groups 共 2 组,已忽略"
+  ],
+  "source": "atlas.mechanics.tier_d.generate_tier_d_jobs"
+}

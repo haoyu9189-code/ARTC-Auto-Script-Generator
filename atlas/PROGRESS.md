@@ -39,8 +39,17 @@
 | P2-5 | 动态/剪切特征扩展 | done | 947/946/947/999 特征;25 缺曲线如实跳过;302 项全绿 |
 | P2-6 | LanceDB(条件触发) | skip-done | 语料 21≪100,miss 率 0%——五条件均未触发,留痕 |
 
+## Phase 3 任务状态(②→①→③,2026-06-11 用户选定)
+
+| ID | 任务 | 状态 | 备注 |
+|----|------|------|------|
+| P3-A | Tier-D ABAQUS 升压收口 | done | tier_d.py 桥+能量门+白名单;三冠军作业已生成;311 全绿 |
+| P3-B | 真 agent 端到端 D2 | todo | 7 agent 定义+MCP 就绪;缺 Orchestrator 入口与真派发接线 |
+| P3-C | Benchmark 仪表 + 单 agent 基线 | todo | 零仪表现状;依赖 P3-B(多 vs 单对比须真 agent 先行) |
+
 ## 日志
 
+- **2026-06-11 P3-A done(Phase 3 启动)**:`atlas/mechanics/tier_d.py`。① 能量门:生成的 postprocess **文本注入** ALLKE/ALLIE 历史提取(锚点=writeXYReport 行,幂等,锚点缺失 fail loudly;不改 script_generator 源——用户工作区有未提交修改);门=ALLKE/ALLIE≤5%(Abaqus 准静态能量平衡准则,vendor),ratio 仅在 ALLIE≥1% 终值区间取最大(初期噪声惯例);**无 ALLKE 历史 = Standard 静力门不适用(informational,margin 保留)**,能量数据缺失/出错 = margin_eligible 取消(缺数据≠不适用,语义分立有测试)。② 结果桥 results_to_checks:feature_data/energy → checks(source_type='abaqus_fea'),刚度 0–0.10mm 窗 polyfit×H/A **与 P2-1c 标定同口径**,comp_EA=∫F·dδ(积分窗口径差异留 caveat),margin_eligible 按 spec.margin_metric 匹配且受能量门约束。③ schema enum + R7 白名单加入 abaqus_fea。④ 三 FunSearch 冠军作业目录 `atlas/reports/tier_d_jobs/`(preprocess/postprocess/run.pbs/job_meta/README,9/12/14 段)。**诚实限定**:管线单半径,CMA-ES polish 的 radii_groups 不可表示——作业按均匀 default_radius_mm,冠军逐组半径增益不在本次测试内(caveat 进 job_meta 有测试);剪切不支持(B6 红线沿袭)。**提交求解由用户决定(loop 协议)**。测试 +9,套件 311 全绿。
 - **2026-06-12 P2-5 done + P2-6 skip-done —— PHASE 2 完成(7/7)**:`atlas/data/extract_dynamic.py`:动态曲线实况(步长 ~0.1mm + 首点惯性瞬态振铃)使"初段弹性斜率"**不可提取**——诚实重定义:dyna_stiffness=5% 应变割线(caveat 含惯性瞬态非弹性模量,Phase 3 滤波重提)/ dyna_yield=首个局部峰应力(落锤动态屈服标准代理)/ dyna_peak=前 30% 应变窗峰值 / shear_peak(面积约定 25mm²)。实提 947/946/947/999 条入 features 表(带源带方法局限),25 条缺动态曲线如实跳过,幂等可复跑。verify.py 动态维度升级:近邻真特征值带源(OOD 不提供),仍 informational 不入 margin(动态验证成熟度 Phase 3)。**P2-6 量化检查:语料 21 篇 ≪100、retrieve_reference miss 率 0%——五条升级触发条件均未满足,按 PLAN skip-done 留痕**。测试 +4(诚实跳过计数/物理合理带/幂等/verify 升级),旧 availability 测试更新至新合同。套件 302 全绿。
 - **2026-06-12 P2-4 done**:`thresholds/process_matrix.json`(Mapper 唯一数据源):SLS-PA12 / MJF-PA12 / LPBF-AlSi10Mg 三档,逐条 source+source_type;**口径纪律制度化**——`E_fea_basis_MPa=1010`(DB 数值实验基材,internal_fea)与 `Es_MPa_datasheet=1700`(真实材性,vendor)分列并禁混用(P2-1c 标定一致性的制度保障);SLS 文献值标 inference+DOI 待核录;LPBF ×0.92 挂 errata E5;跨档刚度比 0.856 一阶近似(强度/SEA 跨档归 P3 实测)。Mapper agent 提示词更新(矩阵首查+口径纪律)。测试 +5,套件 298 全绿。
 - **2026-06-12 P2-3 done**:`atlas/mechanics/catalog_screen.py`:17,262 条全部入 `catalog.sqlite`(几何 JSON + 性能 + C,n + WL 哈希逐条,provenance=DOI+CC BY-NC 每行,gitignore 可重建)。**新勘误 E11**:头部声明的星号标记(40 条数值问题结构)在存档文件中实际缺失(全文无 '*'),无法按文件识别;WL 结构查重 103 条(头部按名对 135)——缓解:自家硬门+绝对门兜底。三级筛:S1 目录自带 C,n 标度排序(毫秒,sqlite 无 POWER 改 Python 排序)→ S2 硬门(r=DfAM 下限 0.4)→ S3 beam 裁判同口径;150 池 → 杀 56 → 幸存 94 → top-10。**三层同台叙事弧成形:种子最优 591(Cubic)→ 枚举冠军 907(cub_Z03.4_E13408,1.53×)→ 生成冠军 1047(dual_column_web,1.77×)**——database-wide 论点first有三层实测数据。措辞红线:枚举非生成,screening 级,有测试把守。测试 +5(17,262 计数/查重带/逐行 provenance/pcu 锚/三层排序),套件 293 全绿。

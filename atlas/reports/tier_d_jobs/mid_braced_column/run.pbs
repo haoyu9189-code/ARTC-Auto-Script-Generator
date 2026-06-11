@@ -1,0 +1,41 @@
+#!/bin/bash
+#PBS -N mid_braced_column_5_0p5_4_StaCompre
+#PBS -P as_mae_kzhou
+#PBS -q qintel_wfly
+#PBS -l walltime=24:00:00
+#PBS -l select=1:ncpus=8:mem=8gb
+#PBS -j oe
+#PBS -o mid_braced_column_5_0p5_4_StaCompre.log
+
+module load abaqus/2023u4
+export PYTHONDONTWRITEBYTECODE=1
+
+# ============================================================
+# USAGE: Modify JOB_NAME, WORK_DIR below before submitting.
+#   qsub run.pbs
+# ============================================================
+JOB_NAME="mid_braced_column_5_0p5_4_StaCompre"
+WORK_DIR="atlas\reports\tier_d_jobs\mid_braced_column"
+
+cd "$WORK_DIR"
+
+echo "=== $JOB_NAME ==="
+echo "Start: $(date)"
+
+echo "[1/3] Preprocess — generate .inp"
+abaqus cae noGUI="mid_braced_column_5_0p5_4_StaCompre_preprocess.py"
+if [ $? -ne 0 ]; then
+    echo "ERROR: preprocess failed"
+    exit 1
+fi
+
+echo "[2/3] Solver — run Abaqus Explicit"
+abaqus job=$JOB_NAME cpus=8 interactive
+if [ $? -ne 0 ]; then
+    echo "WARNING: solver exited with error (partial results may exist)"
+fi
+
+echo "[3/3] Postprocess — extract force-displacement"
+abaqus cae noGUI="mid_braced_column_5_0p5_4_StaCompre_postprocess.py"
+
+echo "=== Done: $(date) ==="

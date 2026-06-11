@@ -91,12 +91,25 @@
 
 执行顺序:P2-1a → (P2-1b ∥ P2-1c ∥ P2-4 ∥ P2-5) → P2-2 → P2-3;P2-6 条件检查每迭代捎带。
 
-### Phase 3 预告
+### Phase 3 任务清单(2026-06-11 启动,用户选定 ②→①→③ 顺序)
 
-- **P3-1** Tier-C 体素裁判 benchmark(GooseFFT-fork+Willot+双网格误差条 vs fedoo+microgen)定主备
-- **P3-2** spinodoid 旗舰全链:NumPy GRF 自研(规避 GIBBON AGPL)→ marching cubes → 打印检查 → orphan-mesh INP → ABAQUS 打标 1–3k 样本 → CPU 训练 f-NN/i-NN;SEA 用 BO 直驱显式 FEA;RVE 收敛研究替代尺寸效应查表(spinodoid 无单胞,Agent 8 查表不适用)
+> 就绪度依据:4 路并行代码扫描(2026-06-11,见 PROGRESS 日志)。
+> 大件 P3-1/P3-2/P3-3 转入 backlog(见下),不在本轮。
+
+| ID | 任务 | Definition of Done | 依赖 |
+|----|------|--------------------|------|
+| P3-A | Tier-D ABAQUS 升压收口 | ① 生成的 postprocess 注入 ALLKE/ALLIE 能量提取(**文本注入生成产物,不改 script_generator 源**——用户工作区有未提交修改);② `atlas/mechanics/tier_d.py` 桥:feature_data/energy → checks(source_type=abaqus_fea),能量门 ALLKE/ALLIE≤5% 判据带源(Abaqus 准静态准则,vendor);③ trace schema enum + R7 白名单加入 abaqus_fea,正反用例;④ 三 FunSearch 冠军(polish 半径)作业目录生成(preprocess/postprocess/run.pbs+README),**提交求解由用户决定**;套件全绿 | — |
+| P3-B | 真 agent 端到端 D2 | Orchestrator 协议落 SKILL(主会话驱动,不建 orchestrator subagent);atlas-generator / atlas-evaluator 经真实子代理派发重跑三 D1 案例;K=3 regenerate_fn 接真 LLM 重生成;判决仍由确定性引擎产出(agent 是载体不是裁判);真跑 trace 与 Python 直跑判决一致性对照;Evaluator PreToolUse hook 实际触发留痕 | — |
+| P3-C | Benchmark 仪表 + 单 agent 基线 | stage 级计时聚合入报告;可溯源率%(带源 checks 占比)自动计算;单 agent 基线 harness 同三案例对跑;多 vs 单 agent 对照表(耗时/溯源率/判决质量)落 `atlas/reports/benchmark.md`(月报素材:traceability + time reduction 实测) | P3-B |
+
+执行顺序:P3-A → P3-B → P3-C。
+
+### Phase 3 backlog(暂缓,启动须用户点名)
+
+- **P3-1** Tier-C 体素裁判 benchmark(GooseFFT-fork+Willot+双网格误差条 vs fedoo+microgen)定主备——估 3–4 周,GooseFFT 许可待核
+- **P3-2** spinodoid 旗舰全链:NumPy GRF 自研(规避 GIBBON AGPL)→ marching cubes → 打印检查 → orphan-mesh INP → ABAQUS 打标 1–3k 样本 → CPU 训练 f-NN/i-NN;SEA 用 BO 直驱显式 FEA;RVE 收敛研究替代尺寸效应查表(spinodoid 无单胞,Agent 8 查表不适用)——估 6–10 周 + 千级求解小时
 - **P3-3** 深度生成 inference-only(UnifyingTrussDesignSpace / DiffuMeta checkpoint;预测头只当启发,永不入 trace)
-- **P3-4** ABAQUS 自动升压制度化(≤3/查询;显式准静态 1–6 h/次,实测日志校准)
+- **P3-4** ABAQUS 自动升压制度化(≤3/查询;显式准静态 1–6 h/次,实测日志校准)——P3-A 为其第一步
 
 ---
 

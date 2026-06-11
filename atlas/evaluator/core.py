@@ -33,8 +33,10 @@ RULES = ('R1 多模态一致', 'R2 margin 含 FoS 不二次乘', 'R3 n<3 强警�
 _CONF_ORDER = ['screening', 'design_reference', 'near_final']
 # beam_fem_calibrated:P2-1c 标定的 frame_fem,margin 值须为
 # E_y_margin_safe(已按 p90 残差折减,弯曲类 OOD 折减后≈0 → 实质
-# 强制 Tier-D)。Tier-D FEA 接入后加入 'abaqus_fea'。
-MARGIN_EVIDENCE_WHITELIST = ('internal_fea', 'beam_fem_calibrated')
+# 强制 Tier-D)。abaqus_fea:P3-A Tier-D 终审(tier_d.py 桥,能量门
+# 未过时 margin_eligible 由桥端取消,白名单成员资格不变)。
+MARGIN_EVIDENCE_WHITELIST = ('internal_fea', 'beam_fem_calibrated',
+                             'abaqus_fea')
 
 
 def validate_trace(trace):
