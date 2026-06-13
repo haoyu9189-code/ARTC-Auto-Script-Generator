@@ -69,12 +69,16 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 40.0。注:库�
 | printability | printability.check_overhangs | overhang_area_fraction=0.0 | ✓ | 粉末床聚合物无需支撑,悬垂检查不适用(skip) |
 | printability | printability.check_powder_escape | trapped_void_mm3=0.0; voxel_pitch_mm=0.25; tolerance_mm3=0.125 | ✓ | 困粉: embree 列射线奇偶填充 + scipy flood-fill(bench_printability3.py |
 | density | rel_density.mesh(manifold3d) | 0.13948 | ✓ | manifold3d watertight 体积 / 胞体积 |
+| mechanics | beam_homog.homogenize | 53.8215 | ✓ | atlas.mechanics.beam_homog(Timoshenko PBC 均质化,能量法 6+15 解);排序 |
+| mechanics | gibson_ashby.band | E_point=26.3462; E_lo=15.8077; E_hi=36.8847 | ℹ️ | Deshpande, Fleck & Ashby, JMPS 49(8):1747-1769, 2001, DOI 10 |
+| material | am_polymer_deviation | [0.1, 0.3] | ℹ️ | 聚合物-金属基线漂移 ±10-30%,查无文献来源 |
+| mechanics | screen_estimate.cross_check | beam_E=53.8215; lit_point=26.3462; band=[15.8077, 36.8847] | ℹ️ | beam_homog(自身几何物理)vs 文献标度律误差带交叉校验(信息性:文献不否决物理) |
 | material | material_props[PA12_MJF] | 1700 | ✓ | HP 3D HR PA12 datasheet, tensile modulus ~1700-1800 MPa |
 | size_effect | scaling.n_cells_advisory | 2 | ℹ️ | Onck/Andrews 2001 边界层机制(atlas/references);修正引擎接线归 P2 |
 
 判决依据:R2: 无可用 margin 证据(pred/design 缺失)
 
-降级记录:R3: n<3,尺寸效应区强警示(1→3 胞跳变最剧烈),强烈建议 n>=3 或实测
+降级记录:R4: material/am_polymer_deviation 证据为 inference,结论降级一档;R3: n<3,尺寸效应区强警示(1→3 胞跳变最剧烈),强烈建议 n>=3 或实测
 
 ## 来源清单(三类分列)
 
@@ -85,16 +89,22 @@ margin 度量:comp_EA(库内同单位代理),设计值(含 FoS)= 40.0。注:库�
 - internal FEA feature extraction: data_package/extracted_features_smoothed.csv (mtime 2026-01-21), derived from the same Abaqus pipeline
 
 ### 内部确定性计算
+- Deshpande, Fleck & Ashby, JMPS 49(8):1747-1769, 2001, DOI 10.1016/S0022-5096(01)00010-2 + Gibson & Ashby, Cellular Solids, 2nd ed., Cambridge UP, 1997 (ISBN 9780521499118)
 - Gibson & Ashby, Cellular Solids, 2nd ed., Cambridge UP, 1997 (bending: E*~rho^2, sigma_y*~0.3 rho^1.5)
 - Gibson & Ashby, Cellular Solids, 2nd ed., Cambridge UP, 1997 (bending: E*~rho^2, sigma_y*~0.3 rho^1.5) + Deshpande, Fleck & Ashby, JMPS 49(8):1747-1769, 2001, DOI 10.1016/S0022-5096(01)00010-2 (octet pin-jointed: E*=(1/9) rho Es, sigma_y*=(1/3) rho sigma_ys)
 - Maxwell 1864; Deshpande, Ashby & Fleck, Acta Mater. 49(6):1035-1040, 2001, DOI 10.1016/S1359-6454(00)00379-7
 - Onck/Andrews 2001 边界层机制(atlas/references);修正引擎接线归 P2
 - P2-5 原始曲线自提(atlas/data/extract_dynamic.py):dyna_stiffness=5% 应变割线(含惯性瞬态,非弹性模量,Phase 3 滤波后重提);dyna_yield=首个局部峰应力(落锤动态屈服代理);peak 取前 30% 应变窗;剪切面积=名义 25mm²(约定);曲线源=内部 Abaqus 显式管线(步长 ~0.1mm)
+- atlas.mechanics.beam_homog(Timoshenko PBC 均质化,能量法 6+15 解);排序口径=E_y
+- beam_homog(自身几何物理)vs 文献标度律误差带交叉校验(信息性:文献不否决物理)
 - manifold3d watertight 体积 / 胞体积
 - trimesh 边-面计数 + manifold3d Mesh.merge 往返 status(双引擎,bench_printability.py 本机验证)
 - 困粉: embree 列射线奇偶填充 + scipy flood-fill(bench_printability3.py 正负对照验证)
 - 粉末床聚合物无需支撑,悬垂检查不适用(skip)
 - 阈值: HP Multi Jet Fusion PA12 design guidelines, min feature ~0.8 mm;方法: embree 射线测厚(bench 验证 BCC d=1.0 误差 0.1-0.5%)
+
+### 标记推测(inference,已降级)
+- 聚合物-金属基线漂移 ±10-30%,查无文献来源
 
 ## 适用域与警示
 - n=2 < 3:尺寸效应强警示(1→3 胞跳变最剧烈),建议 n≥3 或实测。

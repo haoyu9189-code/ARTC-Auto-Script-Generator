@@ -102,7 +102,9 @@
 | P3-B | 真 agent 端到端 D2 | Orchestrator 协议落 SKILL(主会话驱动,不建 orchestrator subagent);atlas-generator / atlas-evaluator 经真实子代理派发重跑三 D1 案例;K=3 regenerate_fn 接真 LLM 重生成;判决仍由确定性引擎产出(agent 是载体不是裁判);真跑 trace 与 Python 直跑判决一致性对照;Evaluator PreToolUse hook 实际触发留痕 | — |
 | P3-C | Benchmark 仪表 + 单 agent 基线 | stage 级计时聚合入报告;可溯源率%(带源 checks 占比)自动计算;单 agent 基线 harness 同三案例对跑;多 vs 单 agent 对照表(耗时/溯源率/判决质量)落 `atlas/reports/benchmark.md`(月报素材:traceability + time reduction 实测) | P3-B |
 
-执行顺序:P3-A → P3-B → P3-C。
+| P3-D | 新拓扑筛选估值器(beam 为体、文献为界) | done | screen_estimate.py:beam_homog 自身几何物理为核心排序值(非白名单→封顶 SCREENING_PASS)+ 文献标度律仅作误差带交叉校验(margin_eligible=False);量纲纪律(模量仅刚度类 spec 可作 margin);弯曲类/分歧/越域→escalate Tier-D;接入 verify.py OOD 分支(此前 graph_doc-only 零力学证据);+14 测试,套件 330 全绿 |
+
+执行顺序:P3-A → P3-B → P3-C → P3-D(用户追加:"为什么不能生成结构 / 论文对比估测")。
 
 ### Phase 3 backlog(暂缓,启动须用户点名)
 

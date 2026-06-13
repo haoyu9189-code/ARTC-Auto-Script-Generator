@@ -111,6 +111,18 @@ def verify_candidate(candidate, spec, db_path=None):
         mx = maxwell_check.check(len(cyls), len(coords))
         checks.append(_envelope_to_check('topology_tendency',
                                          'maxwell_check', mx))
+    # ---- OOD/新图(graph_doc):beam_homog 物理筛选估值 + 文献误差带 ----
+    # P3-D:此前 graph_doc-only 候选(如 PSCZ)在 `if topology` 外 → 零力学
+    # 证据 → R2 FAIL → 被迫升 Tier-D。beam_homog 在自身几何上做物理
+    # (满足创始原则),封顶 SCREENING_PASS(非白名单),不跑 ABAQUS。
+    gd = geo.get('graph_doc')
+    if gd is not None:
+        from atlas.mechanics import screen_estimate
+        mat = ('metal' if spec.get('material', 'PA12') != 'PA12'
+               else 'polymer')
+        se_checks, se_summary = screen_estimate.estimate_from_graph(
+            gd, spec, rho_rel=round(rho, 5), material_family=mat)
+        checks.extend(se_checks)
     if tier in ('1', '1.5') and topology:
         from atlas.retriever.core import nearest_by_density, get_structure
         nn = nearest_by_density(topology, rho, k=1, db_path=db_path)

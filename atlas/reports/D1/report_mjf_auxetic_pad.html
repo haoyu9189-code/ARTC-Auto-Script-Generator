@@ -112,7 +112,7 @@ footer .pg{white-space:nowrap;text-align:right}
       <div class="specline">MJF / PA12 · array n=2 · FoS 1.3 (included) · design 40.0 (comp_EA, in-DB same-unit proxy) · confidence: screening</div>
       
     </div>
-    <div class="meta">REPORT MJF_AUXETIC_PAD<br>DATE 2026-06-11<br>PIPELINE D1-ACCEPT · 300+ TESTS GREEN</div>
+    <div class="meta">REPORT MJF_AUXETIC_PAD<br>DATE 2026-06-13<br>PIPELINE D1-ACCEPT · 300+ TESTS GREEN</div>
   </div>
 
   <div class="grid">
@@ -125,7 +125,7 @@ footer .pg{white-space:nowrap;text-align:right}
       <div class="note">Margin metric is an in-DB comp_EA same-unit proxy (absolute unit mapping pending calibration — flagged inference, downgraded); centre line = 1.0 pass gate.</div>
       <div class="sources">
         <div><h3>ACADEMIC SOURCES (DOI)</h3><ul><li>Deshpande, Ashby & Fleck 2001, Acta Mater — Maxwell criterion · DOI 10.1016/S1359-6454(00)00379-7</li><li>Deshpande, Fleck & Ashby 2001, JMPS — octet stretch scaling · DOI 10.1016/S0022-5096(01)00010-2</li><li>Gibson & Ashby 1997, Cellular Solids 2nd ed. — bending scaling</li></ul></div>
-        <div class="inf"><h3>FLAGGED INFERENCES (DOWNGRADED)</h3><ul><li>Margin unit proxy: comp_EA absolute-unit mapping pending calibration (inference, downgraded)</li><li>Polymer AM as-built deviation magnitude lacks a literature source; int</li></ul></div>
+        <div class="inf"><h3>FLAGGED INFERENCES (DOWNGRADED)</h3><ul><li>Margin unit proxy: comp_EA absolute-unit mapping pending calibration (inference, downgraded)</li><li>Polymer AM as-built deviation magnitude lacks a literature source; int</li><li>spec.margin_metric=comp_ea(库内同单位代理) 非刚度量纲:beam 模量不可作该 margin,仅排序;裕度须 T</li><li>聚合物 AM 偏差无文献来源,结论须降级</li><li>聚合物-金属基线漂移 ±10-30%,查无文献来源</li></ul></div>
       </div>
     </div>
     <div class="trace">
@@ -134,7 +134,7 @@ footer .pg{white-space:nowrap;text-align:right}
         <tr><th>Dimension</th><th>Tool</th><th>Value</th><th></th><th>Source</th></tr>
         <tr><td>printability</td><td>validate_mesh</td><td>watertight=True; winding_consistent=True</td><td><span class="ok">✓</span></td><td class="src">trimesh edge-face count + manifold3d Mesh.merg</td></tr><tr><td>printability</td><td>measure_min_feature</td><td>min_mm=0.980328094391314; p5_mm=0.99144473</td><td><span class="ok">✓</span></td><td class="src">Threshold: HP Multi Jet Fusion PA12 design gui</td></tr><tr><td>printability</td><td>check_overhangs</td><td>overhang_area_fraction=0.0</td><td><span class="ok">✓</span></td><td class="src">Powder-bed polymer needs no supports; overhang</td></tr><tr><td>printability</td><td>check_powder_escape</td><td>trapped_void_mm3=0.0; voxel_pitch_mm=0.25</td><td><span class="ok">✓</span></td><td class="src">Trapped powder: embree column-ray parity fill </td></tr><tr><td>density</td><td>mesh(manifold3d)</td><td>0.4955</td><td><span class="ok">✓</span></td><td class="src">manifold3d watertight volume / cell volume</td></tr><tr><td>mechanics</td><td>estimate</td><td>E_MPa=93.60092485839793; sigma_y_MPa=4.709</td><td><span class="info">ℹ</span></td><td class="src">Gibson & Ashby, Cellular Solids, 2nd ed., Camb</td></tr><tr><td>topology_tendency</td><td>maxwell_check</td><td>maxwell_M=-56; tendency=bending-leaning</td><td><span class="ok">✓</span></td><td class="src">Maxwell 1864; Deshpande, Ashby & Fleck, Acta M</td></tr><tr><td>mechanics</td><td>nearest_by_density+comp_EA</td><td>483.6</td><td><span class="ok">✓</span></td><td class="src">internal FEA feature extraction: data_package/</td></tr><tr><td>material</td><td>material_props[PA12_MJF]</td><td>1700</td><td><span class="ok">✓</span></td><td class="src">HP 3D HR PA12 datasheet, tensile modulus ~1700</td></tr><tr><td>size_effect</td><td>n_cells_advisory</td><td>2</td><td><span class="info">ℹ</span></td><td class="src">Onck/Andrews 2001 boundary-layer mechanism (at</td></tr><tr><td>mechanics</td><td>dynamic_shear_features</td><td>n_dynamic_curves=88; dyna_peak=3.4591</td><td><span class="info">ℹ</span></td><td class="src">P2-5 raw-curve self-extraction(atlas/data/extr</td></tr>
       </table>
-      <div class="note" style="margin-top:6px"><b>Vendor / internal evidence:</b> Gibson & Ashby, Cellular Solids, 2nd ed., Cambridge UP, 1997 (be · HP 3D HR PA12 datasheet, tensile modulus ~1700-1800 MPa · Maxwell 1864; Deshpande, Ashby & Fleck, Acta Mater. 49(6):1035-1 · Onck/Andrews 2001 boundary-layer mechanism (atlas/references); c · P2-5 raw-curve self-extraction(atlas/data/extract_dynamic.py):dy</div>
+      <div class="note" style="margin-top:6px"><b>Vendor / internal evidence:</b> Deshpande, Fleck & Ashby, JMPS 49(8):1747-1769, 2001, DOI 10.101 · Gibson & Ashby, Cellular Solids, 2nd ed., Cambridge UP, 1997 (be · HP 3D HR PA12 datasheet, tensile modulus ~1700-1800 MPa · Maxwell 1864; Deshpande, Ashby & Fleck, Acta Mater. 49(6):1035-1 · Onck/Andrews 2001 boundary-layer mechanism (atlas/references); c</div>
     </div>
     <div>
       <h2>Geometry <i>Auxetic</i></h2>
