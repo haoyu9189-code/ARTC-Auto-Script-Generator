@@ -1,0 +1,86 @@
+[
+  {
+    "name": "Cubic",
+    "rho": 0.086,
+    "fft_Exyz": [
+      0.0343,
+      0.0343,
+      0.0343
+    ],
+    "beam_Ey_norm": 0.0314,
+    "ratio_fft_y_over_beam": 1.09,
+    "ld": 5.0,
+    "it": 1200,
+    "s": 551.4
+  },
+  {
+    "name": "BCC",
+    "rho": 0.182,
+    "fft_Exyz": [
+      0.0065,
+      0.0072,
+      0.0065
+    ],
+    "beam_Ey_norm": 0.005,
+    "ratio_fft_y_over_beam": 1.43,
+    "ld": 4.45,
+    "it": 1200,
+    "s": 549.8
+  },
+  {
+    "name": "Octet_truss",
+    "rho": 0.461,
+    "fft_Exyz": [
+      0.0906,
+      0.0906,
+      0.0906
+    ],
+    "beam_Ey_norm": 0.0361,
+    "ratio_fft_y_over_beam": 2.51,
+    "ld": 3.67,
+    "it": 1200,
+    "s": 554.0
+  },
+  {
+    "name": "dual_column_web",
+    "rho": 0.124,
+    "fft_Exyz": [
+      0.0019,
+      0.0681,
+      0.0019
+    ],
+    "beam_Ey_norm": 0.0764,
+    "ratio_fft_y_over_beam": 0.89,
+    "ld": 5.41,
+    "it": 1200,
+    "s": 516.6
+  },
+  {
+    "name": "mid_braced_column",
+    "rho": 0.086,
+    "fft_Exyz": [
+      0.0343,
+      0.0343,
+      0.0343
+    ],
+    "beam_Ey_norm": 0.038,
+    "ratio_fft_y_over_beam": 0.9,
+    "ld": 4.26,
+    "it": 1200,
+    "s": 563.4
+  },
+  {
+    "name": "twin_offset_web",
+    "rho": 0.086,
+    "fft_Exyz": [
+      0.0335,
+      0.0343,
+      0.0335
+    ],
+    "beam_Ey_norm": 0.038,
+    "ratio_fft_y_over_beam": 0.9,
+    "ld": 4.26,
+    "it": 1200,
+    "s": 562.7
+  }
+]

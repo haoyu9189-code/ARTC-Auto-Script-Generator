@@ -108,7 +108,7 @@
 
 ### Phase 3 backlog(暂缓,启动须用户点名)
 
-- **P3-1** Tier-C 体素裁判 benchmark(GooseFFT-fork+Willot+双网格误差条 vs fedoo+microgen)定主备——估 3–4 周,GooseFFT 许可待核
+- **P3-1** Tier-C 体素裁判 benchmark——**Step 1 原型已做并 KILL 自研路**(2026-06-11,见 `atlas/reports/tierc_fft/results.md`):自研谱-CG FFT 均质化求解器正确(层合板 Backus 精确),但 solid/void 高对比度(≥1e3)下普通 CG 不收敛(1200 迭代/9min)、低对比度软空相污染信号 10–30%,且保守下界(对偶/自平衡空相零应力)未触及;beam_homog ~10ms 已给同量级合理数,原型性价比不成立。**改道**:若确需 margin 级保守 Tier-C,采用成熟 **Vondřejc-Zeman FFT-Galerkin 保证界**代码(预条件+对偶下界+精确积分,3D 弹性;arXiv:1404.3614 / PAMM 2023)——中期工程;否则 beam_homog+Tier-D 已足够,Tier-C 留此。`fft_homog.py` 保留为已验证点估交叉校验工具(仅 screening,非白名单)。原 PINN 候选(arXiv:2509.07579)已否决(2D 标量热,非 3D 弹性)。
 - **P3-2** spinodoid 旗舰全链:NumPy GRF 自研(规避 GIBBON AGPL)→ marching cubes → 打印检查 → orphan-mesh INP → ABAQUS 打标 1–3k 样本 → CPU 训练 f-NN/i-NN;SEA 用 BO 直驱显式 FEA;RVE 收敛研究替代尺寸效应查表(spinodoid 无单胞,Agent 8 查表不适用)——估 6–10 周 + 千级求解小时
 - **P3-3** 深度生成 inference-only(UnifyingTrussDesignSpace / DiffuMeta checkpoint;预测头只当启发,永不入 trace)
 - **P3-4** ABAQUS 自动升压制度化(≤3/查询;显式准静态 1–6 h/次,实测日志校准)——P3-A 为其第一步
