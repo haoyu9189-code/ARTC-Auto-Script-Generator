@@ -201,44 +201,74 @@ def generate_job_for_doc(doc, out_dir, analysis_type='StaCompre',
 
 import re as _re
 
+_DISPCTRL_MARKER = '# ATLAS-P3X-DISPCTRL'
+
+
+def patch_displacement_control(text, target_disp, time_period):
+    """显式 step 的「自由板+初速度冲击」→「位移控制斜坡」(准静态压溃正确设置)。
+
+    原 DynaCompre 给顶板一个初速度预定义场(自由板):准静态低速下初动能太小
+    → 板几乎不压入、顶板 RF2≈0(自由板反力本为零)。改为 SmoothStep 位移 BC
+    驱动顶板下行 target_disp → RF2=真实阻力,曲线干净。幂等;锚点缺失 fail loud。
+    """
+    if _DISPCTRL_MARKER in text:
+        return text
+    bc_anchor = "mdb.models['Model-1'].DisplacementBC(name='BC-2',"
+    if bc_anchor not in text or 'u2=UNSET' not in text \
+            or "Velocity(name='Predefined Field-1'" not in text:
+        raise ValueError('位移控制 patch 锚点缺失(BC-2/u2=UNSET/Velocity)——'
+                         'generator 动态模板已变')
+    amp = (_DISPCTRL_MARKER + " 位移控制斜坡(准静态压溃)\n"
+           "    mdb.models['Model-1'].SmoothStepAmplitude(name='Amp-Crush',"
+           " timeSpan=STEP, data=((0.0, 0.0), (%g, 1.0)))\n    " % time_period)
+    text = text.replace(bc_anchor, amp + bc_anchor, 1)
+    text = text.replace('u1=0.0, u2=UNSET, u3=0.0,',
+                        'u1=0.0, u2=-%g, u3=0.0,' % target_disp, 1)
+    text = text.replace('amplitude=UNSET, fixed=OFF,',
+                        "amplitude='Amp-Crush', fixed=OFF,", 1)
+    # 取消初速度预定义场(改为位移驱动)
+    text = _re.sub(r'velocity2=-[\d.eE+-]+', 'velocity2=0.0', text, count=1)
+    return text
+
 
 def generate_crush_job(doc, out_dir, lattice_array=(1, 1, 1),
                        crush_strain=0.8, strain_rate=10.0,
                        extra_caveats=()):
-    """非线性吸能 Tier-D 压溃作业(NT-1):显式动态 + 自接触 + 能量历史。
+    """非线性吸能 Tier-D 压溃作业(NT-1):显式 + 自接触 + 能量历史 + 位移控制。
 
-    控制运动学到准静态、合理压溃量(原管线 timePeriod=20/velocity 恒压溃
-    20mm,对单胞 4× 过压溃且偏动态)。velocity=strain_rate·H0,timePeriod
-    =crush_strain·H0/velocity=crush_strain/strain_rate;均经文本 patch,
-    不改 generator 源。准静态有效性最终由 ALLKE/ALLIE≤5% 能量门 + 半速不变性
-    (NT-5)实证,非断言。
+    显式动力学步(大变形/自接触/单元删除)+ **位移控制斜坡**(SmoothStep,
+    避免自由板冲击在准静态低速下不压入);速率 strain_rate(准静态),压溃量
+    crush_strain·H0。均经文本 patch,不改 generator 源。准静态有效性由
+    ALLKE/ALLIE≤5% 能量门 + 半速不变性(NT-5)实证,非断言。
     """
     nz = lattice_array[2]
     H0 = CELL_H * nz
-    velocity = strain_rate * H0                       # mm/s
-    time_period = crush_strain / strain_rate          # s(=压溃量/velocity)
+    velocity = strain_rate * H0                       # mm/s(名义,位移控制后仅记录)
+    time_period = crush_strain / strain_rate          # s
+    target_disp = crush_strain * H0                   # mm
     cav = list(extra_caveats) + [
-        f'压溃运动学:目标应变 {crush_strain}、应变率 {strain_rate}/s '
-        f'→ velocity {velocity:g} mm/s、timePeriod {time_period:g}s '
-        '(准静态由能量门+半速不变性实证)']
+        f'位移控制准静态压溃:目标应变 {crush_strain}、应变率 {strain_rate}/s '
+        f'→ 压溃 {target_disp:g}mm、timePeriod {time_period:g}s;'
+        '准静态由能量门+半速不变性实证']
     meta = generate_job_for_doc(
         doc, out_dir, analysis_type=f'DynaCompre_{velocity:g}',
         lattice_array=lattice_array, extra_caveats=cav)
-    # patch timePeriod(generator 给的是 20/velocity,需改为目标压溃量对应)
     pre = [f for f in os.listdir(out_dir)
            if f.endswith('_preprocess.py')][0]
     prepath = os.path.join(out_dir, pre)
     with open(prepath, encoding='utf-8') as f:
         txt = f.read()
-    new, n = _re.subn(r'timePeriod=[\d.eE+-]+',
+    txt, n = _re.subn(r'timePeriod=[\d.eE+-]+',
                       f'timePeriod={time_period:g}', txt, count=1)
     if n != 1:
         raise RuntimeError('timePeriod patch 失败:锚点未命中')
+    txt = patch_displacement_control(txt, target_disp, time_period)
     with open(prepath, 'w', encoding='utf-8', newline='\n') as f:
-        f.write(new)
+        f.write(txt)
     meta['crush'] = {'crush_strain': crush_strain,
                      'strain_rate': strain_rate, 'velocity_mm_s': velocity,
-                     'time_period_s': time_period, 'H0_mm': H0}
+                     'time_period_s': time_period, 'H0_mm': H0,
+                     'target_disp_mm': target_disp, 'control': 'displacement'}
     with open(os.path.join(out_dir, 'job_meta.json'), 'w',
               encoding='utf-8') as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
@@ -287,9 +317,10 @@ def generate_tier_d_jobs(out_root, names=CHAMPIONS,
     return jobs
 
 
-_FLOAT_PAIR = re.compile(
-    r'^\s*(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s+'
-    r'(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*$')
+# Abaqus XY report 格式:含 "0."(尾点无小数)、"859.525E-06" 等 → 允许
+# 小数点后可空、可科学计数(原 \.\d+ 漏掉 "0." 导致 0 数据点)
+_NUM = r'-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?'
+_FLOAT_PAIR = re.compile(r'^\s*(' + _NUM + r')\s+(' + _NUM + r')\s*$')
 
 
 def parse_feature_data(path):
@@ -481,6 +512,8 @@ def crush_metrics(disp, force, H0, A0, n_grid=400):
     force = np.asarray(force, float)
     ok = np.isfinite(disp) & np.isfinite(force) & (disp >= 0)
     disp, force = disp[ok], force[ok]
+    if len(disp) < 8:                       # 数据不足(空/极少)直接判不可用
+        return None
     order = np.argsort(disp)
     disp, force = disp[order], force[order]
     uniq = np.concatenate([[True], np.diff(disp) > 1e-9])

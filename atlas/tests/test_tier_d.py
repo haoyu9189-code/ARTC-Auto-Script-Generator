@@ -35,6 +35,44 @@ def test_inject_energy_history_idempotent_and_fail_loud():
         inject_energy_history_request('print(1)\n')
 
 
+def test_patch_displacement_control():
+    from atlas.mechanics.tier_d import patch_displacement_control
+    fake = (
+        "    mdb.models['Model-1'].DisplacementBC(name='BC-2', "
+        "createStepName='Step-1',\n"
+        "        region=a.sets['TopReflection'],\n"
+        "        u1=0.0, u2=UNSET, u3=0.0, ur1=0.0, ur2=0.0, ur3=0.0,\n"
+        "        amplitude=UNSET, fixed=OFF, distributionType=UNIFORM,\n"
+        "        localCsys=None)\n"
+        "    mdb.models['Model-1'].Velocity(name='Predefined Field-1',\n"
+        "        region=a.sets['TopReflection'],\n"
+        "        velocity1=0.0, velocity2=-50.0, velocity3=0.0,\n"
+        "        omega=0.0)\n")
+    out = patch_displacement_control(fake, target_disp=4.0, time_period=0.08)
+    assert 'ATLAS-P3X-DISPCTRL' in out
+    assert 'SmoothStepAmplitude' in out and "(0.08, 1.0)" in out
+    assert 'u2=-4' in out and 'u2=UNSET' not in out     # 位移驱动
+    assert "amplitude='Amp-Crush'" in out
+    assert 'velocity2=0.0' in out and 'velocity2=-50.0' not in out  # 初速取消
+    assert patch_displacement_control(out, 4.0, 0.08) == out         # 幂等
+    with pytest.raises(ValueError):
+        patch_displacement_control('print(1)\n', 4.0, 0.08)
+
+
+def test_parse_feature_data_abaqus_format(tmp_path):
+    """Abaqus XY 报表 '0.' / '859.525E-06' 格式必须解析(原 regex 漏 '0.')。"""
+    p = tmp_path / 'feat.txt'
+    p.write_text('\n'.join([
+        'job', 'status: successful', 'density: 0.12',
+        'Node X Y',
+        '                0.                 1.5',
+        '              859.525E-06          12.3',
+        '                1.10403E-03        0.']), encoding='utf-8')
+    f = parse_feature_data(str(p))
+    assert len(f['disp']) == 3
+    assert f['disp'][0] == 0.0 and abs(f['force'][1] - 12.3) < 1e-9
+
+
 def test_parse_energy_data_header_aware(tmp_path):
     # 新多列格式(列序任意)
     p = tmp_path / 'e_new.txt'
