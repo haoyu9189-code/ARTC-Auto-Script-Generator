@@ -247,8 +247,8 @@ def generate_crush_job(doc, out_dir, lattice_array=(1, 1, 1),
     crush_strain·H0。均经文本 patch,不改 generator 源。准静态有效性由
     ALLKE/ALLIE≤5% 能量门 + 半速不变性(NT-5)实证,非断言。
     """
-    nz = lattice_array[2]
-    H0 = CELL_H * nz
+    ny = lattice_array[1]            # 载荷轴 = Y:压溃高度 ∝ ny(与提取一致)
+    H0 = CELL_H * ny
     velocity = strain_rate * H0                       # mm/s(名义,位移控制后仅记录)
     time_period = crush_strain / strain_rate          # s
     target_disp = crush_strain * H0                   # mm
