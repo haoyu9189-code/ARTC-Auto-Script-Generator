@@ -115,6 +115,52 @@
 
 ---
 
+## 1bis. Phase 4 里程碑:非线性/吸能 Tier-D(2026-06-11 用户选定 + 设 loop)
+
+### GOAL(北极星)
+
+让 ATLAS 的物理终审(Tier-D)能认证**非线性吸能**:任何点阵(含新拓扑/OOD)经
+**准静态显式压溃**(大变形 + 自接触 + 致密化)得到 **SEA / comp_EA / 平台应力 /
+致密化应变**,并在通过**硬有效性门**后成为 **margin 级证据**(source_type=abaqus_fea)。
+意义:吸能(comp_EA/SEA)是真实案例(汽车防撞盒、头盔内衬)的主导指标,当前
+beam_homog/screen_estimate 与静态 Tier-D 均不能认证非线性压溃(P3-D 把吸能显式推给
+Tier-D 留了缺口);本里程碑补上,并同时解锁 P3-2(spinodoid)/P3-3(壳/TPMS 生成)。
+
+**已就绪基础(P3-A + 预读确认)**:`script_generator.py` 的 DynaCompre 路径已有
+ExplicitDynamicsStep + GeneralContact(自接触)+ nlgeom + 质量缩放 + SmoothStep 加载 +
+单元删除(SC-Solid 损伤);`tier_d.generate_job_for_doc(...,analysis_type=)` 已参数化;
+能量门 ALLKE/ALLIE≤5% 框架已在。故本里程碑是**接线 + 提取压溃指标 + 有效性硬门 +
+本机验证**,非从零写显式 FEA。
+
+### HARNESS(执行框架 —— loop 每迭代遵守)
+
+- **状态机**:PLAN(本表 DoD)+ PROGRESS(状态/日志)。每迭代:读 PROGRESS → 选依赖
+  满足的最小 NT → 实现 → 按 DoD 验证 → 更新 PROGRESS → 本地 commit(带 NT-ID)。
+- **分工纪律**:① 设计/调研/并行扫描 → workflow/subagent;② **正确性敏感的提取与判据
+  代码(NT-2/NT-3)→ 主会话写 + 合成曲线/解析单测**(FFT 教训:界/指标最易"看着对其实错");
+  ③ ABAQUS 结果迭代调试 → 主会话。能写代码的 subagent 只有 general-purpose/workflow
+  (atlas-* 只读)。
+- **ABAQUS 入 loop(Phase 4 覆写 §2 约束)**:本机 ABAQUS 2023 可用 + 用户授权本地跑 →
+  验证 run 作**后台 job** 在 loop 内执行(~10 min/个),自定步(dynamic loop)等其完成。
+  仍不向集群提交。
+- **红线增补(细化 §3 #6)**:Tier-D 显式压溃的 SEA/comp_EA 成 margin 级**仅当 NT-3 硬门
+  全过**;门未过/准静态不成立 → 降为 screening,绝不以 margin 泄出。质量缩放伪能量、
+  单元删除能量损失、接触穿透必须各自有界并留痕。
+- **停止条件**:NT-1..NT-6 全 done 且至少 1 个本机压溃验证 run 在容差内 → 停 loop,汇报。
+
+### 任务清单(loop 按此执行;依赖:NT-1 →(NT-2∥NT-3)→ NT-4 →(NT-5∥NT-6))
+
+| ID | 任务 | Definition of Done | 依赖 |
+|----|------|--------------------|------|
+| NT-1 | 准静态显式压溃作业生成 | tier_d 接 DynaCompre 准静态档(速率/质量缩放调到 ALLKE/ALLIE≤5%);postprocess **文本注入**补提取(应力-应变全程到致密化 + ALLKE/ALLIE + 质量缩放伪能量 ALLMW + 接触穿透代理);生成 1 个种子作业目录;**1 个本机 run 产出 feature+energy,能量门通过且跑到致密化**(不改 generator 源)| — |
+| NT-2 | 压溃指标提取(SEA/平台/致密化) | `results_to_checks_crush`:SEA=能量到致密化÷质量(质量=ρ̄·V_cell·ρ_material)、平台应力(ISO 13314)、致密化应变(能量吸收效率 η(ε) 法);**合成曲线单测**(理想 plateau+densification 已知 SEA,提取在容差内);真实曲线跑通 | NT-1 |
+| NT-3 | 硬有效性门 | 五门:① 能量平衡 ALLKE/ALLIE≤5% ② 致密化已达 ③ 接触穿透有界 ④ 质量缩放伪能量占比有界 ⑤ 单元删除能量损失有界;全过才 `margin_eligible=True`;任一不过→screening + caveat;正反单测 | NT-1 |
+| NT-4 | margin 接线 | comp_EA/SEA 经显式压溃 → abaqus_fea margin 级(白名单已含),**仅 NT-3 全过 + metric 匹配**才进 margin;SEA 量纲/单位与 schema/evaluator 必要改动;judge 在通过门的压溃 SEA 上给 PASS、门未过给 SCREENING/FAIL,正反单测 | NT-2, NT-3 |
+| NT-5 | 本机验证 run | 复现一个已知 cell_db DynaCompre 或静态 comp_EA 的种子能量/SEA 在容差内(本机 1 个 ABAQUS,E_s 与口径归一);留档 `atlas/reports/tierd_crush/results.md` | NT-4 |
+| NT-6 | 闭环接线(补 P3-D 缺口) | verify.py/screen_estimate:comp_EA/SEA spec 的 OOD 新拓扑路由到非线性 Tier-D(此前吸能被推给 Tier-D 但无路径);对一个吸能 spec 新图演示「生成→筛选→压溃终审→margin」全链;报告 | NT-4 |
+
+---
+
 ## 2. Loop 执行协议
 
 每次迭代严格执行:

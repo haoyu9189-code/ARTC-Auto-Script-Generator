@@ -47,6 +47,19 @@
 | P3-B | 真 agent 端到端 D2 | done | 3 案例真派发全通;一致性 22/22;抓出 2 个真 bug(修补死代码+E12 判据带反);hook 触发留痕一项待用户批准注册后补 |
 | P3-C | Benchmark 仪表 + 单 agent 基线 | done | benchmark.md 落档;判决一致率 SLS 100%/LPBF 33%/MJF 67%;316 全绿 |
 
+## Phase 4 任务状态(非线性/吸能 Tier-D,2026-06-11 用户设 loop)
+
+> GOAL/harness/DoD 见 PLAN §1bis。依赖:NT-1 →(NT-2∥NT-3)→ NT-4 →(NT-5∥NT-6)。
+
+| ID | 任务 | 状态 | 备注 |
+|----|------|------|------|
+| NT-1 | 准静态显式压溃作业生成 | todo | 显式基础设施已在 generator(接触/nlgeom/质量缩放/单元删除);需接线+postprocess 文本注入+本机 run |
+| NT-2 | 压溃指标提取(SEA/平台/致密化) | todo | 能量吸收效率 η 法定致密化;合成曲线单测 |
+| NT-3 | 硬有效性门(5 门) | todo | 能量平衡/致密化达/接触穿透/质量缩放伪能量/单元删除损失 |
+| NT-4 | margin 接线 | todo | 仅硬门全过+metric 匹配才进 abaqus_fea margin |
+| NT-5 | 本机验证 run | todo | 复现已知种子 SEA/能量在容差内 |
+| NT-6 | 闭环接线(补 P3-D 吸能缺口) | todo | OOD 吸能 spec 路由到非线性 Tier-D 全链演示 |
+
 ## 日志
 
 - **2026-06-11 P3-1 Step 1 原型 + KILL 自研 FFT 下界路(用户选 C→b)**:`atlas/mechanics/fft_homog.py`(谱位移法周期均质化 + 逐边半径体素化 + 解析界)。**先评估 arXiv:2509.07579(保证下界 PINN)→ 否决**(2D 标量热传导,非 3D 弹性;对偶下界靠 2D 标量流函数,3D 弹性作者自陈未解;每胞训两个 PINN 慢 5-6 数量级;GPL-3.0;保证在光滑化代理上)——但评估澄清"保证变分下界是定理非 ML,*原则上*可进 margin",且暴露 ATLAS 缺保守地板(beam_homog 偏乐观天花板 + Reuss/HS 对 solid/void 恒等于 0)。**Step 1 上手自研 FFT 测可行性**:求解器对解析解把关(单相精确 / 层合板 **Backus 0.0% 精确**,对比度 1/2~1/100 / ≤Voigt / dual_column_web 正确各向异性),过程抓修 CG 符号 bug(C11>Voigt 非物理)+ 体素化忽略逐边半径(mid_braced 统一半径下塌成简单立方)。**实测墙是数值条件数非红线**:solid/void 干净信号需对比度 ≥1e3 → 普通谱-CG 不收敛(1200 迭代/~550s/胞,resid 卡住);降到 1e-2 收敛但软空相污染信号 10–30%;保守下界(对偶/自平衡空相零应力)未触及;beam_homog ~10ms 已给同量级合理数。**判定 KILL 自研路,改道成熟 Vondřejc-Zeman FFT-Galerkin 保证界(中期)或维持 beam+Tier-D**;`fft_homog.py` 留作已验证点估交叉校验(仅 screening,非白名单)。测试 +7(全绿),完整记录 `atlas/reports/tierc_fft/results.md`。
