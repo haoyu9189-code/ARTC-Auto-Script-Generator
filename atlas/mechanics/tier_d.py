@@ -62,14 +62,22 @@ _ENERGY_SNIPPET = '''
         if _e_reg is None:
             _ef.write('status: no_energy_history\\n')
         else:
+            _keys = [_k for _k in ('ALLIE','ALLKE','ALLAE','ALLVD',
+                                   'ALLFD','ALLWK')
+                     if _k in _e_reg.historyOutputs.keys()]
             _ef.write('status: ok\\n')
-            _ef.write('time allke allie\\n')
-            _ie_map = {}
+            _ef.write('time ' + ' '.join([_k.lower() for _k in _keys])
+                      + '\\n')
+            _maps = {}
+            for _k in _keys:
+                _maps[_k] = {}
+                for _p in _e_reg.historyOutputs[_k].data:
+                    _maps[_k][_p[0]] = _p[1]
             for _p in _e_reg.historyOutputs['ALLIE'].data:
-                _ie_map[_p[0]] = _p[1]
-            for _p in _e_reg.historyOutputs['ALLKE'].data:
-                _ef.write(str(_p[0]) + ' ' + str(_p[1]) + ' ' +
-                          str(_ie_map.get(_p[0], 0.0)) + '\\n')
+                _t = _p[0]
+                _row = [str(_t)] + [str(_maps[_k].get(_t, 0.0))
+                                    for _k in _keys]
+                _ef.write(' '.join(_row) + '\\n')
         _ef.close()
     except Exception as _e_err:
         try:
@@ -90,6 +98,30 @@ def inject_energy_extraction(postprocess_text):
         raise ValueError('postprocess 锚点缺失(writeXYReport 行)——'
                          'script_generator 模板已变,注入器需要更新')
     return postprocess_text.replace(_ANCHOR, _ANCHOR + _ENERGY_SNIPPET, 1)
+
+
+# NT-1:whole-model 能量历史(显式动态压溃用)——填补 script_generator
+# H-Output-2 只取板 U/RF 的缺口,使 ALLKE/ALLIE/ALLAE/ALLVD/ALLFD 入 ODB
+_HIST_MARKER = '# ATLAS-P3X-ENERGY-HIST'
+_HIST_ANCHOR = ("region=a.sets['TopReflection'], sectionPoints=DEFAULT, "
+                "rebar=EXCLUDE)")
+_HIST_SNIPPET = (
+    "\n    " + _HIST_MARKER + ": whole-model 能量历史(准静态/沙漏/接触门)\n"
+    "    mdb.models['Model-1'].HistoryOutputRequest(name='H-Energy',\n"
+    "        createStepName='Step-1',\n"
+    "        variables=('ALLKE', 'ALLIE', 'ALLAE', 'ALLVD', 'ALLFD',"
+    " 'ALLWK', 'ETOTAL'), numIntervals=200)")
+
+
+def inject_energy_history_request(preprocess_text):
+    """向生成的 preprocess 注入 whole-model 能量历史请求(幂等,锚点缺失 fail loud)。"""
+    if _HIST_MARKER in preprocess_text:
+        return preprocess_text
+    if _HIST_ANCHOR not in preprocess_text:
+        raise ValueError('preprocess 锚点缺失(H-Output-2 行)——'
+                         'script_generator 模板已变,能量历史注入器需更新')
+    return preprocess_text.replace(_HIST_ANCHOR,
+                                   _HIST_ANCHOR + _HIST_SNIPPET, 1)
 
 
 def load_champion_docs(names=CHAMPIONS):
@@ -134,6 +166,18 @@ def generate_job_for_doc(doc, out_dir, analysis_type='StaCompre',
     with open(ppath, 'w', encoding='utf-8', newline='\n') as f:
         f.write(inject_energy_extraction(txt))
 
+    # NT-1:显式动态压溃需注入 whole-model 能量历史(静态 Standard 不需要)
+    if analysis_type.startswith('DynaCompre'):
+        pre = [f for f in os.listdir(out_dir)
+               if f.endswith('_preprocess.py')]
+        if len(pre) != 1:
+            raise RuntimeError(f'{name} preprocess 文件异常: {pre}')
+        prepath = os.path.join(out_dir, pre[0])
+        with open(prepath, encoding='utf-8') as f:
+            ptxt = f.read()
+        with open(prepath, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(inject_energy_history_request(ptxt))
+
     caveats = [
         '管线为单半径:逐杆/逐组半径不可表示,'
         f'按均匀 default_radius_mm={doc["default_radius_mm"]} 生成',
@@ -149,6 +193,52 @@ def generate_job_for_doc(doc, out_dir, analysis_type='StaCompre',
                             'source_type': 'vendor'},
             'caveats': caveats,
             'source': 'atlas.mechanics.tier_d.generate_job_for_doc'}
+    with open(os.path.join(out_dir, 'job_meta.json'), 'w',
+              encoding='utf-8') as f:
+        json.dump(meta, f, ensure_ascii=False, indent=2)
+    return meta
+
+
+import re as _re
+
+
+def generate_crush_job(doc, out_dir, lattice_array=(1, 1, 1),
+                       crush_strain=0.8, strain_rate=10.0,
+                       extra_caveats=()):
+    """非线性吸能 Tier-D 压溃作业(NT-1):显式动态 + 自接触 + 能量历史。
+
+    控制运动学到准静态、合理压溃量(原管线 timePeriod=20/velocity 恒压溃
+    20mm,对单胞 4× 过压溃且偏动态)。velocity=strain_rate·H0,timePeriod
+    =crush_strain·H0/velocity=crush_strain/strain_rate;均经文本 patch,
+    不改 generator 源。准静态有效性最终由 ALLKE/ALLIE≤5% 能量门 + 半速不变性
+    (NT-5)实证,非断言。
+    """
+    nz = lattice_array[2]
+    H0 = CELL_H * nz
+    velocity = strain_rate * H0                       # mm/s
+    time_period = crush_strain / strain_rate          # s(=压溃量/velocity)
+    cav = list(extra_caveats) + [
+        f'压溃运动学:目标应变 {crush_strain}、应变率 {strain_rate}/s '
+        f'→ velocity {velocity:g} mm/s、timePeriod {time_period:g}s '
+        '(准静态由能量门+半速不变性实证)']
+    meta = generate_job_for_doc(
+        doc, out_dir, analysis_type=f'DynaCompre_{velocity:g}',
+        lattice_array=lattice_array, extra_caveats=cav)
+    # patch timePeriod(generator 给的是 20/velocity,需改为目标压溃量对应)
+    pre = [f for f in os.listdir(out_dir)
+           if f.endswith('_preprocess.py')][0]
+    prepath = os.path.join(out_dir, pre)
+    with open(prepath, encoding='utf-8') as f:
+        txt = f.read()
+    new, n = _re.subn(r'timePeriod=[\d.eE+-]+',
+                      f'timePeriod={time_period:g}', txt, count=1)
+    if n != 1:
+        raise RuntimeError('timePeriod patch 失败:锚点未命中')
+    with open(prepath, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(new)
+    meta['crush'] = {'crush_strain': crush_strain,
+                     'strain_rate': strain_rate, 'velocity_mm_s': velocity,
+                     'time_period_s': time_period, 'H0_mm': H0}
     with open(os.path.join(out_dir, 'job_meta.json'), 'w',
               encoding='utf-8') as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
@@ -227,31 +317,64 @@ def parse_feature_data(path):
 
 
 def parse_energy_data(path):
-    """energy_data.txt → {'status', 'ratio_max', 'n_points'}。
+    """energy_data.txt → {'status','ratio_max','ratio_allae','contact_frac',
+    'n_points'}(header 驱动,兼容旧 3 列 'time allke allie';新格式列序任意)。
 
-    ratio_max 只在 ALLIE ≥ 1% 终值处取(初期 ALLIE≈0 的比值噪声不计,
-    属准静态评估惯例,留 caveat)。
+    比值只在 ALLIE ≥ 1% 终值处取(初期 ALLIE≈0 的比值噪声不计,准静态惯例)。
+    ratio_max=ALLKE/ALLIE(动能门);ratio_allae=ALLAE/ALLIE(沙漏/人工能门);
+    contact_frac=(ALLVD+ALLFD)/ALLIE(接触/黏性耗散占比,稳定性代理)。
     """
     if not os.path.exists(path):
-        return {'status': 'missing', 'ratio_max': None, 'n_points': 0}
+        return {'status': 'missing', 'ratio_max': None,
+                'ratio_allae': None, 'contact_frac': None, 'n_points': 0}
     with open(path, encoding='utf-8', errors='replace') as f:
         lines = f.read().splitlines()
-    status = lines[0].split(':', 1)[1].strip() if lines else 'empty'
-    if status != 'ok':
-        return {'status': status, 'ratio_max': None, 'n_points': 0}
-    ke, ie = [], []
+    status = (lines[0].split(':', 1)[1].strip()
+              if lines and ':' in lines[0] else 'empty')
+    none3 = {'ratio_max': None, 'ratio_allae': None, 'contact_frac': None}
+    if status != 'ok' or len(lines) < 2:
+        return dict(status=status, n_points=0, **none3)
+    cols = lines[1].split()                      # e.g. time allie allke allae
+    data = {c: [] for c in cols}
     for ln in lines[2:]:
         parts = ln.split()
-        if len(parts) == 3:
-            ke.append(float(parts[1]))
-            ie.append(float(parts[2]))
-    ke, ie = np.asarray(ke), np.asarray(ie)
+        if len(parts) != len(cols):
+            continue
+        for c, p in zip(cols, parts):
+            try:
+                data[c].append(float(p))
+            except ValueError:
+                data[c].append(0.0)
+
+    def arr(name):
+        return np.asarray(data.get(name, []), float)
+
+    ie = arr('allie')
     if not len(ie) or ie.max() <= 0:
-        return {'status': 'no_internal_energy', 'ratio_max': None,
-                'n_points': int(len(ke))}
+        return dict(status='no_internal_energy', n_points=int(len(ie)),
+                    **none3)
     m = ie >= 0.01 * ie.max()
-    ratio = float((ke[m] / ie[m]).max()) if m.any() else None
-    return {'status': 'ok', 'ratio_max': ratio, 'n_points': int(len(ke))}
+
+    def ratio(name):
+        n = arr(name)
+        if len(n) != len(ie) or not m.any():
+            return None
+        return float((n[m] / ie[m]).max())
+
+    vd, fd = arr('allvd'), arr('allfd')
+    cd = np.zeros_like(ie)
+    has_cd = False
+    if len(vd) == len(ie):
+        cd = cd + vd
+        has_cd = True
+    if len(fd) == len(ie):
+        cd = cd + fd
+        has_cd = True
+    contact = (float((cd[m] / ie[m]).max()) if (has_cd and m.any())
+               else None)
+    return {'status': 'ok', 'ratio_max': ratio('allke'),
+            'ratio_allae': ratio('allae'), 'contact_frac': contact,
+            'n_points': int(len(ie))}
 
 
 def results_to_checks(job_dir, spec):
@@ -327,3 +450,172 @@ def results_to_checks(job_dir, spec):
             'margin_eligible': bool(margin_allowed
                                     and metric.startswith('comp_EA'))})
     return checks
+
+
+# ============================================================
+# NT-2/3/4:非线性压溃指标(SEA/平台/致密化)+ 硬有效性门 + margin 接线
+# ============================================================
+
+# 实心材料密度 g/mm³(SEA 用实心杆质量 m=ρ·V0·ρ̄,非包络质量)
+_RHO_SOLID_G_MM3 = {'PA12': 1.01e-3, 'AlSi10Mg': 2.67e-3, 'Ti64': 4.43e-3}
+CRUSH_KE_GATE = 0.05        # ALLKE/ALLIE 准静态
+CRUSH_AE_GATE = 0.05        # ALLAE/ALLIE 沙漏/人工能
+CRUSH_CONTACT_GATE = 0.10   # (ALLVD+ALLFD)/ALLIE 接触/黏性耗散
+ISO13314 = ('ISO 13314:2011(平台应力 20-40% 均值)+ Li 2006 '
+            '能量吸收效率法(致密化起点)')
+
+
+def _smooth(y, w=7):
+    if len(y) < w or w < 2:
+        return np.asarray(y, float)
+    return np.convolve(np.asarray(y, float), np.ones(w) / w, mode='same')
+
+
+def crush_metrics(disp, force, H0, A0, n_grid=400):
+    """力-位移压溃曲线 → SEA 输入(ISO 13314 + 效率法致密化)。None 表数据不足。
+
+    eps_d=致密化应变(效率 η=W/σ 全局峰,限 ε>0.1);comp_EA_to_d=∫F·dδ
+    截到 δ_d=ε_d·H0(关键:不积满全曲线,否则 SEA 虚高);sigma_pl=平台应力。
+    """
+    disp = np.asarray(disp, float)
+    force = np.asarray(force, float)
+    ok = np.isfinite(disp) & np.isfinite(force) & (disp >= 0)
+    disp, force = disp[ok], force[ok]
+    order = np.argsort(disp)
+    disp, force = disp[order], force[order]
+    uniq = np.concatenate([[True], np.diff(disp) > 1e-9])
+    disp, force = disp[uniq], force[uniq]
+    if len(disp) < 8:
+        return None
+    eps, sig = disp / H0, force / A0
+    eps_max = float(eps.max())
+    g = np.linspace(0.0, eps_max, n_grid)
+    sg = _smooth(np.interp(g, eps, sig))
+    W = np.concatenate([[0.0], np.cumsum(0.5 * (sg[1:] + sg[:-1])
+                                         * np.diff(g))])
+    with np.errstate(divide='ignore', invalid='ignore'):
+        eta = np.where(sg > 1e-9, W / sg, 0.0)
+    mask = g > 0.1
+    densified, eps_d = False, eps_max
+    if mask.any():
+        idx = np.flatnonzero(mask)[int(np.argmax(eta[mask]))]
+        eps_d = float(g[idx])
+        densified = bool(idx < len(g) - 3 and eps_d < 0.98 * eps_max)
+    d_d = eps_d * H0
+    wd = disp <= d_d
+    comp_EA_to_d = (float(np.trapezoid(force[wd], disp[wd]))
+                    if wd.sum() >= 2 else 0.0)
+    comp_EA_full = float(np.trapezoid(force, disp))
+    lo, hi = 0.20, min(0.40, eps_d)
+    pm = (g >= lo) & (g <= hi)
+    sigma_pl = (float(np.trapezoid(sg[pm], g[pm]) / (hi - lo))
+                if pm.sum() >= 2 and hi > lo else None)
+    return {'eps_d': eps_d, 'eps_max': eps_max, 'sigma_pl': sigma_pl,
+            'comp_EA_to_d': comp_EA_to_d, 'comp_EA_full': comp_EA_full,
+            'densified': densified, 'plateau_window': [lo, round(hi, 4)]}
+
+
+def results_to_checks_crush(job_dir, spec):
+    """显式压溃产物 → (checks, summary)。SEA/comp_EA 仅在五硬门全过时进 margin。"""
+    with open(os.path.join(job_dir, 'job_meta.json'),
+              encoding='utf-8') as f:
+        meta = json.load(f)
+    nx, ny, nz = meta.get('lattice_array', [1, 1, 1])
+    H0, A0 = CELL_H * nz, CELL_A * nx * ny
+    V0 = A0 * H0
+    feat = parse_feature_data(os.path.join(job_dir, 'feature_data.txt'))
+    energy = parse_energy_data(os.path.join(job_dir, 'energy_data.txt'))
+    spec = spec or {}
+    metric = str(spec.get('margin_metric', '')).lower()
+    is_ea = ('ea' in metric) or ('sea' in metric) or ('吸能' in metric)
+    try:
+        rho_rel = float(feat['header'].get('density'))
+    except (TypeError, ValueError):
+        rho_rel = spec.get('rho_rel')
+    material = spec.get('material', 'PA12')
+    rho_solid = _RHO_SOLID_G_MM3.get(material, _RHO_SOLID_G_MM3['PA12'])
+
+    cm = crush_metrics(feat['disp'], feat['force'], H0, A0)
+    ke, ae, cf = (energy.get('ratio_max'), energy.get('ratio_allae'),
+                  energy.get('contact_frac'))
+    ke_ok = (ke is not None and ke <= CRUSH_KE_GATE)
+    ae_ok = (ae is None) or (ae <= CRUSH_AE_GATE)
+    cf_ok = (cf is None) or (cf <= CRUSH_CONTACT_GATE)
+    dens_ok = bool(cm and cm['densified'])
+    gates_pass = bool(cm and ke_ok and ae_ok and cf_ok and dens_ok)
+
+    checks = [
+        {'dimension': 'mechanics', 'tool': 'abaqus.crush.energy_gate',
+         'value': (round(ke, 6) if ke is not None else None),
+         'threshold': CRUSH_KE_GATE, 'pass': bool(ke_ok),
+         'source': ENERGY_GATE_SOURCE + ';DynaCompre 显式→HARD 门',
+         'source_type': 'vendor', 'status': 'computed',
+         'caveats': ['ALLKE/ALLIE≤5% 准静态有效性(显式动态为硬门)']},
+        {'dimension': 'mechanics', 'tool': 'abaqus.crush.hourglass_gate',
+         'value': (round(ae, 6) if ae is not None else None),
+         'threshold': CRUSH_AE_GATE, 'pass': bool(ae_ok),
+         'source': 'ALLAE/ALLIE 沙漏/人工能(C3D10M 弯曲屈曲下 EA 失真判据)',
+         'source_type': 'vendor',
+         'status': ('computed' if ae is not None else 'needs_input'),
+         'caveats': ([] if ae is not None
+                     else ['无 ALLAE 历史,沙漏门未验证(留痕)'])},
+        {'dimension': 'mechanics', 'tool': 'abaqus.crush.contact_stability',
+         'value': (round(cf, 6) if cf is not None else None),
+         'threshold': CRUSH_CONTACT_GATE, 'pass': bool(cf_ok),
+         'source': '(ALLVD+ALLFD)/ALLIE 接触/黏性耗散占比(稳定性代理)',
+         'source_type': 'vendor',
+         'status': ('computed' if cf is not None else 'needs_input'),
+         'caveats': ['穿透<单元尺寸不可从能量历史判定,代理量留 caveat']},
+        {'dimension': 'mechanics', 'tool': 'abaqus.crush.densification',
+         'value': (round(cm['eps_d'], 4) if cm else None),
+         'threshold': None, 'pass': dens_ok, 'source': ISO13314,
+         'source_type': 'abaqus_fea',
+         'status': ('computed' if cm else 'out_of_domain'),
+         'caveats': ([] if dens_ok
+                     else ['未检出内部效率峰:未压到致密化,SEA 不可认证'])},
+    ]
+    base_cav = list(meta.get('caveats', []))
+    if not gates_pass:
+        base_cav.append('硬有效性门未全过 → SEA/comp_EA 仅 screening,不进 margin')
+
+    sea, m_solid = None, 0.0
+    if cm:
+        if cm['sigma_pl'] is not None:
+            checks.append({
+                'dimension': 'mechanics',
+                'tool': 'abaqus.crush.plateau_stress',
+                'value': round(cm['sigma_pl'], 4), 'threshold': None,
+                'pass': None, 'source': ISO13314 + f";窗 {cm['plateau_window']}",
+                'source_type': 'abaqus_fea', 'status': 'computed',
+                'caveats': [], 'margin_eligible': False})
+        m_solid = rho_solid * V0 * (rho_rel or 0.0)
+        sea = (cm['comp_EA_to_d'] / m_solid) if m_solid > 0 else None
+        checks.append({
+            'dimension': 'mechanics', 'tool': 'abaqus.crush.SEA',
+            'value': (round(sea, 2) if sea is not None else None),
+            'threshold': None, 'pass': None,
+            'source': f'∫F·dδ 截到 ε_d={cm["eps_d"]:.3f} ÷ 实心质量'
+                      f'(ρ_{material}·V0·ρ̄={m_solid:.5g} g),单位 J/kg',
+            'source_type': 'abaqus_fea', 'status': 'computed',
+            'caveats': base_cav + ['SEA=实心杆质量归一(非包络);积分截到致密化'],
+            'margin_eligible': bool(gates_pass and is_ea
+                                    and sea is not None)})
+        checks.append({
+            'dimension': 'mechanics', 'tool': 'abaqus.crush.comp_EA',
+            'value': round(cm['comp_EA_to_d'], 4), 'threshold': None,
+            'pass': None,
+            'source': f'∫F·dδ 截到 ε_d(全曲线={cm["comp_EA_full"]:.1f} 仅对照)',
+            'source_type': 'abaqus_fea', 'status': 'computed',
+            'caveats': base_cav,
+            'margin_eligible': bool(gates_pass and is_ea)})
+
+    summary = {'eps_d': (cm['eps_d'] if cm else None),
+               'sigma_pl': (cm['sigma_pl'] if cm else None),
+               'comp_EA_to_d': (cm['comp_EA_to_d'] if cm else None),
+               'comp_EA_full': (cm['comp_EA_full'] if cm else None),
+               'SEA_J_per_kg': (round(sea, 2) if sea is not None else None),
+               'm_solid_g': round(m_solid, 6), 'rho_rel': rho_rel,
+               'gates': {'ke': ke_ok, 'hourglass': ae_ok, 'contact': cf_ok,
+                         'densified': dens_ok, 'all_pass': gates_pass},
+               'is_energy_metric': is_ea, 'source_type': 'abaqus_fea'}
+    return checks, summary

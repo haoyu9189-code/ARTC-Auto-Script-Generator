@@ -7,15 +7,195 @@ import pytest
 
 from atlas.evaluator.core import MARGIN_EVIDENCE_WHITELIST, validate_trace
 from atlas.mechanics.tier_d import (CHAMPIONS, ENERGY_GATE_THRESHOLD,
+                                    crush_metrics,
                                     generate_tier_d_jobs,
                                     inject_energy_extraction,
+                                    inject_energy_history_request,
                                     load_champion_docs,
                                     parse_energy_data,
                                     parse_feature_data,
-                                    results_to_checks)
+                                    results_to_checks,
+                                    results_to_checks_crush)
 
 ANCHOR = ("    session.writeXYReport(fileName='feature_data.txt', "
           "xyData=(xy_combined, ), appendMode=ON)")
+HIST_ANCHOR = ("    region=a.sets['TopReflection'], sectionPoints=DEFAULT, "
+               "rebar=EXCLUDE)")
+
+
+# ---- NT-1:能量历史注入器 ----
+
+def test_inject_energy_history_idempotent_and_fail_loud():
+    fake = "    foo()\n" + HIST_ANCHOR + "\n    bar()\n"
+    once = inject_energy_history_request(fake)
+    assert 'ATLAS-P3X-ENERGY-HIST' in once
+    assert 'H-Energy' in once and 'ALLAE' in once
+    assert inject_energy_history_request(once) == once       # 幂等
+    with pytest.raises(ValueError):                          # 锚点缺失必炸
+        inject_energy_history_request('print(1)\n')
+
+
+def test_parse_energy_data_header_aware(tmp_path):
+    # 新多列格式(列序任意)
+    p = tmp_path / 'e_new.txt'
+    rows = ['status: ok', 'time allie allke allae allvd allfd']
+    for i in range(20):
+        ie = (i + 1) * 5.0
+        rows.append(f'{i*0.01:.4f} {ie} {0.02*ie} {0.01*ie} '
+                    f'{0.03*ie} {0.02*ie}')
+    p.write_text('\n'.join(rows), encoding='utf-8')
+    r = parse_energy_data(str(p))
+    assert r['status'] == 'ok'
+    assert abs(r['ratio_max'] - 0.02) < 1e-6        # ALLKE/ALLIE
+    assert abs(r['ratio_allae'] - 0.01) < 1e-6
+    assert abs(r['contact_frac'] - 0.05) < 1e-6     # (vd+fd)/ie=0.03+0.02
+    # 旧 3 列格式 'time allke allie' 仍解析(向后兼容)
+    p2 = tmp_path / 'e_old.txt'
+    old = ['status: ok', 'time allke allie']
+    for i in range(20):
+        ie = (i + 1) * 5.0
+        old.append(f'{i*0.01:.4f} {0.01*ie} {ie}')
+    p2.write_text('\n'.join(old), encoding='utf-8')
+    r2 = parse_energy_data(str(p2))
+    assert abs(r2['ratio_max'] - 0.01) < 1e-6
+
+
+# ---- NT-2/3/4:压溃指标 + 硬门 + margin(合成已知曲线)----
+
+def _synthetic_crush(sigma_pl=10.0, eps_y=0.03, eps_d=0.6, eps_end=0.8,
+                     sig_dens=60.0, n=300):
+    """理想化 σ(ε):弹性斜坡→平台→致密化陡升。返回 (eps, sig)。"""
+    eps = np.linspace(0, eps_end, n)
+    sig = np.where(
+        eps <= eps_y, sigma_pl * eps / eps_y,
+        np.where(eps <= eps_d, sigma_pl,
+                 sigma_pl + (sig_dens - sigma_pl)
+                 * (eps - eps_d) / (eps_end - eps_d)))
+    return eps, sig
+
+
+def _write_crush_job(tmp_path, eps, sig, rel_density=0.2,
+                     ke=0.01, ae=0.01, vd=0.005, fd=0.005,
+                     H0=5.0, A0=25.0, lattice=(1, 1, 1)):
+    meta = {'name': 'champ_crush', 'analysis_type': 'DynaCompre_50',
+            'lattice_array': list(lattice), 'caveats': ['单半径限定'],
+            'energy_gate': {'threshold': 0.05}}
+    (tmp_path / 'job_meta.json').write_text(json.dumps(meta),
+                                            encoding='utf-8')
+    disp, force = eps * H0, sig * A0
+    fl = ['champ_crush', 'status: COMPLETED', f'density: {rel_density}',
+          f'strain_length: {H0}', f'stress_area: {A0}',
+          'RIGIDPLATE-2 RIGIDPLATE-1']
+    fl += [f'  {d:.6f}  {f:.6f}' for d, f in zip(disp, force)]
+    (tmp_path / 'feature_data.txt').write_text('\n'.join(fl),
+                                               encoding='utf-8')
+    el = ['status: ok', 'time allie allke allae allvd allfd']
+    for i in range(40):
+        ie = (i + 1) * 10.0
+        el.append(f'{i*0.002:.4f} {ie} {ke*ie} {ae*ie} {vd*ie} {fd*ie}')
+    (tmp_path / 'energy_data.txt').write_text('\n'.join(el),
+                                              encoding='utf-8')
+
+
+def test_crush_metrics_densification_and_truncation():
+    eps, sig = _synthetic_crush(eps_d=0.6)
+    cm = crush_metrics(eps * 5.0, sig * 25.0, H0=5.0, A0=25.0)
+    assert cm['densified'] is True
+    assert 0.54 < cm['eps_d'] < 0.66           # 效率峰 ≈ 致密化起点 0.6
+    assert 9.0 < cm['sigma_pl'] < 11.0          # 平台 ≈ 10 MPa
+    # 截到 ε_d 的吸能 ≈ 弹性+平台 = (0.15+5.7)*125 ≈ 731 mJ
+    assert 680 < cm['comp_EA_to_d'] < 780
+    # 关键修正:截断值 << 全曲线(含致密化尾)
+    assert cm['comp_EA_to_d'] < 0.75 * cm['comp_EA_full']
+
+
+def test_crush_SEA_solid_mass_not_envelope(tmp_path):
+    eps, sig = _synthetic_crush()
+    _write_crush_job(tmp_path, eps, sig, rel_density=0.2)
+    checks, summ = results_to_checks_crush(
+        str(tmp_path), {'material': 'PA12', 'margin_metric': 'SEA'})
+    sea = next(c for c in checks if c['tool'] == 'abaqus.crush.SEA')
+    # 实心质量 = 1.01e-3·125·0.2 = 0.02525 g;SEA = comp_EA/质量
+    assert summ['m_solid_g'] == pytest.approx(0.02525, rel=1e-3)
+    assert sea['value'] == pytest.approx(
+        summ['comp_EA_to_d'] / 0.02525, rel=1e-3)
+    # 实心质量归一 = 包络质量归一 × (1/ρ̄) = 5×(ρ̄=0.2)
+    envelope = summ['comp_EA_to_d'] / (1.01e-3 * 125)
+    assert sea['value'] == pytest.approx(envelope * 5.0, rel=1e-3)
+
+
+def test_crush_energy_gate_hard_and_margin(tmp_path):
+    eps, sig = _synthetic_crush()
+    _write_crush_job(tmp_path, eps, sig, ke=0.01)        # 门过
+    checks, summ = results_to_checks_crush(
+        str(tmp_path), {'material': 'PA12', 'margin_metric': 'comp_EA'})
+    gate = next(c for c in checks
+                if c['tool'] == 'abaqus.crush.energy_gate')
+    assert gate['pass'] is True
+    assert summ['gates']['all_pass'] is True
+    sea = next(c for c in checks if c['tool'] == 'abaqus.crush.SEA')
+    assert sea['margin_eligible'] is True               # 吸能 spec + 门全过
+
+
+def test_crush_energy_gate_fail_cancels_margin(tmp_path):
+    eps, sig = _synthetic_crush()
+    _write_crush_job(tmp_path, eps, sig, ke=0.20)        # 动能门超
+    checks, summ = results_to_checks_crush(
+        str(tmp_path), {'material': 'PA12', 'margin_metric': 'SEA'})
+    gate = next(c for c in checks
+                if c['tool'] == 'abaqus.crush.energy_gate')
+    assert gate['pass'] is False
+    assert summ['gates']['all_pass'] is False
+    for c in checks:
+        if c['tool'] in ('abaqus.crush.SEA', 'abaqus.crush.comp_EA'):
+            assert c.get('margin_eligible') is False
+
+
+def test_crush_non_energy_metric_not_margin(tmp_path):
+    eps, sig = _synthetic_crush()
+    _write_crush_job(tmp_path, eps, sig, ke=0.01)
+    checks, _ = results_to_checks_crush(
+        str(tmp_path), {'material': 'PA12',
+                        'margin_metric': 'comp_stiffness'})
+    for c in checks:
+        if c['tool'] in ('abaqus.crush.SEA', 'abaqus.crush.comp_EA'):
+            assert c.get('margin_eligible') is False     # 刚度 spec≠吸能
+
+
+def test_crush_judge_gives_margin_pass(tmp_path):
+    """NT-4 全链:门全过的压溃 SEA(abaqus_fea 白名单)→ judge 给 PASS。"""
+    from atlas.evaluator.core import judge
+    eps, sig = _synthetic_crush()
+    _write_crush_job(tmp_path, eps, sig, ke=0.01, rel_density=0.2)
+    spec = {'material': 'PA12', 'margin_metric': 'SEA',
+            'design_value_with_fos': 5000.0, 'n_cells': 3,
+            'fos_already_applied': True, 'confidence_level': 'screening'}
+    checks, summ = results_to_checks_crush(str(tmp_path), spec)
+    sea = next(c for c in checks if c['tool'] == 'abaqus.crush.SEA')
+    assert sea['value'] > 5000.0 and sea['margin_eligible'] is True
+    extra = [{'dimension': 'density', 'tool': 'rel_density.mesh',
+              'value': 0.2, 'pass': True, 'status': 'computed',
+              'source': 'mesh'},
+             {'dimension': 'printability',
+              'tool': 'printability.validate_mesh',
+              'value': {'watertight': True}, 'pass': True,
+              'status': 'computed', 'source': 'trimesh'}]
+    t = judge('crush1', '2', checks + extra, spec, n_cells=3)
+    assert t['verdict'] == 'PASS'
+    assert t['margin']['ratio'] > 1.0
+
+
+def test_crush_not_densified_no_margin(tmp_path):
+    # 只压到 50%,平台未结束,无内部效率峰 → 未致密化
+    eps = np.linspace(0, 0.5, 200)
+    sig = np.where(eps <= 0.03, 10.0 * eps / 0.03, 10.0)
+    _write_crush_job(tmp_path, eps, sig, ke=0.01)
+    checks, summ = results_to_checks_crush(
+        str(tmp_path), {'material': 'PA12', 'margin_metric': 'SEA'})
+    assert summ['gates']['densified'] is False
+    assert summ['gates']['all_pass'] is False
+    sea = next(c for c in checks if c['tool'] == 'abaqus.crush.SEA')
+    assert sea['margin_eligible'] is False
 
 
 # ---- 注入器 ----

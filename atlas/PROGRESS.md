@@ -53,11 +53,11 @@
 
 | ID | 任务 | 状态 | 备注 |
 |----|------|------|------|
-| NT-1 | 准静态显式压溃作业生成 | todo | 显式基础设施已在 generator(接触/nlgeom/质量缩放/单元删除);需接线+postprocess 文本注入+本机 run |
-| NT-2 | 压溃指标提取(SEA/平台/致密化) | todo | 能量吸收效率 η 法定致密化;合成曲线单测 |
-| NT-3 | 硬有效性门(5 门) | todo | 能量平衡/致密化达/接触穿透/质量缩放伪能量/单元删除损失 |
-| NT-4 | margin 接线 | todo | 仅硬门全过+metric 匹配才进 abaqus_fea margin |
-| NT-5 | 本机验证 run | todo | 复现已知种子 SEA/能量在容差内 |
+| NT-1 | 准静态显式压溃作业生成 | in_progress | 代码完成(generate_crush_job + whole-model 能量历史注入 + timePeriod patch);dual_column_web 作业生成,本机 ABAQUS run 进行中(绝对路径修复后)|
+| NT-2 | 压溃指标提取(SEA/平台/致密化) | done | crush_metrics:效率 η 法定 ε_d、ISO13314 平台、积分截到 ε_d;合成曲线单测在容差内;真实曲线待 NT-5 run 确认 |
+| NT-3 | 硬有效性门(5 门) | done | 能量(ALLKE/ALLIE)+ 沙漏(ALLAE)+ 接触(ALLVD+ALLFD)+ 致密化达 + 积分窗;正反单测 |
+| NT-4 | margin 接线 | done | 门全过+吸能 metric 匹配才 abaqus_fea margin;judge 全链测试给 PASS;非吸能/门未过→不进 margin |
+| NT-5 | 本机验证 run | in_progress | dual_column_web DynaCompre run 跑中;待半速不变性 + 与静态/库内对照 |
 | NT-6 | 闭环接线(补 P3-D 吸能缺口) | todo | OOD 吸能 spec 路由到非线性 Tier-D 全链演示 |
 
 ## 日志
