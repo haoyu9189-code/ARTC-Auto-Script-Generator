@@ -168,12 +168,12 @@ def test_crush_SEA_solid_mass_not_envelope(tmp_path):
     checks, summ = results_to_checks_crush(
         str(tmp_path), {'material': 'PA12', 'margin_metric': 'SEA'})
     sea = next(c for c in checks if c['tool'] == 'abaqus.crush.SEA')
-    # 实心质量 = 1.01e-3·125·0.2 = 0.02525 g;SEA = comp_EA/质量
+    # 实心质量 = 1.01e-3·125·0.2 = 0.02525 g;SEA = comp_EA_ref/质量
     assert summ['m_solid_g'] == pytest.approx(0.02525, rel=1e-3)
     assert sea['value'] == pytest.approx(
-        summ['comp_EA_to_d'] / 0.02525, rel=1e-3)
+        summ['comp_EA_ref'] / 0.02525, rel=1e-3)
     # 实心质量归一 = 包络质量归一 × (1/ρ̄) = 5×(ρ̄=0.2)
-    envelope = summ['comp_EA_to_d'] / (1.01e-3 * 125)
+    envelope = summ['comp_EA_ref'] / (1.01e-3 * 125)
     assert sea['value'] == pytest.approx(envelope * 5.0, rel=1e-3)
 
 
@@ -260,17 +260,33 @@ def test_nt6_energy_spec_escalates_and_routes(tmp_path):
     assert r2['routed'] is False
 
 
-def test_crush_not_densified_no_margin(tmp_path):
-    # 只压到 50%,平台未结束,无内部效率峰 → 未致密化
-    eps = np.linspace(0, 0.5, 200)
-    sig = np.where(eps <= 0.03, 10.0 * eps / 0.03, 10.0)
+def test_crush_ref_strain_not_reached_no_margin(tmp_path):
+    # 只压到 40% < 参考应变 0.5 → 设计 SEA 窗未覆盖 → 不进 margin
+    eps = np.linspace(0, 0.4, 200)
+    sig = np.where(eps <= 0.03, 1.0 * eps / 0.03, 1.0)
     _write_crush_job(tmp_path, eps, sig, ke=0.01)
     checks, summ = results_to_checks_crush(
         str(tmp_path), {'material': 'PA12', 'margin_metric': 'SEA'})
-    assert summ['gates']['densified'] is False
+    assert summ['gates']['ref_reached'] is False
     assert summ['gates']['all_pass'] is False
     sea = next(c for c in checks if c['tool'] == 'abaqus.crush.SEA')
     assert sea['margin_eligible'] is False
+
+
+def test_crush_ref_strain_sea_is_primary_margin(tmp_path):
+    """主 margin = 固定参考应变 SEA;到致密化 SEA 仅诊断(不进 margin)。"""
+    eps, sig = _synthetic_crush(sigma_pl=1.0)
+    _write_crush_job(tmp_path, eps, sig, ke=0.01, rel_density=0.2)
+    checks, summ = results_to_checks_crush(
+        str(tmp_path), {'material': 'PA12', 'margin_metric': 'SEA',
+                        'sea_ref_strain': 0.5})
+    assert summ['ref_strain'] == 0.5
+    sea = next(c for c in checks if c['tool'] == 'abaqus.crush.SEA')
+    sea_d = next(c for c in checks
+                 if c['tool'] == 'abaqus.crush.SEA_to_densification')
+    assert sea['margin_eligible'] is True       # 参考应变 SEA 进 margin
+    assert sea_d['margin_eligible'] is False     # 到致密化仅诊断
+    assert summ['SEA_to_densification_J_per_kg'] is not None
 
 
 # ---- 注入器 ----

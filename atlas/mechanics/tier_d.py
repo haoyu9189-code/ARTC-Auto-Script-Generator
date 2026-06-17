@@ -546,11 +546,13 @@ def _smooth(y, w=7):
     return np.convolve(np.asarray(y, float), np.ones(w) / w, mode='same')
 
 
-def crush_metrics(disp, force, H0, A0, n_grid=400):
+def crush_metrics(disp, force, H0, A0, n_grid=400, ref_strain=0.5):
     """力-位移压溃曲线 → SEA 输入(ISO 13314 + 效率法致密化)。None 表数据不足。
 
     eps_d=致密化应变(效率 η=W/σ 全局峰,限 ε>0.1);comp_EA_to_d=∫F·dδ
-    截到 δ_d=ε_d·H0(关键:不积满全曲线,否则 SEA 虚高);sigma_pl=平台应力。
+    截到 δ_d=ε_d·H0(诊断:多胞渐进致密化时 ε_d 检测对速率敏感);
+    comp_EA_ref=∫ 到固定参考应变 ref_strain(rate-stable 设计口径,用户选定);
+    sigma_pl=平台应力。
     """
     disp = np.asarray(disp, float)
     force = np.asarray(force, float)
@@ -583,11 +585,19 @@ def crush_metrics(disp, force, H0, A0, n_grid=400):
     comp_EA_to_d = (float(np.trapezoid(force[wd], disp[wd]))
                     if wd.sum() >= 2 else 0.0)
     comp_EA_full = float(np.trapezoid(force, disp))
+    # 固定参考应变能量(rate-stable 设计口径):∫ 到 min(ref_strain, eps_max)
+    ref_eps = min(ref_strain, eps_max)
+    wr = disp <= ref_eps * H0
+    comp_EA_ref = (float(np.trapezoid(force[wr], disp[wr]))
+                   if wr.sum() >= 2 else 0.0)
+    ref_reached = bool(eps_max >= ref_strain - 1e-9)
     lo, hi = 0.20, min(0.40, eps_d)
     pm = (g >= lo) & (g <= hi)
     sigma_pl = (float(np.trapezoid(sg[pm], g[pm]) / (hi - lo))
                 if pm.sum() >= 2 and hi > lo else None)
     return {'eps_d': eps_d, 'eps_max': eps_max, 'sigma_pl': sigma_pl,
+            'comp_EA_ref': comp_EA_ref, 'ref_strain': ref_strain,
+            'ref_reached': ref_reached,
             'comp_EA_to_d': comp_EA_to_d, 'comp_EA_full': comp_EA_full,
             'densified': densified, 'plateau_window': [lo, round(hi, 4)]}
 
@@ -614,7 +624,9 @@ def results_to_checks_crush(job_dir, spec):
     material = spec.get('material', 'PA12')
     rho_solid = _RHO_SOLID_G_MM3.get(material, _RHO_SOLID_G_MM3['PA12'])
 
-    cm = crush_metrics(feat['disp'], feat['force'], H0, A0)
+    ref_strain = float(spec.get('sea_ref_strain', 0.5))
+    cm = crush_metrics(feat['disp'], feat['force'], H0, A0,
+                       ref_strain=ref_strain)
     # KE 门判据 = ALLKE/ALLIE 的 **p90**(准静态标准看时间均值/p90,容首次
     # 接触/屈曲的短暂瞬态;ISO/Abaqus 准静态准则)。峰值 ke_max 作诊断报告,
     # 回退到 max(旧数据无 p90 时)。
@@ -626,8 +638,11 @@ def results_to_checks_crush(job_dir, spec):
     ke_ok = (ke is not None and ke <= CRUSH_KE_GATE)
     ae_ok = (ae is None) or (ae <= CRUSH_AE_GATE)
     cf_ok = (cf is None) or (cf <= CRUSH_CONTACT_GATE)
-    dens_ok = bool(cm and cm['densified'])
-    gates_pass = bool(cm and ke_ok and ae_ok and cf_ok and dens_ok)
+    dens_ok = bool(cm and cm['densified'])          # 诊断:是否压到致密化
+    ref_ok = bool(cm and cm.get('ref_reached'))     # 设计 SEA 需覆盖参考应变
+    # 设计 margin 走**固定参考应变 SEA**(rate-stable,用户选定口径):
+    # 门 = 准静态 + 沙漏 + 接触 + 曲线覆盖到 ref_strain
+    gates_pass = bool(cm and ke_ok and ae_ok and cf_ok and ref_ok)
 
     ke_cav = ['ALLKE/ALLIE p90≤5% 准静态有效性(显式动态硬门;'
               '容首屈曲短暂瞬态)']
@@ -659,17 +674,26 @@ def results_to_checks_crush(job_dir, spec):
          'caveats': ['穿透<单元尺寸不可从能量历史判定,代理量留 caveat']},
         {'dimension': 'mechanics', 'tool': 'abaqus.crush.densification',
          'value': (round(cm['eps_d'], 4) if cm else None),
-         'threshold': None, 'pass': dens_ok, 'source': ISO13314,
+         'threshold': None, 'pass': None,    # 诊断量,不作硬门(速率敏感)
+         'source': ISO13314, 'source_type': 'abaqus_fea',
+         'status': ('computed' if cm else 'out_of_domain'),
+         'caveats': ['ε_d(致密化起点)为诊断:多胞渐进致密化下检测对速率敏感,'
+                     '设计 margin 改用固定参考应变 SEA(rate-stable,用户选定)'
+                     + ('' if dens_ok else ';本 run 未检出明确内部效率峰')]},
+        {'dimension': 'mechanics', 'tool': 'abaqus.crush.ref_strain_reached',
+         'value': (round(cm['eps_max'], 4) if cm else None),
+         'threshold': ref_strain, 'pass': ref_ok,
+         'source': f'曲线须覆盖参考应变 ε={ref_strain}(设计 SEA 积分窗)',
          'source_type': 'abaqus_fea',
          'status': ('computed' if cm else 'out_of_domain'),
-         'caveats': ([] if dens_ok
-                     else ['未检出内部效率峰:未压到致密化,SEA 不可认证'])},
+         'caveats': ([] if ref_ok
+                     else [f'曲线未压到 ε={ref_strain},设计 SEA 不可认证'])},
     ]
     base_cav = list(meta.get('caveats', []))
     if not gates_pass:
         base_cav.append('硬有效性门未全过 → SEA/comp_EA 仅 screening,不进 margin')
 
-    sea, m_solid = None, 0.0
+    sea_ref, sea_d, m_solid = None, None, 0.0
     if cm:
         if cm['sigma_pl'] is not None:
             checks.append({
@@ -678,54 +702,73 @@ def results_to_checks_crush(job_dir, spec):
                 'value': round(cm['sigma_pl'], 4), 'threshold': None,
                 'pass': None, 'source': ISO13314 + f";窗 {cm['plateau_window']}",
                 'source_type': 'abaqus_fea', 'status': 'computed',
-                'caveats': [], 'margin_eligible': False})
+                'caveats': ['平台应力 rate-stable(实测两速差 ~2.5%)'],
+                'margin_eligible': False})
         m_solid = rho_solid * V0 * (rho_rel or 0.0)
-        sea = (cm['comp_EA_to_d'] / m_solid) if m_solid > 0 else None
+        sea_ref = (cm['comp_EA_ref'] / m_solid) if m_solid > 0 else None
+        sea_d = (cm['comp_EA_to_d'] / m_solid) if m_solid > 0 else None
         band = _SEA_BAND_KJ.get(material, _SEA_BAND_KJ['PA12'])
-        in_band = (sea is not None
-                   and band[0] <= sea / 1000.0 <= band[1])
-        n1 = (nx == 1 and ny == 1 and nz == 1)
-        sea_cav = base_cav + ['SEA=实心杆质量归一(非包络);积分截到致密化']
-        if sea is not None and not in_band:
-            sea_cav.append(f'SEA {sea/1000:.1f} kJ/kg 超出 {material} '
-                           f'合理带 {band} kJ/kg(errata E4)→ 不进 margin,'
-                           '复核(多因 n=1 边界高估/模型偏硬/速率)')
-        if n1:
-            sea_cav.append('n=1 单胞:平台直载边界效应高估 SEA,'
-                           '代表性值须 n≥3 阵列')
+        in_band = (sea_ref is not None
+                   and band[0] <= sea_ref / 1000.0 <= band[1])
+        # 主 margin 量:固定参考应变 SEA(rate-stable,用户选定口径)
+        sea_cav = base_cav + [
+            f'SEA=∫F·dδ 到固定参考应变 ε={ref_strain}(rate-stable 设计口径,'
+            '用户选定;非"到致密化")÷ 实心杆质量(非包络)']
+        if sea_ref is not None and not in_band:
+            sea_cav.append(f'SEA {sea_ref/1000:.1f} kJ/kg 超出 {material} '
+                           f'合理带 {band} kJ/kg(errata E4)→ 不进 margin,复核')
         checks.append({
             'dimension': 'mechanics', 'tool': 'abaqus.crush.SEA',
-            'value': (round(sea, 2) if sea is not None else None),
-            'threshold': None, 'pass': (in_band if sea is not None else None),
-            'source': f'∫F·dδ 截到 ε_d={cm["eps_d"]:.3f} ÷ 实心质量'
+            'value': (round(sea_ref, 2) if sea_ref is not None else None),
+            'threshold': None,
+            'pass': (in_band if sea_ref is not None else None),
+            'source': f'∫F·dδ 到 ε={ref_strain} ÷ 实心质量'
                       f'(ρ_{material}·V0·ρ̄={m_solid:.5g} g),单位 J/kg',
             'source_type': 'abaqus_fea', 'status': 'computed',
             'caveats': sea_cav,
             'margin_eligible': bool(gates_pass and is_ea
-                                    and sea is not None and in_band)})
+                                    and sea_ref is not None and in_band)})
         checks.append({
             'dimension': 'mechanics', 'tool': 'abaqus.crush.comp_EA',
-            'value': round(cm['comp_EA_to_d'], 4), 'threshold': None,
+            'value': round(cm['comp_EA_ref'], 4), 'threshold': None,
             'pass': None,
-            'source': f'∫F·dδ 截到 ε_d(全曲线={cm["comp_EA_full"]:.1f} 仅对照)',
+            'source': f'∫F·dδ 到 ε={ref_strain}(全曲线={cm["comp_EA_full"]:.1f} '
+                      '仅对照)',
             'source_type': 'abaqus_fea', 'status': 'computed',
             'caveats': base_cav,
             'margin_eligible': bool(gates_pass and is_ea)})
+        # 诊断:到致密化 SEA(速率敏感,不进 margin)
+        checks.append({
+            'dimension': 'mechanics',
+            'tool': 'abaqus.crush.SEA_to_densification',
+            'value': (round(sea_d, 2) if sea_d is not None else None),
+            'threshold': None, 'pass': None,
+            'source': f'∫F·dδ 截到 ε_d={cm["eps_d"]:.3f}(诊断对照)',
+            'source_type': 'abaqus_fea', 'status': 'computed',
+            'caveats': ['到致密化 SEA:ε_d 检测多胞下对速率敏感(实测半速差 '
+                        '~25%)→ 诊断量,不进 margin'],
+            'margin_eligible': False})
 
+    band = _SEA_BAND_KJ.get(material, _SEA_BAND_KJ['PA12'])
     summary = {'eps_d': (cm['eps_d'] if cm else None),
+               'ref_strain': ref_strain,
                'sigma_pl': (cm['sigma_pl'] if cm else None),
+               'comp_EA_ref': (cm['comp_EA_ref'] if cm else None),
                'comp_EA_to_d': (cm['comp_EA_to_d'] if cm else None),
                'comp_EA_full': (cm['comp_EA_full'] if cm else None),
-               'SEA_J_per_kg': (round(sea, 2) if sea is not None else None),
-               'SEA_in_band': (None if not cm or sea is None
-                               else bool(_SEA_BAND_KJ.get(
-                                   material, _SEA_BAND_KJ['PA12'])[0]
-                                   <= sea / 1000.0 <=
-                                   _SEA_BAND_KJ.get(
-                                       material, _SEA_BAND_KJ['PA12'])[1])),
+               # 主 SEA = 固定参考应变(rate-stable);诊断 = 到致密化
+               'SEA_J_per_kg': (round(sea_ref, 2)
+                                if sea_ref is not None else None),
+               'SEA_to_densification_J_per_kg': (round(sea_d, 2)
+                                                 if sea_d is not None
+                                                 else None),
+               'SEA_in_band': (None if sea_ref is None
+                               else bool(band[0] <= sea_ref / 1000.0
+                                         <= band[1])),
                'm_solid_g': round(m_solid, 6), 'rho_rel': rho_rel,
                'n1_cell': bool(nx == 1 and ny == 1 and nz == 1),
                'gates': {'ke': ke_ok, 'hourglass': ae_ok, 'contact': cf_ok,
-                         'densified': dens_ok, 'all_pass': gates_pass},
+                         'ref_reached': ref_ok, 'densified': dens_ok,
+                         'all_pass': gates_pass},
                'is_energy_metric': is_ea, 'source_type': 'abaqus_fea'}
     return checks, summary
