@@ -159,6 +159,10 @@ ExplicitDynamicsStep + GeneralContact(自接触)+ nlgeom + 质量缩放 + Smooth
 | NT-5 | 本机验证 run | 复现一个已知 cell_db DynaCompre 或静态 comp_EA 的种子能量/SEA 在容差内(本机 1 个 ABAQUS,E_s 与口径归一);留档 `atlas/reports/tierd_crush/results.md` | NT-4 |
 | NT-6 | 闭环接线(补 P3-D 缺口) | verify.py/screen_estimate:comp_EA/SEA spec 的 OOD 新拓扑路由到非线性 Tier-D(此前吸能被推给 Tier-D 但无路径);对一个吸能 spec 新图演示「生成→筛选→压溃终审→margin」全链;报告 | NT-4 |
 
+**Phase 4 完成(2026-06-11)。Backlog**:NT-5 验证用 n=1 单胞,SEA 受平台直载边界
+效应高估而超 PA12 合理带 → 代表性 margin 级 SEA 须跑 **n≥3 阵列**(轴向约定已修正
+支持);去边界后预期落带内可授 margin。中期跟进,非阻塞。
+
 ---
 
 ## 2. Loop 执行协议

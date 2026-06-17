@@ -226,6 +226,12 @@ def estimate_from_graph(doc, spec=None, Es=1700.0, sigma_ys=45.0,
         escalate = True
     if cls_info['cls'] == 'bending':
         escalate = True   # 弯曲类设计裕度恒走 certify→Tier-D,本器只排序
+    # NT-6:吸能 metric(comp_EA/SEA)beam 模量算不出 → 必升非线性压溃 Tier-D
+    is_energy = any(k in metric for k in ('ea', 'sea', '吸能'))
+    if is_energy:
+        escalate = True
+    escalate_target = ('crush_tier_d(非线性压溃)' if is_energy
+                       else 'tier_d(静态/壳)')
 
     E_lo_report = None
     if band and bh_ok:
@@ -239,7 +245,7 @@ def estimate_from_graph(doc, spec=None, Es=1700.0, sigma_ys=45.0,
                             if band and bh_ok else None),
                    'basis': '文献 C 散布 ∪ beam Lumpe-p90 全正偏置'},
         'cls': cls_info, 'cross_check_consistent': consistent,
-        'escalate_tier_d': bool(escalate),
+        'escalate_tier_d': bool(escalate), 'escalate_target': escalate_target,
         'margin_eligible': False, 'source_type': 'internal_computed',
         'beam_certified': bool(bh.get('certified')),
         'note': '排序值=自身几何物理(beam_homog);文献仅作误差带交叉校验,'

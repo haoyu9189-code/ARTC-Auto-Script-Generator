@@ -1,6 +1,6 @@
 {
   "name": "dual_column_web",
-  "analysis_type": "DynaCompre_50",
+  "analysis_type": "DynaCompre_25",
   "lattice_array": [
     1,
     1,
@@ -20,16 +20,16 @@
   },
   "caveats": [
     "管线为单半径:逐杆/逐组半径不可表示,按均匀 default_radius_mm=0.5 生成",
-    "analysis_type=DynaCompre_50;剪切需 X 旋转适配,不支持",
-    "NT-1 位移控制",
-    "位移控制准静态压溃:目标应变 0.8、应变率 10.0/s → 压溃 4mm、timePeriod 0.08s;准静态由能量门+半速不变性实证"
+    "analysis_type=DynaCompre_25;剪切需 X 旋转适配,不支持",
+    "NT-5 半速不变性检验(strain_rate 5/s)",
+    "位移控制准静态压溃:目标应变 0.8、应变率 5.0/s → 压溃 4mm、timePeriod 0.16s;准静态由能量门+半速不变性实证"
   ],
   "source": "atlas.mechanics.tier_d.generate_job_for_doc",
   "crush": {
     "crush_strain": 0.8,
-    "strain_rate": 10.0,
-    "velocity_mm_s": 50.0,
-    "time_period_s": 0.08,
+    "strain_rate": 5.0,
+    "velocity_mm_s": 25.0,
+    "time_period_s": 0.16,
     "H0_mm": 5.0,
     "target_disp_mm": 4.0,
     "control": "displacement"

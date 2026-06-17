@@ -239,6 +239,27 @@ def test_crush_judge_gives_margin_pass(tmp_path):
     assert t['margin']['ratio'] > 1.0
 
 
+def test_nt6_energy_spec_escalates_and_routes(tmp_path):
+    """NT-6:吸能 spec 的新图 → screen_estimate 标升压 + 路由生成压溃作业。"""
+    import os
+    from atlas.mechanics.screen_estimate import estimate_from_graph
+    from atlas.mechanics.tier_d import (route_energy_spec_to_crush,
+                                        load_champion_docs)
+    doc = load_champion_docs(('dual_column_web',))[0][1]
+    spec = {'material': 'PA12', 'margin_metric': 'comp_EA'}
+    _, summ = estimate_from_graph(doc, spec, rho_rel=0.124)
+    assert summ['escalate_tier_d'] is True              # 吸能→必升
+    assert 'crush' in summ['escalate_target']
+    out = str(tmp_path / 'route')
+    r = route_energy_spec_to_crush(doc, spec, out)
+    assert r['routed'] is True
+    assert any(f.endswith('_preprocess.py') for f in os.listdir(out))
+    # 非吸能 metric 不路由到压溃
+    r2 = route_energy_spec_to_crush(doc, {'margin_metric': 'comp_stiffness'},
+                                    str(tmp_path / 'route2'))
+    assert r2['routed'] is False
+
+
 def test_crush_not_densified_no_margin(tmp_path):
     # 只压到 50%,平台未结束,无内部效率峰 → 未致密化
     eps = np.linspace(0, 0.5, 200)

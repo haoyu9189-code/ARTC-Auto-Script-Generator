@@ -281,6 +281,31 @@ def generate_crush_job(doc, out_dir, lattice_array=(1, 1, 1),
     return meta
 
 
+def route_energy_spec_to_crush(doc, spec, out_dir, lattice_array=(1, 1, 1),
+                               crush_strain=0.8, strain_rate=10.0):
+    """NT-6:吸能 spec 的 OOD 新拓扑 → 非线性压溃 Tier-D 的合法升压出口。
+
+    补 P3-D 缺口:screen_estimate 对 comp_EA/SEA spec 标 escalate_tier_d
+    (beam 模量算不出吸能),本函数即其落地——生成位移控制压溃作业。
+    **提交求解由 loop/用户决定**;求解后 results_to_checks_crush→judge。
+    非吸能 metric 调用视为误用(返回提示),应走 certify/静态 Tier-D。
+    """
+    metric = str((spec or {}).get('margin_metric', '')).lower()
+    is_energy = any(k in metric for k in ('ea', 'sea', '吸能'))
+    if not is_energy:
+        return {'routed': False,
+                'reason': f'margin_metric={metric} 非吸能,应走 certify/'
+                          '静态 Tier-D,不路由到压溃'}
+    meta = generate_crush_job(doc, out_dir, lattice_array=lattice_array,
+                              crush_strain=crush_strain,
+                              strain_rate=strain_rate,
+                              extra_caveats=('NT-6 吸能 spec 压溃升压路由',))
+    meta['routed'] = True
+    meta['next'] = ('提交求解 → results_to_checks_crush(out_dir, spec) → '
+                    'judge;SEA 仅硬门全过+合理带内才进 margin')
+    return meta
+
+
 def generate_tier_d_jobs(out_root, names=CHAMPIONS,
                          analysis_type='StaCompre',
                          lattice_array=(1, 1, 1)):
@@ -420,8 +445,8 @@ def results_to_checks(job_dir, spec):
               encoding='utf-8') as f:
         meta = json.load(f)
     nx, ny, nz = meta.get('lattice_array', [1, 1, 1])
-    h = CELL_H * nz
-    a = CELL_A * nx * ny
+    h = CELL_H * ny       # 载荷轴 Y:高度 ∝ ny(n=1 等价;n>1 按 Y 口径)
+    a = CELL_A * nx * nz  # ⊥截面 ∝ nx·nz
     feat = parse_feature_data(os.path.join(job_dir, 'feature_data.txt'))
     energy = parse_energy_data(os.path.join(job_dir, 'energy_data.txt'))
     job = feat['header'].get('job_name', meta['name'])
@@ -564,7 +589,9 @@ def results_to_checks_crush(job_dir, spec):
               encoding='utf-8') as f:
         meta = json.load(f)
     nx, ny, nz = meta.get('lattice_array', [1, 1, 1])
-    H0, A0 = CELL_H * nz, CELL_A * nx * ny
+    # 载荷轴 = Y(u2/velocity2 压缩):压溃高度 ∝ ny、⊥截面 ∝ nx·nz
+    # (n=1 时各轴等价;n>1 务必按 Y 轴口径,否则 ε/σ 算错)
+    H0, A0 = CELL_H * ny, CELL_A * nx * nz
     V0 = A0 * H0
     feat = parse_feature_data(os.path.join(job_dir, 'feature_data.txt'))
     energy = parse_energy_data(os.path.join(job_dir, 'energy_data.txt'))
