@@ -1,11 +1,11 @@
 #!/bin/bash
-#PBS -N dual_column_web_5_0p5_4_DynaCompre_150_1x3x1
+#PBS -N dual_column_web_5_0p5_4_DynaCompre_60_1x3x1
 #PBS -P as_mae_kzhou
 #PBS -q qintel_wfly
 #PBS -l walltime=24:00:00
 #PBS -l select=1:ncpus=8:mem=8gb
 #PBS -j oe
-#PBS -o dual_column_web_5_0p5_4_DynaCompre_150_1x3x1.log
+#PBS -o dual_column_web_5_0p5_4_DynaCompre_60_1x3x1.log
 
 module load abaqus/2023u4
 export PYTHONDONTWRITEBYTECODE=1
@@ -14,7 +14,7 @@ export PYTHONDONTWRITEBYTECODE=1
 # USAGE: Modify JOB_NAME, WORK_DIR below before submitting.
 #   qsub run.pbs
 # ============================================================
-JOB_NAME="dual_column_web_5_0p5_4_DynaCompre_150_1x3x1"
+JOB_NAME="dual_column_web_5_0p5_4_DynaCompre_60_1x3x1"
 WORK_DIR="D:\ARTC\ARTC-Auto-Script\atlas\reports\tierd_crush\dual_column_web_n3y"
 
 cd "$WORK_DIR"
@@ -23,7 +23,7 @@ echo "=== $JOB_NAME ==="
 echo "Start: $(date)"
 
 echo "[1/3] Preprocess — generate .inp"
-abaqus cae noGUI="dual_column_web_5_0p5_4_DynaCompre_150_1x3x1_preprocess.py"
+abaqus cae noGUI="dual_column_web_5_0p5_4_DynaCompre_60_1x3x1_preprocess.py"
 if [ $? -ne 0 ]; then
     echo "ERROR: preprocess failed"
     exit 1
@@ -36,6 +36,6 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "[3/3] Postprocess — extract force-displacement"
-abaqus cae noGUI="dual_column_web_5_0p5_4_DynaCompre_150_1x3x1_postprocess.py"
+abaqus cae noGUI="dual_column_web_5_0p5_4_DynaCompre_60_1x3x1_postprocess.py"
 
 echo "=== Done: $(date) ==="

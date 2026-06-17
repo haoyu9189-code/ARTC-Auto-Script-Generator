@@ -393,7 +393,8 @@ def parse_energy_data(path):
         lines = f.read().splitlines()
     status = (lines[0].split(':', 1)[1].strip()
               if lines and ':' in lines[0] else 'empty')
-    none3 = {'ratio_max': None, 'ratio_allae': None, 'contact_frac': None}
+    none3 = {'ratio_max': None, 'ratio_p90': None, 'ratio_mean': None,
+             'ratio_allae': None, 'contact_frac': None}
     if status != 'ok' or len(lines) < 2:
         return dict(status=status, n_points=0, **none3)
     cols = lines[1].split()                      # e.g. time allie allke allae
@@ -417,11 +418,16 @@ def parse_energy_data(path):
                     **none3)
     m = ie >= 0.01 * ie.max()
 
-    def ratio(name):
+    def ratio(name, stat='max'):
         n = arr(name)
         if len(n) != len(ie) or not m.any():
             return None
-        return float((n[m] / ie[m]).max())
+        r = n[m] / ie[m]
+        if stat == 'p90':
+            return float(np.percentile(r, 90))
+        if stat == 'mean':
+            return float(r.mean())
+        return float(r.max())
 
     vd, fd = arr('allvd'), arr('allfd')
     cd = np.zeros_like(ie)
@@ -434,7 +440,10 @@ def parse_energy_data(path):
         has_cd = True
     contact = (float((cd[m] / ie[m]).max()) if (has_cd and m.any())
                else None)
-    return {'status': 'ok', 'ratio_max': ratio('allke'),
+    return {'status': 'ok',
+            'ratio_max': ratio('allke'),           # 峰值(诊断;含首屈曲瞬态)
+            'ratio_p90': ratio('allke', 'p90'),    # 准静态判据(容短暂瞬态)
+            'ratio_mean': ratio('allke', 'mean'),
             'ratio_allae': ratio('allae'), 'contact_frac': contact,
             'n_points': int(len(ie))}
 
@@ -606,21 +615,33 @@ def results_to_checks_crush(job_dir, spec):
     rho_solid = _RHO_SOLID_G_MM3.get(material, _RHO_SOLID_G_MM3['PA12'])
 
     cm = crush_metrics(feat['disp'], feat['force'], H0, A0)
-    ke, ae, cf = (energy.get('ratio_max'), energy.get('ratio_allae'),
-                  energy.get('contact_frac'))
+    # KE 门判据 = ALLKE/ALLIE 的 **p90**(准静态标准看时间均值/p90,容首次
+    # 接触/屈曲的短暂瞬态;ISO/Abaqus 准静态准则)。峰值 ke_max 作诊断报告,
+    # 回退到 max(旧数据无 p90 时)。
+    ke = energy.get('ratio_p90')
+    if ke is None:
+        ke = energy.get('ratio_max')
+    ke_max, ke_mean = energy.get('ratio_max'), energy.get('ratio_mean')
+    ae, cf = energy.get('ratio_allae'), energy.get('contact_frac')
     ke_ok = (ke is not None and ke <= CRUSH_KE_GATE)
     ae_ok = (ae is None) or (ae <= CRUSH_AE_GATE)
     cf_ok = (cf is None) or (cf <= CRUSH_CONTACT_GATE)
     dens_ok = bool(cm and cm['densified'])
     gates_pass = bool(cm and ke_ok and ae_ok and cf_ok and dens_ok)
 
+    ke_cav = ['ALLKE/ALLIE p90≤5% 准静态有效性(显式动态硬门;'
+              '容首屈曲短暂瞬态)']
+    if ke_max is not None:
+        _mean_s = f'{ke_mean:.3f}' if ke_mean is not None else 'n/a'
+        ke_cav.append(f'峰值 ALLKE/ALLIE={ke_max:.3f}(均值 {_mean_s});'
+                      '峰值多为首次屈曲瞬态,非准静态判据')
     checks = [
         {'dimension': 'mechanics', 'tool': 'abaqus.crush.energy_gate',
          'value': (round(ke, 6) if ke is not None else None),
          'threshold': CRUSH_KE_GATE, 'pass': bool(ke_ok),
-         'source': ENERGY_GATE_SOURCE + ';DynaCompre 显式→HARD 门',
+         'source': ENERGY_GATE_SOURCE + ';DynaCompre 显式→HARD 门(p90 口径)',
          'source_type': 'vendor', 'status': 'computed',
-         'caveats': ['ALLKE/ALLIE≤5% 准静态有效性(显式动态为硬门)']},
+         'caveats': ke_cav},
         {'dimension': 'mechanics', 'tool': 'abaqus.crush.hourglass_gate',
          'value': (round(ae, 6) if ae is not None else None),
          'threshold': CRUSH_AE_GATE, 'pass': bool(ae_ok),

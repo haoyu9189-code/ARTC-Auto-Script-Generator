@@ -1,6 +1,6 @@
 {
   "name": "dual_column_web",
-  "analysis_type": "DynaCompre_150",
+  "analysis_type": "DynaCompre_60",
   "lattice_array": [
     1,
     3,
@@ -20,16 +20,16 @@
   },
   "caveats": [
     "管线为单半径:逐杆/逐组半径不可表示,按均匀 default_radius_mm=0.5 生成",
-    "analysis_type=DynaCompre_150;剪切需 X 旋转适配,不支持",
-    "下一步①:n=3(Y 向)去单格边界效应,争取吸能落带可盖设计级",
-    "位移控制准静态压溃:目标应变 0.8、应变率 10.0/s → 压溃 12mm、timePeriod 0.08s;准静态由能量门+半速不变性实证"
+    "analysis_type=DynaCompre_60;剪切需 X 旋转适配,不支持",
+    "下一步①:n=3(Y)+ 准静态速率 4/s(降速过动能门)",
+    "位移控制准静态压溃:目标应变 0.8、应变率 4.0/s → 压溃 12mm、timePeriod 0.2s;准静态由能量门+半速不变性实证"
   ],
   "source": "atlas.mechanics.tier_d.generate_job_for_doc",
   "crush": {
     "crush_strain": 0.8,
-    "strain_rate": 10.0,
-    "velocity_mm_s": 150.0,
-    "time_period_s": 0.08,
+    "strain_rate": 4.0,
+    "velocity_mm_s": 60.0,
+    "time_period_s": 0.2,
     "H0_mm": 15.0,
     "target_disp_mm": 12.0,
     "control": "displacement"
