@@ -1,0 +1,37 @@
+{
+  "name": "dual_column_web",
+  "analysis_type": "DynaCompre_30",
+  "lattice_array": [
+    1,
+    3,
+    1
+  ],
+  "radius_mm": 0.5,
+  "cell_size_mm": 5.0,
+  "adapter_stats": {
+    "points": 11,
+    "segments": 9,
+    "quotient_edges": 5
+  },
+  "energy_gate": {
+    "threshold": 0.05,
+    "source": "Abaqus Analysis User's Guide — quasi-static energy balance criterion(ALLKE ≤ ~5% ALLIE)",
+    "source_type": "vendor"
+  },
+  "caveats": [
+    "管线为单半径:逐杆/逐组半径不可表示,按均匀 default_radius_mm=0.5 生成",
+    "analysis_type=DynaCompre_30;剪切需 X 旋转适配,不支持",
+    "next-① 收尾:n=3 半速不变性复核(sr=2)",
+    "位移控制准静态压溃:目标应变 0.8、应变率 2.0/s → 压溃 12mm、timePeriod 0.4s;准静态由能量门+半速不变性实证"
+  ],
+  "source": "atlas.mechanics.tier_d.generate_job_for_doc",
+  "crush": {
+    "crush_strain": 0.8,
+    "strain_rate": 2.0,
+    "velocity_mm_s": 30.0,
+    "time_period_s": 0.4,
+    "H0_mm": 15.0,
+    "target_disp_mm": 12.0,
+    "control": "displacement"
+  }
+}
