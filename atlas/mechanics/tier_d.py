@@ -226,8 +226,14 @@ def patch_displacement_control(text, target_disp, time_period):
                         'u1=0.0, u2=-%g, u3=0.0,' % target_disp, 1)
     text = text.replace('amplitude=UNSET, fixed=OFF,',
                         "amplitude='Amp-Crush', fixed=OFF,", 1)
-    # 取消初速度预定义场(改为位移驱动)
-    text = _re.sub(r'velocity2=-[\d.eE+-]+', 'velocity2=0.0', text, count=1)
+    # 删除初速度预定义场(改为位移驱动;全零 Velocity 会被 Abaqus 拒绝)
+    text, nv = _re.subn(
+        r"mdb\.models\['Model-1'\]\.Velocity\(name='Predefined Field-1',"
+        r".*?omega=0\.0\)",
+        "pass  " + _DISPCTRL_MARKER + " 初速度预定义场已移除(位移控制)",
+        text, count=1, flags=_re.S)
+    if nv != 1:
+        raise ValueError('Velocity 预定义场移除失败:锚点未命中')
     return text
 
 

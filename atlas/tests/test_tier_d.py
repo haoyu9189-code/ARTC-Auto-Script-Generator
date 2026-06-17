@@ -53,7 +53,8 @@ def test_patch_displacement_control():
     assert 'SmoothStepAmplitude' in out and "(0.08, 1.0)" in out
     assert 'u2=-4' in out and 'u2=UNSET' not in out     # 位移驱动
     assert "amplitude='Amp-Crush'" in out
-    assert 'velocity2=0.0' in out and 'velocity2=-50.0' not in out  # 初速取消
+    assert 'velocity2=-50.0' not in out          # 初速度场已删除
+    assert "Velocity(name='Predefined Field-1'" not in out
     assert patch_displacement_control(out, 4.0, 0.08) == out         # 幂等
     with pytest.raises(ValueError):
         patch_displacement_control('print(1)\n', 4.0, 0.08)
