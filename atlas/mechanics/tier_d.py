@@ -498,6 +498,10 @@ _RHO_SOLID_G_MM3 = {'PA12': 1.01e-3, 'AlSi10Mg': 2.67e-3, 'Ti64': 4.43e-3}
 CRUSH_KE_GATE = 0.05        # ALLKE/ALLIE 准静态
 CRUSH_AE_GATE = 0.05        # ALLAE/ALLIE 沙漏/人工能
 CRUSH_CONTACT_GATE = 0.10   # (ALLVD+ALLFD)/ALLIE 接触/黏性耗散
+# SEA 合理带 kJ/kg(errata E4:PA12 lattice 0.3–8,>10 属金属);超带→
+# 不静默进 margin(实心杆质量归一下,超带多因 n=1 边界高估或模型偏硬)
+_SEA_BAND_KJ = {'PA12': (0.3, 8.0), 'AlSi10Mg': (1.0, 40.0),
+                'Ti64': (1.0, 50.0)}
 ISO13314 = ('ISO 13314:2011(平台应力 20-40% 均值)+ Li 2006 '
             '能量吸收效率法(致密化起点)')
 
@@ -629,16 +633,28 @@ def results_to_checks_crush(job_dir, spec):
                 'caveats': [], 'margin_eligible': False})
         m_solid = rho_solid * V0 * (rho_rel or 0.0)
         sea = (cm['comp_EA_to_d'] / m_solid) if m_solid > 0 else None
+        band = _SEA_BAND_KJ.get(material, _SEA_BAND_KJ['PA12'])
+        in_band = (sea is not None
+                   and band[0] <= sea / 1000.0 <= band[1])
+        n1 = (nx == 1 and ny == 1 and nz == 1)
+        sea_cav = base_cav + ['SEA=实心杆质量归一(非包络);积分截到致密化']
+        if sea is not None and not in_band:
+            sea_cav.append(f'SEA {sea/1000:.1f} kJ/kg 超出 {material} '
+                           f'合理带 {band} kJ/kg(errata E4)→ 不进 margin,'
+                           '复核(多因 n=1 边界高估/模型偏硬/速率)')
+        if n1:
+            sea_cav.append('n=1 单胞:平台直载边界效应高估 SEA,'
+                           '代表性值须 n≥3 阵列')
         checks.append({
             'dimension': 'mechanics', 'tool': 'abaqus.crush.SEA',
             'value': (round(sea, 2) if sea is not None else None),
-            'threshold': None, 'pass': None,
+            'threshold': None, 'pass': (in_band if sea is not None else None),
             'source': f'∫F·dδ 截到 ε_d={cm["eps_d"]:.3f} ÷ 实心质量'
                       f'(ρ_{material}·V0·ρ̄={m_solid:.5g} g),单位 J/kg',
             'source_type': 'abaqus_fea', 'status': 'computed',
-            'caveats': base_cav + ['SEA=实心杆质量归一(非包络);积分截到致密化'],
+            'caveats': sea_cav,
             'margin_eligible': bool(gates_pass and is_ea
-                                    and sea is not None)})
+                                    and sea is not None and in_band)})
         checks.append({
             'dimension': 'mechanics', 'tool': 'abaqus.crush.comp_EA',
             'value': round(cm['comp_EA_to_d'], 4), 'threshold': None,
@@ -653,7 +669,14 @@ def results_to_checks_crush(job_dir, spec):
                'comp_EA_to_d': (cm['comp_EA_to_d'] if cm else None),
                'comp_EA_full': (cm['comp_EA_full'] if cm else None),
                'SEA_J_per_kg': (round(sea, 2) if sea is not None else None),
+               'SEA_in_band': (None if not cm or sea is None
+                               else bool(_SEA_BAND_KJ.get(
+                                   material, _SEA_BAND_KJ['PA12'])[0]
+                                   <= sea / 1000.0 <=
+                                   _SEA_BAND_KJ.get(
+                                       material, _SEA_BAND_KJ['PA12'])[1])),
                'm_solid_g': round(m_solid, 6), 'rho_rel': rho_rel,
+               'n1_cell': bool(nx == 1 and ny == 1 and nz == 1),
                'gates': {'ke': ke_ok, 'hourglass': ae_ok, 'contact': cf_ok,
                          'densified': dens_ok, 'all_pass': gates_pass},
                'is_energy_metric': is_ea, 'source_type': 'abaqus_fea'}

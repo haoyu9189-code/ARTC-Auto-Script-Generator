@@ -101,8 +101,8 @@ def test_parse_energy_data_header_aware(tmp_path):
 
 # ---- NT-2/3/4:压溃指标 + 硬门 + margin(合成已知曲线)----
 
-def _synthetic_crush(sigma_pl=10.0, eps_y=0.03, eps_d=0.6, eps_end=0.8,
-                     sig_dens=60.0, n=300):
+def _synthetic_crush(sigma_pl=1.0, eps_y=0.03, eps_d=0.6, eps_end=0.8,
+                     sig_dens=6.0, n=300):
     """理想化 σ(ε):弹性斜坡→平台→致密化陡升。返回 (eps, sig)。"""
     eps = np.linspace(0, eps_end, n)
     sig = np.where(
@@ -137,7 +137,7 @@ def _write_crush_job(tmp_path, eps, sig, rel_density=0.2,
 
 
 def test_crush_metrics_densification_and_truncation():
-    eps, sig = _synthetic_crush(eps_d=0.6)
+    eps, sig = _synthetic_crush(sigma_pl=10.0, sig_dens=60.0, eps_d=0.6)
     cm = crush_metrics(eps * 5.0, sig * 25.0, H0=5.0, A0=25.0)
     assert cm['densified'] is True
     assert 0.54 < cm['eps_d'] < 0.66           # 效率峰 ≈ 致密化起点 0.6
@@ -146,6 +146,20 @@ def test_crush_metrics_densification_and_truncation():
     assert 680 < cm['comp_EA_to_d'] < 780
     # 关键修正:截断值 << 全曲线(含致密化尾)
     assert cm['comp_EA_to_d'] < 0.75 * cm['comp_EA_full']
+
+
+def test_crush_SEA_out_of_band_blocks_margin(tmp_path):
+    """SEA 超出 PA12 合理带(0.3-8 kJ/kg)→ 即使硬门全过也不进 margin。"""
+    eps, sig = _synthetic_crush(sigma_pl=10.0, sig_dens=60.0)  # SEA≈29kJ/kg
+    _write_crush_job(tmp_path, eps, sig, ke=0.01, rel_density=0.2)
+    checks, summ = results_to_checks_crush(
+        str(tmp_path), {'material': 'PA12', 'margin_metric': 'SEA'})
+    assert summ['gates']['all_pass'] is True     # 物理门过
+    assert summ['SEA_in_band'] is False          # 但超合理带
+    sea = next(c for c in checks if c['tool'] == 'abaqus.crush.SEA')
+    assert sea['pass'] is False
+    assert sea['margin_eligible'] is False       # 超带不进 margin
+    assert any('合理带' in c for c in sea['caveats'])
 
 
 def test_crush_SEA_solid_mass_not_envelope(tmp_path):
@@ -207,11 +221,12 @@ def test_crush_judge_gives_margin_pass(tmp_path):
     eps, sig = _synthetic_crush()
     _write_crush_job(tmp_path, eps, sig, ke=0.01, rel_density=0.2)
     spec = {'material': 'PA12', 'margin_metric': 'SEA',
-            'design_value_with_fos': 5000.0, 'n_cells': 3,
+            'design_value_with_fos': 1000.0, 'n_cells': 3,
             'fos_already_applied': True, 'confidence_level': 'screening'}
     checks, summ = results_to_checks_crush(str(tmp_path), spec)
     sea = next(c for c in checks if c['tool'] == 'abaqus.crush.SEA')
-    assert sea['value'] > 5000.0 and sea['margin_eligible'] is True
+    assert summ['SEA_in_band'] is True
+    assert sea['value'] > 1000.0 and sea['margin_eligible'] is True
     extra = [{'dimension': 'density', 'tool': 'rel_density.mesh',
               'value': 0.2, 'pass': True, 'status': 'computed',
               'source': 'mesh'},
