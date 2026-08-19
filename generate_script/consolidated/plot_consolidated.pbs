@@ -1,0 +1,18 @@
+#!/bin/bash
+#PBS -N plot_consolidated
+#PBS -P as_mae_kzhou
+#PBS -q qintel_wfly
+#PBS -l walltime=00:10:00
+#PBS -l select=1:ncpus=1:mem=2gb
+#PBS -j oe
+#PBS -o /home/haoyu.wang/ARTC_Database_final/generate_script/consolidated/plot_consolidated.log
+
+cd /home/haoyu.wang/ARTC_Database_final/generate_script/consolidated
+
+echo "=== plot_consolidated: all sessions combined ==="
+echo "Start: $(date)"
+
+python3 plot_consolidated.py
+
+echo "End  : $(date)"
+echo "=== done ==="

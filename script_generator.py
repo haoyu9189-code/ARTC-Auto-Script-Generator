@@ -16,6 +16,7 @@ import platform
 import json
 import numpy as np
 from structure_set import get_crystal_structure
+from config import Config
 
 
 # from macro_integration import MacroIntegrator
@@ -34,6 +35,37 @@ class AbaqusScriptGenerator:
     def set_file_tracker_callback(self, callback):
         """设置文件追踪回调函数"""
         self._file_tracker_callback = callback
+
+    def _write_and_track(self, filepath, content):
+        """Write *content* to *filepath* and notify the file tracker.
+
+        Shell/batch 脚本必须是纯 UTF-8（BOM 会破坏 shebang 与 #PBS 指令）；
+        .py 输出保留 BOM 以兼容老版本 Windows Abaqus Python。
+        """
+        ext = os.path.splitext(filepath)[1].lower()
+        encoding = 'utf-8' if ext in ('.pbs', '.sh', '.bat', '.slurm') else 'utf-8-sig'
+        with open(filepath, 'w', encoding=encoding) as f:
+            f.write(content)
+        if hasattr(self, '_file_tracker_callback') and self._file_tracker_callback:
+            try:
+                self._file_tracker_callback(filepath)
+            except Exception as e:
+                print(f"Warning: 无法添加文件到追踪列表: {e}")
+
+    @staticmethod
+    def _format_param(value, try_int=True):
+        """Convert a number to a path-safe string (e.g. 0.5 -> '0p5', 8.0 -> '8').
+
+        Args:
+            value: numeric value (int, float, or string representation)
+            try_int: if True, convert whole-number floats to int strings (5.0 -> '5')
+        Returns:
+            path-safe string with dots replaced by 'p'
+        """
+        v = float(value)
+        if try_int and v == int(v):
+            return str(int(v))
+        return str(value).replace('.', 'p')
 
     def _extract_velocity_from_analysis_type(self, analysis_type):
         """从 analysis_type 中提取速度值
@@ -99,20 +131,9 @@ class AbaqusScriptGenerator:
                 data = json.load(f)
 
             # 构建结构键名: 如 "Cubic_5_0p5_4"
-            # 处理 cell_size: 整数去掉小数点
-            if float(cell_size).is_integer():
-                size_str = str(int(float(cell_size)))
-            else:
-                size_str = str(cell_size).replace('.', 'p')
-
-            # 处理 cell_radius: 小数点替换为 p
-            radius_str = str(cell_radius).replace('.', 'p')
-
-            # 处理 slider: 整数去掉小数点
-            if float(slider) == int(float(slider)):
-                slider_str = str(int(float(slider)))
-            else:
-                slider_str = str(slider).replace('.', 'p')
+            size_str = self._format_param(cell_size)
+            radius_str = self._format_param(cell_radius, try_int=False)
+            slider_str = self._format_param(slider)
 
             structure_key = f"{cell_type}_{size_str}_{radius_str}_{slider_str}"
 
@@ -320,7 +341,7 @@ class AbaqusScriptGenerator:
         multiplier2 = multiplier1 + 0.3
         return [round(multiplier1, 1), round(multiplier2, 1)]
 
-    def generate_script(self, cell_type, cell_size, cell_radius, slider=4, output_dir=None, mode_type="Compression", analysis_type="StaCompre", batch_mode=False, batch_parent_dir=None):
+    def generate_script(self, cell_type, cell_size, cell_radius, slider=4, output_dir=None, mode_type="Compression", analysis_type="StaCompre", batch_mode=False, batch_parent_dir=None, lattice_array=(1,1,1), flat_output=False):
         """
         生成定制化的Abaqus脚本
 
@@ -360,7 +381,7 @@ class AbaqusScriptGenerator:
 
                 success, message, filename = self._generate_single_script(
                     cell_type, cell_size, cell_radius, slider, output_dir,
-                    mode_type, modified_analysis_type, batch_mode, batch_parent_dir
+                    mode_type, modified_analysis_type, batch_mode, batch_parent_dir, lattice_array=lattice_array, flat_output=flat_output
                 )
 
                 if not success:
@@ -382,14 +403,14 @@ class AbaqusScriptGenerator:
         # 非 Auto 模式，正常生成单个脚本
         return self._generate_single_script(
             cell_type, cell_size, cell_radius, slider, output_dir,
-            mode_type, analysis_type, batch_mode, batch_parent_dir
+            mode_type, analysis_type, batch_mode, batch_parent_dir, lattice_array=lattice_array, flat_output=flat_output
         )
 
-    def _generate_single_script(self, cell_type, cell_size, cell_radius, slider=4, output_dir=None, mode_type="Compression", analysis_type="StaCompre", batch_mode=False, batch_parent_dir=None):
+    def _generate_single_script(self, cell_type, cell_size, cell_radius, slider=4, output_dir=None, mode_type="Compression", analysis_type="StaCompre", batch_mode=False, batch_parent_dir=None, lattice_array=(1,1,1), flat_output=False):
         """生成单个脚本的内部实现"""
         try:
             # 统一的文件夹创建逻辑
-            output_dir = self._create_output_directory(cell_type, cell_size, cell_radius, slider, mode_type, analysis_type, batch_mode, batch_parent_dir, output_dir)
+            output_dir = self._create_output_directory(cell_type, cell_size, cell_radius, slider, mode_type, analysis_type, batch_mode, batch_parent_dir, output_dir, flat_output=flat_output)
 
             # 设置当前结构名称，用于结构感知检测
             self._current_structure_name = cell_type
@@ -398,6 +419,49 @@ class AbaqusScriptGenerator:
             if not self._validate_parameters(cell_type, cell_size, cell_radius):
                 return False, "参数验证失败", ""
 
+            # 统一走阵列路径（包括1x1x1），确保输出格式一致
+            is_array = True
+
+            if is_array:
+                # ========== 阵列模式：生成完整的独立脚本 ==========
+                # 获取结构几何定义
+                structure_data = self._get_structure_data(cell_type, slider, analysis_type)
+                if not structure_data:
+                    return False, f"不支持的结构类型: {cell_type}", ""
+
+                # 生成文件名（含阵列后缀）
+                filename = self._generate_filename(cell_type, cell_size, cell_radius, slider, mode_type, analysis_type, lattice_array=lattice_array)
+
+                # 生成阵列脚本内容
+                script_content = self._generate_array_script(
+                    structure_data, cell_type, cell_size, cell_radius, slider,
+                    mode_type, analysis_type, output_dir, filename, lattice_array
+                )
+
+                # 保存前处理脚本
+                preprocess_filename = filename.replace('.py', '_preprocess.py')
+                preprocess_filepath = os.path.join(output_dir, preprocess_filename)
+                self._write_and_track(preprocess_filepath, script_content)
+
+                # 生成阵列后处理脚本
+                postprocess_content = self._generate_array_postprocess_script(
+                    output_dir, cell_size, mode_type, analysis_type, filename, lattice_array
+                )
+                postprocess_filename = filename.replace('.py', '_postprocess.py')
+                postprocess_filepath = os.path.join(output_dir, postprocess_filename)
+                self._write_and_track(postprocess_filepath, postprocess_content)
+
+                # 生成 per-job PBS 提交脚本
+                pbs_content = self._generate_pbs_script(
+                    output_dir, os.path.splitext(filename)[0],
+                    preprocess_filename, postprocess_filename
+                )
+                pbs_filepath = os.path.join(output_dir, 'run.pbs')
+                self._write_and_track(pbs_filepath, pbs_content)
+
+                return True, f"阵列脚本生成成功: {preprocess_filename}, {postprocess_filename} 和 run.pbs", filename
+
+            # ========== 原有1x1x1模式 ==========
             # 2. 读取基础模板
             template_content = self._read_template(mode_type, analysis_type)
             if not template_content:
@@ -421,17 +485,7 @@ class AbaqusScriptGenerator:
             # 6. 保存前处理脚本
             preprocess_filename = filename.replace('.py', '_preprocess.py')
             preprocess_filepath = os.path.join(output_dir, preprocess_filename)
-
-            # 使用UTF-8编码并添加BOM以确保兼容性
-            with open(preprocess_filepath, 'w', encoding='utf-8-sig') as f:
-                f.write(script_content)
-
-            # 将生成的文件添加到追踪列表
-            if hasattr(self, '_file_tracker_callback') and self._file_tracker_callback:
-                try:
-                    self._file_tracker_callback(preprocess_filepath)
-                except Exception as e:
-                    print(f"Warning: 无法添加文件到追踪列表: {e}")
+            self._write_and_track(preprocess_filepath, script_content)
 
             # 7. 生成并保存后处理脚本
             postprocess_content = self._generate_postprocess_script(
@@ -439,44 +493,41 @@ class AbaqusScriptGenerator:
             )
             postprocess_filename = filename.replace('.py', '_postprocess.py')
             postprocess_filepath = os.path.join(output_dir, postprocess_filename)
-
-            with open(postprocess_filepath, 'w', encoding='utf-8-sig') as f:
-                f.write(postprocess_content)
-
-            # 将后处理文件也添加到追踪列表
-            if hasattr(self, '_file_tracker_callback') and self._file_tracker_callback:
-                try:
-                    self._file_tracker_callback(postprocess_filepath)
-                except Exception as e:
-                    print(f"Warning: 无法添加文件到追踪列表: {e}")
+            self._write_and_track(postprocess_filepath, postprocess_content)
 
             return True, f"脚本生成成功: {preprocess_filename} 和 {postprocess_filename}", filename
 
         except Exception as e:
             return False, f"生成脚本时出错: {str(e)}", ""
 
-    def _create_output_directory(self, cell_type, cell_size, cell_radius, slider, mode_type, analysis_type, batch_mode, batch_parent_dir, output_dir):
+    def _create_output_directory(self, cell_type, cell_size, cell_radius, slider, mode_type, analysis_type, batch_mode, batch_parent_dir, output_dir, flat_output=False):
         """
-        统一的文件夹创建逻辑 - 层级结构
-        创建层级结构: clean_cell_type -> cell_size -> radius -> slider -> analysis_suffix
-        """
-        # 获取基础目录
-        if batch_mode and batch_parent_dir:
-            base_output_dir = batch_parent_dir
-        else:
-            if output_dir is None:
-                if getattr(sys, 'frozen', False):
-                    # 打包环境：获取可执行文件所在目录
-                    current_dir = os.path.dirname(sys.executable)
-                else:
-                    # 开发环境：获取脚本文件所在目录
-                    current_dir = os.path.dirname(os.path.abspath(__file__))
-                base_output_dir = os.path.join(current_dir, "generate_script")
-            else:
-                base_output_dir = output_dir
+        统一的文件夹创建逻辑
 
-        # 构建层级路径
-        target_output_dir = self._build_hierarchical_path(base_output_dir, cell_type, cell_size, cell_radius, slider, mode_type, analysis_type)
+        当 flat_output=True 时，直接使用 output_dir 作为目标目录（不添加层级路径）。
+        否则按层级结构创建: clean_cell_type -> cell_size -> radius -> slider -> analysis_suffix
+        """
+        if flat_output and output_dir is not None:
+            # 平铺模式：直接使用调用方指定的目录
+            target_output_dir = output_dir
+        else:
+            # 获取基础目录
+            if batch_mode and batch_parent_dir:
+                base_output_dir = batch_parent_dir
+            else:
+                if output_dir is None:
+                    if getattr(sys, 'frozen', False):
+                        # 打包环境：获取可执行文件所在目录
+                        current_dir = os.path.dirname(sys.executable)
+                    else:
+                        # 开发环境：获取脚本文件所在目录
+                        current_dir = os.path.dirname(os.path.abspath(__file__))
+                    base_output_dir = os.path.join(current_dir, "generate_script")
+                else:
+                    base_output_dir = output_dir
+
+            # 构建层级路径
+            target_output_dir = self._build_hierarchical_path(base_output_dir, cell_type, cell_size, cell_radius, slider, mode_type, analysis_type)
 
         # 确保目录存在
         if not os.path.exists(target_output_dir):
@@ -501,20 +552,9 @@ class AbaqusScriptGenerator:
         # 清理cell_type，移除特殊字符
         clean_cell_type = re.sub(r'[^\w-]', '', cell_type)
 
-        # 处理cell_size: 如果是整数(如5.0)去掉小数点变成5,如果是小数(如5.1)替换为5p1
-        if float(cell_size).is_integer():
-            size_str = str(int(float(cell_size)))
-        else:
-            size_str = str(cell_size).replace('.', 'p')
-
-        # 处理radius: 将小数点替换为p (如0.5变成0p5)
-        radius_dir_str = str(cell_radius).replace('.', 'p')
-
-        # 处理slider: 如果是整数(如8.0)去掉小数点变成8,如果是小数(如8.2)替换为8p2
-        if float(slider) == int(float(slider)):
-            slider_str = str(int(float(slider)))
-        else:
-            slider_str = str(slider).replace('.', 'p')
+        size_str = self._format_param(cell_size)
+        radius_dir_str = self._format_param(cell_radius, try_int=False)
+        slider_str = self._format_param(slider)
 
         # 确定后缀 (Level 5) - 直接使用 analysis_type
         suffix = analysis_type
@@ -664,6 +704,13 @@ class AbaqusScriptGenerator:
 
         # 1.5. 替换模板开头的cell_size值
         content = self._replace_template_cell_size(content, cell_size)
+
+        # 1.6. 替换球径比（模板中的 1.2 → Config.SPHERE_RADIUS_RATIO_SCRIPT）
+        content = re.sub(
+            r'sphere_radius\s*=\s*radius\s*\*\s*[\d.]+',
+            f'sphere_radius = radius * {Config.SPHERE_RADIUS_RATIO_SCRIPT}',
+            content
+        )
 
         # 2. 替换坐标定义
         content = self._replace_coordinates(content, structure_data['coords'], cell_size)
@@ -1241,15 +1288,11 @@ print("CAE will exit after script completion to release license.")
         content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
 
         # 2. 根据cell_size和radius动态调整网格密度
-        # 基准: cell_size=5, radius=0.5 对应 mesh_size=0.1
-        base_cell_size = 5.0
-        base_radius = 0.5
-        base_mesh_size = 0.1
-
-        # 计算新的网格密度: mesh_size = base_mesh_size * (radius / base_radius) * (cell_size / base_cell_size)
+        # 公式与模板和阵列脚本一致: 0.3 * sqrt(radius / 0.5) * (cell_size / 5.0)
+        import math
         cell_size_float = float(cell_size)
         radius_float = float(cell_radius)
-        new_mesh_size = base_mesh_size * (radius_float / base_radius) * (cell_size_float / base_cell_size)
+        new_mesh_size = 0.3 * math.sqrt(radius_float / 0.5) * (cell_size_float / 5.0)
 
         # 格式化为两位小数
         new_mesh_size = round(new_mesh_size, 2)
@@ -1262,7 +1305,7 @@ print("CAE will exit after script completion to release license.")
 
         print(f"\n=== 网格密度动态调整 ===")
         print(f"Cell Size: {cell_size_float}, Radius: {radius_float}")
-        print(f"基准: cell_size=5, radius=0.5, mesh_size=0.1")
+        print(f"公式: 0.2 * sqrt(radius / 0.5) * (cell_size / 5.0)")
         print(f"调整后网格密度: {new_mesh_size}")
 
         return content
@@ -1509,34 +1552,1190 @@ print("CAE will exit after script completion to release license.")
     #     return content
 
 
-    def _generate_filename(self, cell_type, cell_size, cell_radius, slider, mode_type="Compression", analysis_type="StaCompre"):
+    # ------------------------------------------------------------------
+    # Array script sub-methods  (each returns list[str])
+    # ------------------------------------------------------------------
+
+    def _array_script_header(self, cell_type, cell_size, cell_radius, a, b, c, analysis_type, time_period=0.3):
+        """Config + imports section for the array ABAQUS script."""
+        cell_size_float = float(cell_size)
+        lines = []
+        lines.append("# -*- coding: utf-8 -*-")
+        lines.append(f'"""')
+        lines.append(f'{cell_type} {a}x{b}x{c} Array - {analysis_type}')
+        lines.append(f'Generated by size_effect_batch/generate_batch.py')
+        lines.append(f'timePeriod = {time_period} ({0.3} * {b}, constant strain rate)')
+        lines.append(f'"""')
+        lines.append("")
+        lines.append("from abaqus import *")
+        lines.append("from abaqusConstants import *")
+        lines.append("import numpy as np")
+        lines.append("from math import acos, degrees")
+        lines.append("from numpy.linalg import norm")
+        lines.append("from numpy import cross, dot")
+        lines.append("import regionToolset")
+        lines.append("import os")
+        lines.append("import math")
+        lines.append("")
+        lines.append("# ==========================================================")
+        lines.append("# CONFIG")
+        lines.append("# ==========================================================")
+        lines.append(f"radius = {cell_radius}")
+        lines.append(f"cell_size = {int(cell_size_float) if cell_size_float == int(cell_size_float) else cell_size_float}")
+        lines.append(f"ARRAY_A = {a}  # X direction")
+        lines.append(f"ARRAY_B = {b}  # Y direction (compression)")
+        lines.append(f"ARRAY_C = {c}  # Z direction")
+        lines.append("PLATE_GAP = 0.02")
+        lines.append("")
+        return lines
+
+    def _array_script_unit_cell(self, scaled_coords, cylinders):
+        """Unit cell geometry: coordinates, struts, cylinder+sphere build, merge."""
+        lines = []
+        # Coordinates
+        lines.append("# Unit cell coordinates")
+        for coord in scaled_coords:
+            lines.append(coord)
+        lines.append("")
+
+        # Cylinders
+        lines.append("# Unit cell struts")
+        lines.append("cylinders = [")
+        for i, cyl in enumerate(cylinders):
+            if i == len(cylinders) - 1:
+                lines.append(f"    {cyl}")
+            else:
+                lines.append(f"    {cyl},")
+        lines.append("]")
+        lines.append("")
+
+        # Build cylinders + node spheres
+        lines.append("model = mdb.models['Model-1']")
+        lines.append("assembly = model.rootAssembly")
+        lines.append("inst_list = []")
+        lines.append("node_points = []")
+        lines.append("")
+        lines.append("# ==========================================================")
+        lines.append("# BUILD UNIT CELL: CYLINDERS + NODE SPHERES")
+        lines.append("# ==========================================================")
+        lines.append("for i, (start, end) in enumerate(cylinders):")
+        lines.append("    start = np.array(start, dtype=float)")
+        lines.append("    end   = np.array(end, dtype=float)")
+        lines.append("    vec = end - start")
+        lines.append("    length = norm(vec)")
+        lines.append("    if length < 1e-6:")
+        lines.append("        continue")
+        lines.append("    direction = vec / length")
+        lines.append("")
+        lines.append("    node_points.append(tuple(start.tolist()))")
+        lines.append("    node_points.append(tuple(end.tolist()))")
+        lines.append("")
+        lines.append("    sketch = model.ConstrainedSketch(name='circleSketch-%02d' % (i+1), sheetSize=20.0)")
+        lines.append("    sketch.CircleByCenterPerimeter(center=(0.0, 0.0), point1=(radius, 0.0))")
+        lines.append("")
+        lines.append("    part_name = 'Cyl-%02d' % (i+1)")
+        lines.append("    if part_name in model.parts.keys():")
+        lines.append("        del model.parts[part_name]")
+        lines.append("    part = model.Part(name=part_name, dimensionality=THREE_D, type=DEFORMABLE_BODY)")
+        lines.append("    part.BaseSolidExtrude(sketch=sketch, depth=length)")
+        lines.append("")
+        lines.append("    inst_name = 'Inst-%02d' % (i+1)")
+        lines.append("    assembly.Instance(name=inst_name, part=part, dependent=ON)")
+        lines.append("    assembly.translate(instanceList=(inst_name,), vector=tuple(start))")
+        lines.append("")
+        lines.append("    z_axis = np.array([0.0, 0.0, 1.0])")
+        lines.append("    rot_axis = cross(z_axis, direction)")
+        lines.append("    dot_product = dot(z_axis, direction)")
+        lines.append("")
+        lines.append("    if norm(rot_axis) < 1e-6:")
+        lines.append("        if dot_product < 0:")
+        lines.append("            assembly.rotate(instanceList=(inst_name,),")
+        lines.append("                            axisPoint=tuple(start),")
+        lines.append("                            axisDirection=(1, 0, 0), angle=180.0)")
+        lines.append("    else:")
+        lines.append("        if dot_product > 1.0: dot_product = 1.0")
+        lines.append("        if dot_product < -1.0: dot_product = -1.0")
+        lines.append("        angle = degrees(acos(dot_product))")
+        lines.append("        assembly.rotate(instanceList=(inst_name,),")
+        lines.append("                        axisPoint=tuple(start),")
+        lines.append("                        axisDirection=tuple(rot_axis), angle=angle)")
+        lines.append("")
+        lines.append("    inst_list.append(assembly.instances[inst_name])")
+        lines.append("")
+        lines.append("assembly.regenerate()")
+        lines.append("")
+
+        # Node spheres
+        lines.append("# Node spheres")
+        lines.append("uniq_nodes = []")
+        lines.append("seen = set()")
+        lines.append("for pnt in node_points:")
+        lines.append("    key = (round(pnt[0], 6), round(pnt[1], 6), round(pnt[2], 6))")
+        lines.append("    if key not in seen:")
+        lines.append("        seen.add(key)")
+        lines.append("        uniq_nodes.append((float(pnt[0]), float(pnt[1]), float(pnt[2])))")
+        lines.append("")
+        lines.append("if 'NodeSphere' in model.parts.keys():")
+        lines.append("    del model.parts['NodeSphere']")
+        lines.append("s_sph = model.ConstrainedSketch(name='sphereSketch', sheetSize=50.0)")
+        lines.append("s_sph.setPrimaryObject(option=STANDALONE)")
+        lines.append(f"sphere_radius = radius * {Config.SPHERE_RADIUS_RATIO_SCRIPT}")
+        lines.append("s_sph.ConstructionLine(point1=(0.0, -sphere_radius*2), point2=(0.0, sphere_radius*2))")
+        lines.append("s_sph.ArcByCenterEnds(center=(0.0, 0.0), point1=(0.0, sphere_radius),")
+        lines.append("                       point2=(0.0, -sphere_radius), direction=CLOCKWISE)")
+        lines.append("s_sph.Line(point1=(0.0, sphere_radius), point2=(0.0, -sphere_radius))")
+        lines.append("sphere_part = model.Part(name='NodeSphere', dimensionality=THREE_D, type=DEFORMABLE_BODY)")
+        lines.append("sphere_part.BaseSolidRevolve(sketch=s_sph, angle=360.0, flipRevolveDirection=OFF)")
+        lines.append("s_sph.unsetPrimaryObject()")
+        lines.append("del model.sketches['sphereSketch']")
+        lines.append("")
+        lines.append("for k, pnt in enumerate(uniq_nodes):")
+        lines.append("    nm = 'NodeSphere-%03d' % (k+1)")
+        lines.append("    assembly.Instance(name=nm, part=sphere_part, dependent=ON)")
+        lines.append("    assembly.translate(instanceList=(nm,), vector=pnt)")
+        lines.append("    inst_list.append(assembly.instances[nm])")
+        lines.append("")
+        lines.append("assembly.regenerate()")
+        lines.append("")
+
+        # Merge unit cell
+        lines.append("# Merge unit cell")
+        lines.append("if 'MergedStructure' in model.parts.keys():")
+        lines.append("    del model.parts['MergedStructure']")
+        lines.append("assembly.InstanceFromBooleanMerge(")
+        lines.append("    name='MergedStructure',")
+        lines.append("    instances=tuple(inst_list),")
+        lines.append("    keepIntersections=OFF,")
+        lines.append("    originalInstances=DELETE,")
+        lines.append("    domain=GEOMETRY")
+        lines.append(")")
+        lines.append("assembly.regenerate()")
+        lines.append("")
+        return lines
+
+    def _array_script_array_build(self, a, b, c, merged_name):
+        """Build the a*b*c array from unit cells and handle instance naming."""
+        lines = []
+        lines.append("# ==========================================================")
+        lines.append(f"# BUILD {a}x{b}x{c} ARRAY")
+        lines.append("# ==========================================================")
+
+        if a == 1 and b == 1 and c == 1:
+            # N=1: no array merge needed, use the merged unit cell directly
+            lines.append("if ARRAY_A == 1 and ARRAY_B == 1 and ARRAY_C == 1:")
+            lines.append("    # N=1: no array merge needed, use the merged unit cell directly")
+            lines.append("    ARR_PART_NAME = 'MergedStructure'")
+            lines.append("    ARR_INST_NAME = 'MergedStructure-1'")
+            lines.append("else:")
+            lines.append("    uc_part = model.parts['MergedStructure']")
+            lines.append("    array_instances = []")
+            lines.append("")
+            lines.append("    for ix in range(ARRAY_A):")
+            lines.append("        for iy in range(ARRAY_B):")
+            lines.append("            for iz in range(ARRAY_C):")
+            lines.append("                dx = (ix - (ARRAY_A - 1) / 2.0) * cell_size")
+            lines.append("                dy = (iy - (ARRAY_B - 1) / 2.0) * cell_size")
+            lines.append("                dz = (iz - (ARRAY_C - 1) / 2.0) * cell_size")
+            lines.append("                nm = 'UC-%d-%d-%d' % (ix, iy, iz)")
+            lines.append("                assembly.Instance(name=nm, part=uc_part, dependent=ON)")
+            lines.append("                assembly.translate(instanceList=(nm,), vector=(dx, dy, dz))")
+            lines.append("                array_instances.append(assembly.instances[nm])")
+            lines.append("")
+            lines.append(f"    merged3 = assembly.InstanceFromBooleanMerge(")
+            lines.append(f"        name='{merged_name}',")
+            lines.append("        instances=tuple(array_instances),")
+            lines.append("        keepIntersections=OFF,")
+            lines.append("        originalInstances=DELETE,")
+            lines.append("        domain=GEOMETRY")
+            lines.append("    )")
+            lines.append("    assembly.regenerate()")
+            lines.append("")
+            lines.append("    try:")
+            lines.append("        ARR_INST_NAME = merged3.name")
+            lines.append("    except:")
+            lines.append(f"        ARR_INST_NAME = '{merged_name}-1'")
+            lines.append("    try:")
+            lines.append("        ARR_PART_NAME = merged3.partName")
+            lines.append("    except:")
+            lines.append("        try:")
+            lines.append("            ARR_PART_NAME = merged3.part.name")
+            lines.append("        except:")
+            lines.append(f"            ARR_PART_NAME = '{merged_name}'")
+            lines.append("")
+            lines.append(f"    if ARR_INST_NAME != '{merged_name}-1':")
+            lines.append(f"        if '{merged_name}-1' not in assembly.instances.keys():")
+            lines.append(f"            assembly.instances.changeKey(fromName=ARR_INST_NAME, toName='{merged_name}-1')")
+            lines.append(f"        ARR_INST_NAME = '{merged_name}-1'")
+            lines.append("")
+            lines.append("    assembly.regenerate()")
+        else:
+            lines.append("uc_part = model.parts['MergedStructure']")
+            lines.append("array_instances = []")
+            lines.append("")
+            lines.append("for ix in range(ARRAY_A):")
+            lines.append("    for iy in range(ARRAY_B):")
+            lines.append("        for iz in range(ARRAY_C):")
+            lines.append("            dx = (ix - (ARRAY_A - 1) / 2.0) * cell_size")
+            lines.append("            dy = (iy - (ARRAY_B - 1) / 2.0) * cell_size")
+            lines.append("            dz = (iz - (ARRAY_C - 1) / 2.0) * cell_size")
+            lines.append("            nm = 'UC-%d-%d-%d' % (ix, iy, iz)")
+            lines.append("            assembly.Instance(name=nm, part=uc_part, dependent=ON)")
+            lines.append("            assembly.translate(instanceList=(nm,), vector=(dx, dy, dz))")
+            lines.append("            array_instances.append(assembly.instances[nm])")
+            lines.append("")
+            lines.append(f"merged3 = assembly.InstanceFromBooleanMerge(")
+            lines.append(f"    name='{merged_name}',")
+            lines.append("    instances=tuple(array_instances),")
+            lines.append("    keepIntersections=OFF,")
+            lines.append("    originalInstances=DELETE,")
+            lines.append("    domain=GEOMETRY")
+            lines.append(")")
+            lines.append("assembly.regenerate()")
+            lines.append("")
+
+            # Instance name handling (robust try/except pattern from BCC.py)
+            lines.append("try:")
+            lines.append("    ARR_INST_NAME = merged3.name")
+            lines.append("except:")
+            lines.append(f"    ARR_INST_NAME = '{merged_name}-1'")
+            lines.append("try:")
+            lines.append("    ARR_PART_NAME = merged3.partName")
+            lines.append("except:")
+            lines.append("    try:")
+            lines.append("        ARR_PART_NAME = merged3.part.name")
+            lines.append("    except:")
+            lines.append(f"        ARR_PART_NAME = '{merged_name}'")
+            lines.append("")
+            lines.append(f"if ARR_INST_NAME != '{merged_name}-1':")
+            lines.append(f"    if '{merged_name}-1' not in assembly.instances.keys():")
+            lines.append(f"        assembly.instances.changeKey(fromName=ARR_INST_NAME, toName='{merged_name}-1')")
+            lines.append(f"    ARR_INST_NAME = '{merged_name}-1'")
+            lines.append("")
+            lines.append("assembly.regenerate()")
+
+        lines.append("")
+
+        # Y extents detection (always runs)
+        lines.append("inst3 = assembly.instances[ARR_INST_NAME]")
+        lines.append("y_vals = [v.pointOn[0][1] for v in inst3.vertices]")
+        lines.append("Y_MIN = min(y_vals)")
+        lines.append("Y_MAX = max(y_vals)")
+        lines.append('print("TRUE LATTICE Y EXTENTS: Y_MIN=%.6f Y_MAX=%.6f" % (Y_MIN, Y_MAX))')
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _array_script_cutting():
+        """Cut the merged array structure to create flat top/bottom/side surfaces.
+
+        Mirrors the cutting logic from the N=1 Static_model.py template.
+        After cutting, the structure has flat faces at the bounding box boundaries
+        (±half_x, ±half_y, ±half_z), enabling reliable Tie constraint creation
+        via face normal detection.
+        """
+        lines = []
+        lines.append("# ==========================================================")
+        lines.append("# CUTTING: trim protrusions to create flat surfaces")
+        lines.append("# ==========================================================")
+        lines.append("p_cut = model.parts[ARR_PART_NAME]")
+        lines.append("")
+        lines.append("half_x = ARRAY_A * cell_size / 2.0")
+        lines.append("half_y = ARRAY_B * cell_size / 2.0")
+        lines.append("half_z = ARRAY_C * cell_size / 2.0")
+        lines.append("cut_margin = 2.0 * radius")
+        lines.append("")
+
+        # Datum axes (reusable for both cuts)
+        lines.append("da_y = p_cut.DatumAxisByPrincipalAxis(principalAxis=YAXIS)")
+        lines.append("da_x = p_cut.DatumAxisByPrincipalAxis(principalAxis=XAXIS)")
+        lines.append("")
+
+        # --- Cut 1: XYPLANE (Z direction) ---
+        # Sketch lives in XY plane; ring removes material outside [-half_x, half_x] x [-half_y, half_y]
+        lines.append("# Cut 1: Z direction (XYPLANE) — trims X & Y protrusions")
+        lines.append("cut_z_offset = half_z + cut_margin")
+        lines.append("cut_z_depth  = 2.0 * cut_z_offset")
+        lines.append("dp_z = p_cut.DatumPlaneByPrincipalPlane(principalPlane=XYPLANE, offset=cut_z_offset)")
+        lines.append("")
+        lines.append("t1 = p_cut.MakeSketchTransform(sketchPlane=p_cut.datums[dp_z.id],")
+        lines.append("    sketchUpEdge=p_cut.datums[da_y.id],")
+        lines.append("    sketchPlaneSide=SIDE1, sketchOrientation=RIGHT,")
+        lines.append("    origin=(0.0, 0.0, half_z))")
+        lines.append("s1 = model.ConstrainedSketch(name='cutZSketch', sheetSize=200.0, transform=t1)")
+        lines.append("s1.setPrimaryObject(option=SUPERIMPOSE)")
+        lines.append("p_cut.projectReferencesOntoSketch(sketch=s1, filter=COPLANAR_EDGES)")
+        lines.append("s1.rectangle(point1=(-half_x, -half_y), point2=(half_x, half_y))")
+        lines.append("outer = max(half_x, half_y) + 10.0")
+        lines.append("s1.rectangle(point1=(-outer, -outer), point2=(outer, outer))")
+        lines.append("p_cut.CutExtrude(sketchPlane=p_cut.datums[dp_z.id],")
+        lines.append("    sketchUpEdge=p_cut.datums[da_y.id],")
+        lines.append("    sketchPlaneSide=SIDE1, sketchOrientation=RIGHT,")
+        lines.append("    sketch=s1, depth=cut_z_depth, flipExtrudeDirection=OFF)")
+        lines.append("s1.unsetPrimaryObject()")
+        lines.append("del model.sketches['cutZSketch']")
+        lines.append("")
+
+        # --- Cut 2: XZPLANE (Y direction) ---
+        # Sketch lives in XZ plane; ring removes material outside [-half_x, half_x] x [-half_z, half_z]
+        # This is the critical cut for creating flat top/bottom faces for Tie constraints
+        lines.append("# Cut 2: Y direction (XZPLANE) — creates flat top/bottom for Tie")
+        lines.append("cut_y_offset = half_y + cut_margin")
+        lines.append("cut_y_depth  = 2.0 * cut_y_offset")
+        lines.append("dp_y = p_cut.DatumPlaneByPrincipalPlane(principalPlane=XZPLANE, offset=cut_y_offset)")
+        lines.append("")
+        lines.append("t2 = p_cut.MakeSketchTransform(sketchPlane=p_cut.datums[dp_y.id],")
+        lines.append("    sketchUpEdge=p_cut.datums[da_x.id],")
+        lines.append("    sketchPlaneSide=SIDE1, sketchOrientation=RIGHT,")
+        lines.append("    origin=(0.0, half_y, 0.0))")
+        lines.append("s2 = model.ConstrainedSketch(name='cutYSketch', sheetSize=200.0, transform=t2)")
+        lines.append("s2.setPrimaryObject(option=SUPERIMPOSE)")
+        lines.append("p_cut.projectReferencesOntoSketch(sketch=s2, filter=COPLANAR_EDGES)")
+        lines.append("s2.rectangle(point1=(-half_x, -half_z), point2=(half_x, half_z))")
+        lines.append("outer2 = max(half_x, half_z) + 10.0")
+        lines.append("s2.rectangle(point1=(-outer2, -outer2), point2=(outer2, outer2))")
+        lines.append("p_cut.CutExtrude(sketchPlane=p_cut.datums[dp_y.id],")
+        lines.append("    sketchUpEdge=p_cut.datums[da_x.id],")
+        lines.append("    sketchPlaneSide=SIDE1, sketchOrientation=RIGHT,")
+        lines.append("    sketch=s2, depth=cut_y_depth, flipExtrudeDirection=OFF)")
+        lines.append("s2.unsetPrimaryObject()")
+        lines.append("del model.sketches['cutYSketch']")
+        lines.append("")
+
+        # After cutting, update Y extents to the exact cut boundaries
+        lines.append("# Update Y extents after cutting (now exact, no protrusions)")
+        lines.append("Y_MIN = -half_y")
+        lines.append("Y_MAX =  half_y")
+        lines.append('print("After cutting: Y_MIN=%.4f  Y_MAX=%.4f" % (Y_MIN, Y_MAX))')
+        lines.append("")
+        lines.append("assembly.regenerate()")
+        lines.append('print("Cutting completed: flat top/bottom surfaces created for Tie constraints")')
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _array_script_plates():
+        """Rigid plates section."""
+        lines = []
+        lines.append("# ==========================================================")
+        lines.append("# RIGID PLATES")
+        lines.append("# ==========================================================")
+        lines.append("plate_half = max(ARRAY_A, ARRAY_C) * cell_size / 2.0 + 1.0")
+        lines.append("")
+        lines.append("s3 = model.ConstrainedSketch(name='rigidPlateSketch', sheetSize=50.0)")
+        lines.append("s3.setPrimaryObject(option=STANDALONE)")
+        lines.append("s3.Line(point1=(-plate_half, 0.0), point2=(plate_half, 0.0))")
+        lines.append("s3.HorizontalConstraint(entity=s3.geometry[2], addUndoState=False)")
+        lines.append("")
+        lines.append("if 'RigidPlate' in model.parts.keys():")
+        lines.append("    del model.parts['RigidPlate']")
+        lines.append("rigid_part = model.Part(name='RigidPlate', dimensionality=THREE_D, type=DISCRETE_RIGID_SURFACE)")
+        lines.append("rigid_part.BaseShellExtrude(sketch=s3, depth=2.0 * plate_half)")
+        lines.append("s3.unsetPrimaryObject()")
+        lines.append("del model.sketches['rigidPlateSketch']")
+        lines.append("")
+        lines.append("assembly.DatumCsysByDefault(CARTESIAN)")
+        lines.append("assembly.Instance(name='RigidPlate-1', part=rigid_part, dependent=ON)")
+        lines.append("assembly.translate(instanceList=('RigidPlate-1',), vector=(0.0, Y_MIN - PLATE_GAP, -plate_half))")
+        lines.append("assembly.Instance(name='RigidPlate-2', part=rigid_part, dependent=ON)")
+        lines.append("assembly.translate(instanceList=('RigidPlate-2',), vector=(0.0, Y_MAX + PLATE_GAP, -plate_half))")
+        lines.append("assembly.regenerate()")
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _array_script_material():
+        """Material definition section."""
+        lines = []
+        lines.append("# ==========================================================")
+        lines.append("# MATERIAL")
+        lines.append("# ==========================================================")
+        # ----------------------------------------------------------------
+        # MATERIAL CARD — NS3 plastic + 校准 E
+        #   E = 1010 (NS3 ×0.65 — 校准实验 compliance / 延长弹性段)
+        #   σ_y0=33.97, σ_ult=56.80 (NS3 unchanged)
+        # 同步位置: model/Static_model.py, model/Dynamic_model.py
+        # ----------------------------------------------------------------
+        lines.append("material_obj = model.Material(name='Material-1')")
+        lines.append("material_obj.Density(table=((1.01e-09,),))")
+        lines.append("material_obj.Elastic(table=((1010, 0.3),))")
+        lines.append("material_obj.Plastic(table=(")
+        lines.append("    (33.97, 0.0),(36.71, 0.0014),(39.03, 0.0040),(41.13, 0.0071),")
+        lines.append("    (43.36, 0.0115),(45.09, 0.0162),(46.48, 0.0218),(47.74, 0.0279),")
+        lines.append("    (49.00, 0.0357),(50.21, 0.0456),(51.47, 0.0569),(52.48, 0.0718),")
+        lines.append("    (53.86, 0.0830),(55.07, 0.1041),(55.98, 0.1227),(56.31, 0.1376),")
+        lines.append("    (56.64, 0.1534),(56.80, 0.1633),")
+        lines.append("))")
+        lines.append("material_obj.DuctileDamageInitiation(table=(")
+        lines.append("    (0.60, -0.333, 0.033),(0.40, 0.0, 0.033),(0.25, 0.333, 0.033),")
+        lines.append("))")
+        lines.append("material_obj.ductileDamageInitiation.DamageEvolution(type=DISPLACEMENT, table=((0.5,),))")
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _array_script_sections(merged_name):
+        """Section assignments for the merged structure and rigid plate."""
+        lines = []
+        lines.append("model.HomogeneousSolidSection(name='Section-1', material='Material-1', thickness=None)")
+        lines.append("model.HomogeneousShellSection(name='Section-2',")
+        lines.append("    preIntegrate=OFF, material='Material-1',")
+        lines.append("    thicknessType=UNIFORM, thickness=0.05,")
+        lines.append("    thicknessField='', nodalThicknessField='',")
+        lines.append("    idealization=NO_IDEALIZATION, poissonDefinition=DEFAULT,")
+        lines.append("    thicknessModulus=None, temperature=GRADIENT,")
+        lines.append("    useDensity=OFF, integrationRule=SIMPSON, numIntPts=5)")
+        lines.append("")
+        lines.append("rigid_part = model.parts['RigidPlate']")
+        lines.append("region = regionToolset.Region(faces=rigid_part.faces[:])")
+        lines.append("rigid_part.SectionAssignment(region=region, sectionName='Section-2',")
+        lines.append("    offset=0.0, offsetType=MIDDLE_SURFACE,")
+        lines.append("    offsetField='', thicknessAssignment=FROM_SECTION)")
+        lines.append("")
+        lines.append("main_part = model.parts[ARR_PART_NAME]")
+        lines.append("c = main_part.cells")
+        lines.append("if len(c) == 0:")
+        lines.append('    raise RuntimeError("ERROR: %s has 0 solid cells." % ARR_PART_NAME)')
+        lines.append("region = regionToolset.Region(cells=c[:])")
+        lines.append("main_part.SectionAssignment(region=region, sectionName='Section-1',")
+        lines.append("    offset=0.0, offsetType=MIDDLE_SURFACE,")
+        lines.append("    offsetField='', thicknessAssignment=FROM_SECTION)")
+        lines.append("")
+        lines.append("assembly.regenerate()")
+        lines.append('print("Model creation completed successfully!")')
+        lines.append("")
+        return lines
+
+    def _array_script_macro(self, is_shear, is_dynamic, compress_disp, time_period, velocity_num, plate_half=8.5):
+        """Macro1 containing step, BC, contact, rigid body constraints, and mesh."""
+        lines = []
+        lines.append("# ==========================================================")
+        lines.append("# MACRO1")
+        lines.append("# ==========================================================")
+        lines.append("import section")
+        lines.append("import displayGroupMdbToolset as dgm")
+        lines.append("import part")
+        lines.append("import material as material_module")
+        lines.append("import assembly as assembly_module")
+        lines.append("import step")
+        lines.append("import interaction")
+        lines.append("import load")
+        lines.append("import mesh")
+        lines.append("import optimization")
+        lines.append("import job")
+        lines.append("import sketch")
+        lines.append("import visualization")
+        lines.append("import xyPlot")
+        lines.append("import displayGroupOdbToolset as dgo")
+        lines.append("import connectorBehavior")
+        lines.append("")
+        lines.append("")
+        lines.append("def Macro1():")
+        lines.append("    p = mdb.models['Model-1'].parts['RigidPlate']")
+        lines.append("    v = p.vertices")
+        lines.append("    p.ReferencePoint(point=v[0])")
+        lines.append("    r = p.referencePoints")
+        lines.append("    rp_key = list(r.keys())[-1]")
+        lines.append("    refPoints = (r[rp_key], )")
+        lines.append("    region = p.Set(referencePoints=refPoints, name='RefPlateSet')")
+        # 刚性板质量按面积缩放: 基准 4.375mm 板 = 8.45e-07 tonne
+        base_plate_size = 4.375
+        base_mass = 8.45e-07
+        plate_size = 2.0 * plate_half
+        scaled_mass = base_mass * (plate_size / base_plate_size) ** 2
+        lines.append("    p.engineeringFeatures.PointMassInertia(")
+        lines.append(f"        name='Inertia-1', region=region, mass={scaled_mass:.6e}, alpha=0.0, composite=0.0)")
+        lines.append("")
+        lines.append("    a = mdb.models['Model-1'].rootAssembly")
+        lines.append("    a.regenerate()")
+        lines.append("")
+
+        # Step definition
+        lines.append("    mdb.models['Model-1'].ExplicitDynamicsStep(")
+        lines.append(f"        name='Step-1', previous='Initial', timePeriod={time_period},")
+        lines.append("        massScaling=((SEMI_AUTOMATIC, MODEL, THROUGHOUT_STEP, 0.0, 5e-06, BELOW_MIN, 1, 0, 0.0, 0.0, 0, None), ),")
+        lines.append("        improvedDtMethod=ON, nlgeom=ON,")
+        # Bulk viscosity = NS3 (0.25, 2.0). Tried Abaqus default (0.06, 1.2) on 2026-05-02:
+        # impact on σ-ε <2% (BCC<0.5%, Aux ε=0.05 -5.6% only), but wall time 2-5×.
+        # Lit recommends defaults but real impact is negligible for quasi-static + mass scaling.
+        lines.append("        linearBulkViscosity=0.25, quadBulkViscosity=2.0)")
+        lines.append("")
+        lines.append("    mdb.models['Model-1'].fieldOutputRequests['F-Output-1'].setValues(")
+        lines.append("        variables=('S', 'E', 'PE', 'PEEQ', 'PEMAG', 'LE', 'U', 'RF', 'CF', 'CSTRESS', 'CDISP', 'STATUS'),")
+        lines.append("        numIntervals=100)")
+        lines.append("")
+
+        # Reference points and history output
+        lines.append("    def _get_first_rp(instName):")
+        lines.append("        rpDict = a.instances[instName].referencePoints")
+        lines.append("        return list(rpDict.values())[0]")
+        lines.append("")
+        lines.append("    rp_bot = _get_first_rp('RigidPlate-1')")
+        lines.append("    rp_top = _get_first_rp('RigidPlate-2')")
+        lines.append("    a.Set(referencePoints=(rp_bot,), name='BotReflection')")
+        lines.append("    a.Set(referencePoints=(rp_top,), name='TopReflection')")
+        lines.append("")
+        lines.append("    mdb.models['Model-1'].HistoryOutputRequest(name='H-Output-2',")
+        lines.append("        createStepName='Step-1', variables=('U1', 'U2', 'RF1', 'RF2'),")
+        lines.append("        region=a.sets['TopReflection'], sectionPoints=DEFAULT, rebar=EXCLUDE)")
+        lines.append("")
+
+        # Rigid body constraints
+        lines.append("    mdb.models['Model-1'].RigidBody(name='Constraint-1',")
+        lines.append("        refPointRegion=regionToolset.Region(referencePoints=(rp_top,)),")
+        lines.append("        bodyRegion=a.sets['TopReflection'])")
+        lines.append("    mdb.models['Model-1'].RigidBody(name='Constraint-2',")
+        lines.append("        refPointRegion=regionToolset.Region(referencePoints=(rp_bot,)),")
+        lines.append("        bodyRegion=a.sets['BotReflection'])")
+        lines.append("")
+
+        # Contact property
+        lines.append("    mdb.models['Model-1'].ContactProperty('IntProp-1')")
+        lines.append("    mdb.models['Model-1'].interactionProperties['IntProp-1'].TangentialBehavior(")
+        lines.append("        formulation=PENALTY, directionality=ISOTROPIC, slipRateDependency=OFF,")
+        lines.append("        pressureDependency=OFF, temperatureDependency=OFF, dependencies=0,")
+        # 摩擦系数恢复 NS3 原值 0.15
+        lines.append("        table=((0.15, ), ), shearStressLimit=None, maximumElasticSlip=FRACTION,")
+        lines.append("        fraction=0.005, elasticSlipStiffness=None)")
+        # NormalBehavior: HARD contact + scale=5.0
+        # 锁定 5.0 跨所有 N — 文献依据: Lee&Kajtaz 2022, Park 2022, Khan 2022 (PA12 lattice
+        # Abaqus/Explicit 默认 HARD + penalty)。N=2/3 用 1.0 虽更软, 但跨 N 趋势分析必须参数统一。
+        lines.append("    mdb.models['Model-1'].interactionProperties['IntProp-1'].NormalBehavior(")
+        lines.append("        pressureOverclosure=HARD, allowSeparation=ON,")
+        lines.append("        contactStiffnessScaleFactor=5.0)")
+        # ContactDamping (NS3 设置): 耗散 buckling 事件触发的高频振荡，
+        # 防止 BCCZ 类拓扑在屈曲时出现穿透。
+        lines.append("    mdb.models['Model-1'].interactionProperties['IntProp-1'].Damping(")
+        lines.append("        definition=DAMPING_COEFFICIENT, tangentFraction=DEFAULT,")
+        lines.append("        clearanceDependence=STEP, table=((0.1, ),))")
+        lines.append("")
+
+        # Surface-to-surface contacts
+        lines.append("    region1 = a.Surface(side1Faces=a.instances['RigidPlate-2'].faces[:], name='m_Surf-1')")
+        lines.append("    f_lat = a.instances[ARR_INST_NAME].faces")
+        lines.append("    top_faces = f_lat.getByBoundingBox(xMin=-1e9, xMax=1e9,")
+        lines.append("        yMin=Y_MAX - 0.30, yMax=Y_MAX + 0.30, zMin=-1e9, zMax=1e9)")
+        lines.append("    region2 = a.Surface(side1Faces=top_faces, name='s_Surf-1')")
+        lines.append("    mdb.models['Model-1'].SurfaceToSurfaceContactExp(name='Int-1',")
+        lines.append("        createStepName='Step-1', main=region1, secondary=region2,")
+        lines.append("        sliding=FINITE, interactionProperty='IntProp-1')")
+        lines.append("")
+        lines.append("    region1 = a.Surface(side1Faces=a.instances['RigidPlate-1'].faces[:], name='m_Surf-3')")
+        lines.append("    bot_faces = f_lat.getByBoundingBox(xMin=-1e9, xMax=1e9,")
+        lines.append("        yMin=Y_MIN - 0.30, yMax=Y_MIN + 0.30, zMin=-1e9, zMax=1e9)")
+        lines.append("    region2 = a.Surface(side1Faces=bot_faces, name='s_Surf-3')")
+        lines.append("    mdb.models['Model-1'].SurfaceToSurfaceContactExp(name='Int-2',")
+        lines.append("        createStepName='Step-1', main=region1, secondary=region2,")
+        lines.append("        sliding=FINITE, interactionProperty='IntProp-1')")
+        lines.append("")
+        lines.append("    mdb.models['Model-1'].interactions['Int-1'].move('Step-1', 'Initial')")
+        lines.append("    mdb.models['Model-1'].interactions['Int-2'].move('Step-1', 'Initial')")
+        lines.append("")
+
+        # Boundary conditions
+        lines.append("    mdb.models['Model-1'].EncastreBC(name='BC-1', createStepName='Initial',")
+        lines.append("        region=a.sets['BotReflection'], localCsys=None)")
+        lines.append("")
+
+        if is_dynamic:
+            vel_num = float(velocity_num) if velocity_num is not None else 500.0
+
+            if is_shear:
+                lines.append(f"    mdb.models['Model-1'].DisplacementBC(name='BC-2', createStepName='Step-1',")
+                lines.append("        region=a.sets['TopReflection'],")
+                lines.append("        u1=UNSET, u2=0.0, u3=0.0, ur1=0.0, ur2=0.0, ur3=0.0,")
+                lines.append("        amplitude=UNSET, fixed=OFF, distributionType=UNIFORM, fieldName='',")
+                lines.append("        localCsys=None)")
+                lines.append(f"    mdb.models['Model-1'].Velocity(name='Predefined Field-1',")
+                lines.append(f"        region=a.sets['TopReflection'],")
+                lines.append(f"        velocity1=-{vel_num}, velocity2=0.0, velocity3=0.0,")
+                lines.append(f"        omega=0.0)")
+            else:
+                lines.append(f"    mdb.models['Model-1'].DisplacementBC(name='BC-2', createStepName='Step-1',")
+                lines.append("        region=a.sets['TopReflection'],")
+                lines.append("        u1=0.0, u2=UNSET, u3=0.0, ur1=0.0, ur2=0.0, ur3=0.0,")
+                lines.append("        amplitude=UNSET, fixed=OFF, distributionType=UNIFORM, fieldName='',")
+                lines.append("        localCsys=None)")
+                lines.append(f"    mdb.models['Model-1'].Velocity(name='Predefined Field-1',")
+                lines.append(f"        region=a.sets['TopReflection'],")
+                lines.append(f"        velocity1=0.0, velocity2=-{vel_num}, velocity3=0.0,")
+                lines.append(f"        omega=0.0)")
+        else:
+            if is_shear:
+                lines.append(f"    u1 = {compress_disp}")
+                lines.append("    mdb.models['Model-1'].DisplacementBC(name='BC-2', createStepName='Step-1',")
+                lines.append("        region=a.sets['TopReflection'],")
+                lines.append("        u1=u1, u2=0.0, u3=0.0, ur1=0.0, ur2=0.0, ur3=0.0,")
+                lines.append("        amplitude=UNSET, fixed=OFF, distributionType=UNIFORM, fieldName='',")
+                lines.append("        localCsys=None)")
+            else:
+                lines.append(f"    u2 = {compress_disp}")
+                lines.append("    mdb.models['Model-1'].DisplacementBC(name='BC-2', createStepName='Step-1',")
+                lines.append("        region=a.sets['TopReflection'],")
+                lines.append("        u1=0.0, u2=u2, u3=0.0, ur1=0.0, ur2=0.0, ur3=0.0,")
+                lines.append("        amplitude=UNSET, fixed=OFF, distributionType=UNIFORM, fieldName='',")
+                lines.append("        localCsys=None)")
+
+            lines.append(f"    mdb.models['Model-1'].SmoothStepAmplitude(name='Amp-1', timeSpan=STEP,")
+            lines.append(f"        data=((0.0, 0.0), ({time_period}, 1.0)))")
+            lines.append("    mdb.models['Model-1'].boundaryConditions['BC-2'].setValuesInStep(")
+            lines.append("        stepName='Step-1', amplitude='Amp-1')")
+
+        lines.append("")
+
+        # Update rigid body constraints with face sets
+        lines.append("    a_rb = mdb.models['Model-1'].rootAssembly")
+        lines.append("    f1 = a_rb.instances['RigidPlate-2'].faces")
+        lines.append("    region2 = a_rb.Set(faces=f1[:], name='b_Set-8')")
+        lines.append("    rp_top2 = _get_first_rp('RigidPlate-2')")
+        lines.append("    region1 = regionToolset.Region(referencePoints=(rp_top2,))")
+        lines.append("    mdb.models['Model-1'].constraints['Constraint-1'].setValues(")
+        lines.append("        refPointRegion=region1, bodyRegion=region2)")
+        lines.append("")
+        lines.append("    f1 = a_rb.instances['RigidPlate-1'].faces")
+        lines.append("    region2 = a_rb.Set(faces=f1[:], name='b_Set-9')")
+        lines.append("    rp_bot2 = _get_first_rp('RigidPlate-1')")
+        lines.append("    region1 = regionToolset.Region(referencePoints=(rp_bot2,))")
+        lines.append("    mdb.models['Model-1'].constraints['Constraint-2'].setValues(")
+        lines.append("        refPointRegion=region1, bodyRegion=region2)")
+        lines.append("")
+        lines.append("    a.regenerate()")
+
+        # Mesh
+        lines.append("    p = mdb.models['Model-1'].parts[ARR_PART_NAME]")
+        lines.append("    c = p.cells")
+        lines.append("    p.setMeshControls(regions=c[:], elemShape=TET, technique=FREE)")
+        lines.append("    # distortionControl=ON with lengthRatio=0.1: prevent element inversion")
+        lines.append("    # when elements compress below 10% of original size (densification regime).")
+        lines.append("    # Avoids CFL violation crash without affecting elastic/plateau response.")
+        lines.append("    # element deletion: enabled by default when damage model is defined.")
+        lines.append("    elemType1 = mesh.ElemType(elemCode=C3D10M, elemLibrary=EXPLICIT,")
+        lines.append("        secondOrderAccuracy=OFF, distortionControl=ON, lengthRatio=0.1)")
+        lines.append("    elemType2 = mesh.ElemType(elemCode=C3D10M, elemLibrary=EXPLICIT,")
+        lines.append("        secondOrderAccuracy=OFF, distortionControl=ON, lengthRatio=0.1)")
+        lines.append("    elemType3 = mesh.ElemType(elemCode=C3D10M, elemLibrary=EXPLICIT,")
+        lines.append("        secondOrderAccuracy=OFF, distortionControl=ON, lengthRatio=0.1)")
+        lines.append("    p.setElementType(regions=(c[:],), elemTypes=(elemType1, elemType2, elemType3))")
+        lines.append("")
+        lines.append("    mesh_size_structure = 0.3 * math.sqrt(radius / 0.5) * (cell_size / 5.0)")
+        lines.append("    mesh_size_plate = 0.5 * (radius / 0.5) * (cell_size / 5.0)")
+        lines.append("    p.seedPart(size=mesh_size_structure, deviationFactor=0.1, minSizeFactor=0.1)")
+        lines.append("    p.generateMesh()")
+        lines.append("")
+        lines.append("    p2 = mdb.models['Model-1'].parts['RigidPlate']")
+        lines.append("    p2.seedPart(size=mesh_size_plate, deviationFactor=0.1, minSizeFactor=0.1)")
+        lines.append("    p2.generateMesh()")
+        lines.append("")
+        lines.append("")
+        lines.append("Macro1()")
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _array_script_tie(merged_name):
+        """Tie constraints section."""
+        lines = []
+        lines.append("# ==========================================================")
+        lines.append("# TIE CONSTRAINTS")
+        lines.append("# ==========================================================")
+        lines.append('print("\\n========== Creating Tie Constraints ==========")')
+        lines.append("a = mdb.models['Model-1'].rootAssembly")
+        lines.append("instance = a.instances[ARR_INST_NAME]")
+        lines.append("faces = instance.faces")
+        lines.append("")
+        lines.append("bottom_face_objects = []")
+        lines.append("for face in faces:")
+        lines.append("    try:")
+        lines.append("        normal = face.getNormal()")
+        lines.append("        if abs(normal[0]) < 0.01 and abs(normal[1] + 1.0) < 0.01 and abs(normal[2]) < 0.01:")
+        lines.append("            bottom_face_objects.append(face)")
+        lines.append("    except:")
+        lines.append("        pass")
+        lines.append("")
+        lines.append('print("Found %d bottom faces" % len(bottom_face_objects))')
+        lines.append("if bottom_face_objects:")
+        lines.append("    s1 = a.instances['RigidPlate-1'].faces")
+        lines.append("    region1 = regionToolset.Region(side2Faces=s1[:])")
+        lines.append("    s1_struct = a.instances[ARR_INST_NAME].faces")
+        lines.append("    found_faces = []")
+        lines.append("    for face in bottom_face_objects:")
+        lines.append("        found_faces.append(s1_struct.findAt((face.pointOn[0],)))")
+        lines.append("    region2 = a.Surface(side1Faces=tuple(found_faces), name='s_Surf-BottomTie')")
+        lines.append("    mdb.models['Model-1'].Tie(name='Constraint-3', main=region1, secondary=region2,")
+        lines.append("        positionToleranceMethod=COMPUTED, adjust=ON, tieRotations=ON, thickness=ON)")
+        lines.append('    print("SUCCESS: Bottom Tie created")')
+        lines.append("")
+        lines.append("top_face_objects = []")
+        lines.append("for face in faces:")
+        lines.append("    try:")
+        lines.append("        normal = face.getNormal()")
+        lines.append("        if abs(normal[0]) < 0.01 and abs(normal[1] - 1.0) < 0.01 and abs(normal[2]) < 0.01:")
+        lines.append("            top_face_objects.append(face)")
+        lines.append("    except:")
+        lines.append("        pass")
+        lines.append("")
+        lines.append('print("Found %d top faces" % len(top_face_objects))')
+        lines.append("if top_face_objects:")
+        lines.append("    s1 = a.instances['RigidPlate-2'].faces")
+        lines.append("    region1 = regionToolset.Region(side2Faces=s1[:])")
+        lines.append("    s1_struct = a.instances[ARR_INST_NAME].faces")
+        lines.append("    found_faces = []")
+        lines.append("    for face in top_face_objects:")
+        lines.append("        found_faces.append(s1_struct.findAt((face.pointOn[0],)))")
+        lines.append("    region2 = a.Surface(side1Faces=tuple(found_faces), name='s_Surf-TopTie')")
+        lines.append("    mdb.models['Model-1'].Tie(name='Constraint-4', main=region1, secondary=region2,")
+        lines.append("        positionToleranceMethod=COMPUTED, adjust=ON, tieRotations=ON, thickness=ON)")
+        lines.append('    print("SUCCESS: Top Tie created")')
+        lines.append("")
+        lines.append('print("=" * 50)')
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _array_script_contact():
+        """General contact section (replaces surface-to-surface contacts)."""
+        lines = []
+        lines.append("# ==========================================================")
+        lines.append("# GENERAL CONTACT")
+        lines.append("# ==========================================================")
+        lines.append('print("\\n========== Creating General Contact ==========")')
+        lines.append("try:")
+        lines.append("    if 'Int-1' in mdb.models['Model-1'].interactions.keys():")
+        lines.append("        del mdb.models['Model-1'].interactions['Int-1']")
+        lines.append("except:")
+        lines.append("    pass")
+        lines.append("try:")
+        lines.append("    if 'Int-2' in mdb.models['Model-1'].interactions.keys():")
+        lines.append("        del mdb.models['Model-1'].interactions['Int-2']")
+        lines.append("except:")
+        lines.append("    pass")
+        lines.append("")
+        lines.append("mdb.models['Model-1'].ContactExp(name='GeneralContact', createStepName='Initial')")
+        lines.append("mdb.models['Model-1'].interactions['GeneralContact'].includedPairs.setValuesInStep(")
+        lines.append("    stepName='Initial', useAllstar=ON)")
+        lines.append("mdb.models['Model-1'].interactions['GeneralContact'].contactPropertyAssignments.appendInStep(")
+        lines.append("    stepName='Initial', assignments=((GLOBAL, SELF, 'IntProp-1'), ))")
+        lines.append('print("SUCCESS: General Contact created")')
+        lines.append('print("=" * 50)')
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _array_script_job(job_name, merged_name, array_volume, output_dir):
+        """Job definition, density calculation, and input file generation."""
+        lines = []
+        lines.append("# ==========================================================")
+        lines.append("# JOB")
+        lines.append("# ==========================================================")
+        lines.append("mdb.models['Model-1'].fieldOutputRequests['F-Output-1'].setValues(frequency=3)")
+        lines.append("")
+        lines.append(f"JOB_NAME = '{job_name}'")
+        lines.append("")
+        lines.append(f"os.chdir(r\"{output_dir}\")")
+        lines.append("")
+        lines.append("mdb.Job(name=JOB_NAME, model='Model-1', description='', type=ANALYSIS,")
+        lines.append("    atTime=None, waitMinutes=0, waitHours=0, queue=None, memory=90,")
+        lines.append("    memoryUnits=PERCENTAGE, getMemoryFromAnalysis=True,")
+        lines.append("    explicitPrecision=SINGLE, nodalOutputPrecision=SINGLE, echoPrint=ON,")
+        lines.append("    modelPrint=ON, contactPrint=ON, historyPrint=ON, userSubroutine='',")
+        lines.append("    scratch='', resultsFormat=ODB, numThreadsPerMpiProcess=0, numCpus=8,")
+        lines.append("    numDomains=8, numGPUs=0)")
+        lines.append("")
+        lines.append("try:")
+        lines.append("    part = mdb.models['Model-1'].parts[ARR_PART_NAME]")
+        lines.append("    volume = part.getVolume()")
+        lines.append(f"    density = volume / ({array_volume})")
+        lines.append('    print("Volume = ", volume)')
+        lines.append('    print("Relative density = ", density)')
+        lines.append("    with open('density_temp.txt', 'w') as f:")
+        lines.append("        f.write(str(density))")
+        lines.append("except Exception as e:")
+        lines.append('    print("Warning: Cannot calculate density: " + str(e))')
+        lines.append("    with open('density_temp.txt', 'w') as f:")
+        lines.append("        f.write('0.0')")
+        lines.append("")
+        lines.append('print("Generating input file...")')
+        lines.append("mdb.jobs[JOB_NAME].writeInput(consistencyChecking=OFF)")
+        lines.append("print(\"Input file '%s.inp' generated successfully.\" % JOB_NAME)")
+        lines.append("")
+
+        # INP patch: inject SC-Solid section controls with element deletion
+        lines.append("# ==========================================================")
+        lines.append("# PATCH: inject SC-Solid section controls with element deletion")
+        lines.append("# (ductile damage >=95% -> remove element) to prevent Explicit")
+        lines.append("# from collapsing dt to 1e-14 in densification regime. The CAE")
+        lines.append("# Python API does not expose a controls kwarg on")
+        lines.append("# SectionAssignment, so we post-edit the .inp directly.")
+        lines.append("# ==========================================================")
+        lines.append("import re as _re_patch")
+        lines.append('_inp_patch = JOB_NAME + ".inp"')
+        lines.append('with open(_inp_patch, "r") as _fp:')
+        lines.append("    _c_patch = _fp.read()")
+        lines.append('_sc_def = ("*Section Controls, name=SC-Solid, element deletion=YES, "')
+        lines.append('           "max degradation=0.95\\n1., 1., 1.\\n")')
+        lines.append('if "*Section Controls, name=SC-Solid" not in _c_patch:')
+        lines.append('    _c_patch = _c_patch.replace("*Step", _sc_def + "*Step", 1)')
+        lines.append("_c_patch = _re_patch.sub(")
+        lines.append('    r"\\*Solid Section, (elset=[^,]+), material=Material-1",')
+        lines.append('    r"*Solid Section, \\1, controls=SC-Solid, material=Material-1",')
+        lines.append("    _c_patch)")
+        lines.append('with open(_inp_patch, "w") as _fp:')
+        lines.append("    _fp.write(_c_patch)")
+        lines.append('print("PATCH: injected SC-Solid section controls into %s" % _inp_patch)')
+        lines.append("")
+        return lines
+
+    # ------------------------------------------------------------------
+    # Orchestrator
+    # ------------------------------------------------------------------
+
+    def _generate_array_script(self, structure_data, cell_type, cell_size, cell_radius, slider, mode_type, analysis_type, output_dir, script_filename, lattice_array):
+        """生成a*b*c阵列的完整ABAQUS Python脚本 (orchestrator)."""
+        a, b, c = lattice_array
+        cell_size_float = float(cell_size)
+        cell_radius_float = float(cell_radius)
+
+        # Derived parameters
+        scale_factor = cell_size_float / self.base_cell_size
+        scaled_coords = [self._scale_coordinate_line(coord, scale_factor) for coord in structure_data['coords']]
+        job_name = os.path.splitext(script_filename)[0]
+        merged_name = f'MergedStructure_{a}x{b}x{c}'
+        is_shear = (mode_type == "Shear")
+        is_dynamic = analysis_type.startswith("Dyna")
+        compress_disp = -0.6 * b * cell_size_float
+
+        velocity_num = None
+        if is_dynamic:
+            if "_Auto" in analysis_type:
+                # Auto 模式：从静态 EA 反推速度 (固定 1g 板质量、multiplier 由 generate_script 设置)
+                ea_value = self._get_static_energy_absorb(
+                    cell_type, cell_size, cell_radius, slider, mode_type
+                )
+                if ea_value is None:
+                    raise ValueError("无法获取静态吸能数据，请先运行对应的静态仿真 (StaCompre/StaShear)")
+                multiplier = getattr(self, '_auto_multiplier', 0.8)
+                velocity_num = float(self._calculate_velocity_for_auto_mode(
+                    ea_value, mass_gram=1.0, multiplier=multiplier
+                ))
+            else:
+                velocity_str = self._extract_velocity_from_analysis_type(analysis_type)
+                velocity_num = float(velocity_str) if velocity_str else 500.0
+            time_period = 20.0 / velocity_num if velocity_num else 0.01
+        else:
+            # 恒定应变率: timePeriod = 0.3 * ARRAY_B
+            time_period = round(0.3 * b, 10)
+
+        array_volume_total = (a * cell_size_float) * (b * cell_size_float) * (c * cell_size_float)
+        plate_half = max(a, c) * cell_size_float / 2.0 + 1.0
+
+        # Assemble script from sub-methods
+        lines = []
+        lines.extend(self._array_script_header(cell_type, cell_size, cell_radius, a, b, c, analysis_type, time_period=time_period))
+        lines.extend(self._array_script_unit_cell(scaled_coords, structure_data['cylinders']))
+        lines.extend(self._array_script_array_build(a, b, c, merged_name))
+        lines.extend(self._array_script_cutting())
+        lines.extend(self._array_script_plates())
+        lines.extend(self._array_script_material())
+        lines.extend(self._array_script_sections(merged_name))
+        lines.extend(self._array_script_macro(is_shear, is_dynamic, compress_disp, time_period, velocity_num, plate_half))
+        lines.extend(self._array_script_tie(merged_name))
+        lines.extend(self._array_script_contact())
+        lines.extend(self._array_script_job(job_name, merged_name, array_volume_total, output_dir))
+
+        return '\n'.join(lines)
+
+    def _generate_pbs_script(self, output_dir, job_name, preprocess_filename, postprocess_filename):
+        """生成 per-job PBS 提交脚本 (run.pbs)"""
+        from config import Config
+        pbs = Config.get_pbs_header()
+        ncpus = pbs['ncpus']
+        pbs_content = f"""#!/bin/bash
+#PBS -N {job_name}
+#PBS -P {pbs['project']}
+#PBS -q {pbs['queue']}
+#PBS -l walltime={Config.PBS_PER_JOB_WALLTIME}
+#PBS -l select=1:ncpus={ncpus}:mem={Config.PBS_PER_JOB_MEMORY}
+#PBS -j oe
+#PBS -o {job_name}.log
+
+module load {Config.ABAQUS_MODULE}
+export PYTHONDONTWRITEBYTECODE=1
+
+# ============================================================
+# USAGE: Modify JOB_NAME, WORK_DIR below before submitting.
+#   qsub run.pbs
+# ============================================================
+JOB_NAME="{job_name}"
+WORK_DIR="{output_dir}"
+
+cd "$WORK_DIR"
+
+echo "=== $JOB_NAME ==="
+echo "Start: $(date)"
+
+echo "[1/3] Preprocess — generate .inp"
+abaqus cae noGUI="{preprocess_filename}"
+if [ $? -ne 0 ]; then
+    echo "ERROR: preprocess failed"
+    exit 1
+fi
+
+echo "[2/3] Solver — run Abaqus Explicit"
+abaqus job=$JOB_NAME cpus={ncpus} interactive
+if [ $? -ne 0 ]; then
+    echo "WARNING: solver exited with error (partial results may exist)"
+fi
+
+echo "[3/3] Postprocess — extract force-displacement"
+abaqus cae noGUI="{postprocess_filename}"
+
+echo "=== Done: $(date) ==="
+"""
+        return pbs_content
+
+    def _generate_array_postprocess_script(self, output_dir, cell_size, mode_type, analysis_type, script_filename, lattice_array):
+        """生成阵列模式的后处理脚本 (使用阵列感知的归一化参数)
+
+        Args:
+            output_dir: 输出目录
+            cell_size: 单元尺寸
+            mode_type: "Compression" 或 "Shear"
+            analysis_type: 分析类型
+            script_filename: 脚本文件名
+            lattice_array: (a, b, c) 阵列尺寸
+
+        Returns:
+            后处理脚本内容字符串
+        """
+        a, b, c_dim = lattice_array
+        cell_size_float = float(cell_size)
+
+        job_name = os.path.splitext(script_filename)[0]
+
+        # 根据 mode_type 决定使用U1还是U2
+        if mode_type == "Shear":
+            disp_var_name = "U1"
+        else:
+            disp_var_name = "U2"
+
+        # 应力应变归一化参数 (array-aware)
+        # 两种模式共享相同的板几何：Y 方向为板间距、XZ 为板接触面。
+        # Shear 沿 X 施加 u1，Compression 沿 Y 施加 u2，但归一化几何相同。
+        strain_length = b * cell_size_float                # 板间距 (Y)
+        stress_area = a * c_dim * cell_size_float ** 2     # 板接触面积 (X*Z)
+
+        postprocess_content = f"""# -*- coding: utf-8 -*-
+# Abaqus post-processing script - Array mode ({a}x{b}x{c_dim})
+from abaqus import *
+from abaqusConstants import *
+import os
+import time
+import sys
+
+print("="*80)
+print("POST-PROCESSING SCRIPT STARTED (ARRAY MODE {a}x{b}x{c_dim})")
+print("Strain length (normalization): {strain_length}")
+print("Stress area   (normalization): {stress_area}")
+print("="*80)
+
+script_dir = os.getcwd()
+print("Working directory:", script_dir)
+
+odb_filename = '{job_name}.odb'
+lck_filename = '{job_name}.lck'
+
+print("ODB file to process:", odb_filename)
+print("Waiting for job completion...")
+
+timeout = 3600
+start_time = time.time()
+job_status = "unknown"
+
+try:
+    while not os.path.exists(odb_filename):
+        if time.time() - start_time > timeout:
+            print("WARNING: Timeout - ODB file not created after 1 hour")
+            job_status = "no_odb"
+            break
+        time.sleep(10)
+
+    if job_status == "unknown":
+        print("ODB file detected, waiting for analysis to complete...")
+        while os.path.exists(lck_filename):
+            if time.time() - start_time > timeout:
+                print("WARNING: Timeout - Job still running after 1 hour")
+                job_status = "timeout"
+                break
+            time.sleep(10)
+
+        if job_status == "unknown":
+            print("Analysis completed. Starting post-processing...")
+            job_status = "successful"
+        time.sleep(2)
+
+except Exception as e:
+    print("ERROR during job monitoring: " + str(e))
+    job_status = "error"
+
+print("Job status: " + job_status)
+
+from odbAccess import openOdb
+import xyPlot
+
+if not os.path.exists(odb_filename):
+    raise RuntimeError("ODB file not created - job failed")
+
+if job_status == "timeout":
+    extra_wait = 300
+    extra_start = time.time()
+    while os.path.exists(lck_filename) and (time.time() - extra_start < extra_wait):
+        time.sleep(10)
+
+try:
+    odb = openOdb(path=odb_filename, readOnly=True)
+except Exception as e:
+    raise RuntimeError("Cannot open ODB file: " + str(e))
+
+try:
+    step = odb.steps['Step-1']
+    disp_key = '{disp_var_name}'
+    force_key = 'RF2'
+    if disp_key == 'U1':
+        force_key = 'RF1'
+
+    print("Available history regions:")
+    for region_name in step.historyRegions.keys():
+        region = step.historyRegions[region_name]
+        outputs = region.historyOutputs.keys()
+        print("  - " + region_name + " -> " + str(outputs))
+
+    def select_by_max_mean(candidates, output_key, label):
+        if len(candidates) == 0:
+            return None
+        elif len(candidates) == 1:
+            return candidates[0][0]
+        else:
+            max_mean = -1
+            selected = None
+            for name, reg in candidates:
+                data = reg.historyOutputs[output_key].data
+                mean_val = sum([abs(d[1]) for d in data]) / len(data) if data else 0
+                if mean_val > max_mean:
+                    max_mean = mean_val
+                    selected = name
+            return selected
+
+    disp_candidates = []
+    for region_name in step.historyRegions.keys():
+        region = step.historyRegions[region_name]
+        if 'RIGIDPLATE-2' in region_name.upper():
+            if disp_key in region.historyOutputs.keys():
+                disp_candidates.append((region_name, region))
+
+    disp_var = select_by_max_mean(disp_candidates, disp_key, "displacement")
+
+    force_candidates = []
+    for region_name in step.historyRegions.keys():
+        region = step.historyRegions[region_name]
+        if 'RIGIDPLATE' in region_name.upper():
+            if force_key in region.historyOutputs.keys():
+                force_candidates.append((region_name, region))
+
+    force_var = select_by_max_mean(force_candidates, force_key, "force")
+
+    if force_var is None or disp_var is None:
+        odb.close()
+        with open('feature_data.txt', 'w') as f:
+            f.write('{job_name}' + "\\n")
+            f.write("status: no_outputs\\n")
+            f.write("strain_length: {strain_length}\\n")
+            f.write("stress_area: {stress_area}\\n")
+        raise ValueError("Cannot find required output variables (ODB may be empty from crashed solver)")
+
+    force_region = step.historyRegions[force_var]
+    force_data = force_region.historyOutputs[force_key]
+
+    disp_region = step.historyRegions[disp_var]
+    disp_data = disp_region.historyOutputs['{disp_var_name}']
+
+    # Validate data arrays are non-empty (solver may have crashed at startup, ODB exists but empty)
+    if not force_data.data or len(force_data.data) < 2 or not disp_data.data or len(disp_data.data) < 2:
+        odb.close()
+        with open('feature_data.txt', 'w') as f:
+            f.write('{job_name}' + "\\n")
+            f.write("status: empty_odb\\n")
+            f.write("strain_length: {strain_length}\\n")
+            f.write("stress_area: {stress_area}\\n")
+            f.write("force_points: " + str(len(force_data.data) if force_data.data else 0) + "\\n")
+            f.write("disp_points: " + str(len(disp_data.data) if disp_data.data else 0) + "\\n")
+        raise ValueError("ODB contains no time history data (likely solver crash at startup)")
+
+    xy_force = session.XYData('Force', force_data.data)
+    xy_disp = session.XYData('Displacement', disp_data.data)
+
+    if xy_force is None or xy_disp is None:
+        odb.close()
+        with open('feature_data.txt', 'w') as f:
+            f.write('{job_name}' + "\\n")
+            f.write("status: xydata_failed\\n")
+            f.write("strain_length: {strain_length}\\n")
+            f.write("stress_area: {stress_area}\\n")
+        raise ValueError("session.XYData returned None")
+
+    xy_combined = combine(abs(xy_disp), abs(xy_force))
+
+    os.chdir(r"{output_dir}")
+
+    density = 0.0
+    try:
+        with open('density_temp.txt', 'r') as f:
+            density = float(f.read().strip())
+    except:
+        density = 0.0
+
+    with open('feature_data.txt', 'w') as f:
+        f.write('{job_name}' + "\\n")
+        f.write("status: " + job_status + "\\n")
+        f.write("density: " + str(density) + "\\n")
+        f.write("strain_length: {strain_length}\\n")
+        f.write("stress_area: {stress_area}\\n")
+        f.write(str(disp_var) + " " + str(force_var))
+
+    session.writeXYReport(fileName='feature_data.txt', xyData=(xy_combined, ), appendMode=ON)
+    odb.close()
+
+    print("Post-processing completed successfully!")
+
+except Exception as e:
+    print("FATAL ERROR: " + str(e))
+    import traceback
+    traceback.print_exc()
+    raise
+"""
+        return postprocess_content
+
+    def _generate_filename(self, cell_type, cell_size, cell_radius, slider, mode_type="Compression", analysis_type="StaCompre", lattice_array=(1,1,1)):
         """生成文件名 (小数点替换为p)"""
         # 清理cell_type，移除特殊字符
         clean_cell_type = re.sub(r'[^\w-]', '', cell_type)
 
-        # 处理cell_size: 如果是整数(如5.0)去掉小数点变成5,如果是小数(如5.1)替换为5p1
-        if float(cell_size).is_integer():
-            size_str = str(int(float(cell_size)))
-        else:
-            size_str = str(cell_size).replace('.', 'p')
-
-        # 处理radius: 将小数点替换为p (如0.5变成0p5)
-        radius_str = str(cell_radius).replace('.', 'p')
-
-        # 处理slider: 如果是整数(如8.0)去掉小数点变成8,如果是小数(如8.2)替换为8p2
-        if float(slider) == int(float(slider)):
-            slider_str = str(int(float(slider)))
-        else:
-            slider_str = str(slider).replace('.', 'p')
+        size_str = self._format_param(cell_size)
+        radius_str = self._format_param(cell_radius, try_int=False)
+        slider_str = self._format_param(slider)
 
         # 使用 analysis_type 作为后缀
         suffix = f"_{analysis_type}"
 
-        return f"{clean_cell_type}_{size_str}_{radius_str}_{slider_str}{suffix}.py"
+        # 添加阵列后缀 (如 _3x3x3)
+        array_suffix = ""
+        if lattice_array != (1,1,1):
+            a, b, c = lattice_array
+            array_suffix = f"_{a}x{b}x{c}"
+
+        return f"{clean_cell_type}_{size_str}_{radius_str}_{slider_str}{suffix}{array_suffix}.py"
 
 
 
-def generate_abaqus_script(cell_type, cell_size, cell_radius, slider=4, output_dir=None, mode_type="Compression", analysis_type="StaCompre", batch_mode=False, batch_parent_dir=None):
+def generate_abaqus_script(cell_type, cell_size, cell_radius, slider=4, output_dir=None, mode_type="Compression", analysis_type="StaCompre", batch_mode=False, batch_parent_dir=None, lattice_array=(1,1,1), flat_output=False):
     """
     便捷函数：生成Abaqus脚本
 
@@ -1550,6 +2749,8 @@ def generate_abaqus_script(cell_type, cell_size, cell_radius, slider=4, output_d
     - analysis_type: 分析类型 ("StaCompre", "DynaCompre_500", "StaShear", "DynaShear_500" 等)
     - batch_mode: 是否为批量模式
     - batch_parent_dir: 批量模式的父文件夹路径
+    - lattice_array: 阵列尺寸元组 (a, b, c)，默认 (1,1,1) 即单个晶胞
+    - flat_output: 为True时直接使用output_dir，不添加层级子目录
 
     返回:
     - (success: bool, message: str, filename: str)
@@ -1570,7 +2771,7 @@ def generate_abaqus_script(cell_type, cell_size, cell_radius, slider=4, output_d
     except Exception:
         pass  # 静默失败，不影响脚本生成
 
-    return generator.generate_script(cell_type, cell_size, cell_radius, slider, output_dir, mode_type, analysis_type, batch_mode, batch_parent_dir)
+    return generator.generate_script(cell_type, cell_size, cell_radius, slider, output_dir, mode_type, analysis_type, batch_mode, batch_parent_dir, lattice_array=lattice_array, flat_output=flat_output)
 
 
 if __name__ == "__main__":

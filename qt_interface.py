@@ -67,1809 +67,14 @@ except ImportError:
 # 避免循环导入，在需要时动态导入
 
 
-class Statistics3DDialog(QWidget):
-    """3D 统计曲面可视化对话框"""
+from dialogs.stats_3d_dialog import Statistics3DDialog
 
-    # 压缩曲线特征
-    FEATURES_COMPRESSION = ["Young's Modulus", 'Densified Stress', 'Densified Strain',
-                            'Yield Stress', 'Yield Strain', 'Energy Absorb']
-    # 剪切曲线特征
-    FEATURES_SHEAR = ['Shear Modulus', 'Last Stress', 'Last Strain',
-                      'Yield Stress', 'Yield Strain', 'Energy Absorb']
 
-    # 设置文件路径
-    SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'work', 'ui_settings.json')
 
-    def __init__(self, data, cell_type, cell_size, curve_type, parent=None):
-        super().__init__(parent, Qt.Window)
-        # 使用无边框窗口 + 自定义标题栏（与主窗口一致）
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
-        self.setAttribute(Qt.WA_TranslucentBackground, False)
-        self.resize(1300, 950)  # 增大窗口尺寸
-        # 非模态窗口，允许与主界面并行操作
-        self.setWindowModality(Qt.NonModal)
 
-        # 保存标题信息
-        self._window_title = f"Statistics - {cell_type} (Cell Size: {cell_size}mm)"
+from dialogs.feature_search_dialog import FeatureSearchDialog
 
-        # 从设置文件加载窗口位置，如果没有则使用默认位置
-        self._load_window_position(parent)
 
-        self.data = data
-        self.curve_type = curve_type
-        self.cell_size = cell_size
-        self.parent_window = parent  # 保存父窗口引用以获取实时 UI 值
-
-        # 根据曲线类型选择特征列表 (支持动态曲线)
-        self.is_compression = ('Compre' in curve_type)
-        self.FEATURES = self.FEATURES_COMPRESSION if self.is_compression else self.FEATURES_SHEAR
-
-        # 异常值过滤属性
-        self.filter_outliers = True  # 默认开启过滤
-        self.outlier_samples = set()  # 存储异常样本名
-        self.all_points = []  # 存储所有点（包括异常）
-
-        # 平滑处理属性
-        self.use_smooth = True  # 默认开启平滑
-
-        # 解析数据点
-        self._parse_data()
-
-        # 创建 UI
-        self._setup_ui()
-
-        # 初始显示
-        self.update_surface(self.FEATURES[0])
-
-        # 设置定时器监听父窗口 slider 变化
-        if parent:
-            self._setup_realtime_update()
-
-    def _load_window_position(self, parent):
-        """从设置文件加载窗口位置"""
-        try:
-            if os.path.exists(self.SETTINGS_FILE):
-                with open(self.SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                    settings = json.load(f)
-                    stats_pos = settings.get('statistics_dialog_position', None)
-                    if stats_pos:
-                        # 验证位置是否在屏幕范围内
-                        from PyQt5.QtWidgets import QDesktopWidget
-                        screen = QDesktopWidget().screenGeometry()
-                        x = stats_pos.get('x', 0)
-                        y = stats_pos.get('y', 0)
-                        w = stats_pos.get('width', self.width())
-                        h = stats_pos.get('height', self.height())
-                        # 确保窗口在屏幕范围内
-                        if 0 <= x <= screen.width() - 100 and 0 <= y <= screen.height() - 100:
-                            self.resize(w, h)
-                            self.move(x, y)
-                            return
-        except Exception as e:
-            print(f"加载Statistics窗口位置失败: {e}")
-
-        # 如果没有保存的位置，使用默认位置（父窗口右下角）
-        if parent:
-            parent_geo = parent.geometry()
-            new_x = parent_geo.x() + parent_geo.width() - self.width() - 50
-            new_y = parent_geo.y() + parent_geo.height() - self.height() - 50
-            from PyQt5.QtWidgets import QDesktopWidget
-            screen = QDesktopWidget().screenGeometry()
-            new_x = max(0, min(new_x, screen.width() - self.width()))
-            new_y = max(0, min(new_y, screen.height() - self.height()))
-            self.move(new_x, new_y)
-
-    def _save_window_position(self):
-        """保存窗口位置到设置文件"""
-        try:
-            settings = {}
-            if os.path.exists(self.SETTINGS_FILE):
-                with open(self.SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                    settings = json.load(f)
-
-            # 保存窗口位置和大小
-            settings['statistics_dialog_position'] = {
-                'x': self.x(),
-                'y': self.y(),
-                'width': self.width(),
-                'height': self.height()
-            }
-
-            with open(self.SETTINGS_FILE, 'w', encoding='utf-8') as f:
-                json.dump(settings, f, indent=2, ensure_ascii=False)
-        except Exception as e:
-            print(f"保存Statistics窗口位置失败: {e}")
-
-    def closeEvent(self, event):
-        """窗口关闭时保存位置"""
-        self._save_window_position()
-        # 停止定时器
-        if hasattr(self, 'update_timer'):
-            self.update_timer.stop()
-        super().closeEvent(event)
-
-    def _setup_realtime_update(self):
-        """设置实时更新监听"""
-        from PyQt5.QtCore import QTimer
-        self.update_timer = QTimer(self)
-        self.update_timer.timeout.connect(self._check_ui_change)
-        self.update_timer.start(200)  # 每200ms检查一次
-        self._last_radius = None
-        self._last_slider = None
-        self._last_cell_type = None
-        self._last_curve_type = self.curve_type  # 监听曲线类型变化
-
-    def _get_current_cell_type(self):
-        """获取当前选中的 Cell type"""
-        if self.parent_window:
-            # 优先从 Page 2 获取 (dropdowns_page2["Cell type:"])
-            dropdowns_page2 = getattr(self.parent_window, 'dropdowns_page2', {})
-            cell_type_dropdown_p2 = dropdowns_page2.get("Cell type:", None)
-            if cell_type_dropdown_p2:
-                return cell_type_dropdown_p2.currentText()
-            # 否则从 Page 1 获取
-            dropdowns = getattr(self.parent_window, 'dropdowns', {})
-            cell_type_dropdown = dropdowns.get("Cell type :", None)
-            if cell_type_dropdown:
-                return cell_type_dropdown.currentText()
-        return None
-
-    def _get_current_curve_type(self):
-        """获取当前选中的 Curve type"""
-        if self.parent_window:
-            # 优先从 Page 2 获取
-            dropdowns_page2 = getattr(self.parent_window, 'dropdowns_page2', {})
-            curve_type_dropdown = dropdowns_page2.get("Curve type:", None)
-            if curve_type_dropdown:
-                return curve_type_dropdown.currentText()
-        return None
-
-    def _check_ui_change(self):
-        """检查 UI 值是否变化，触发更新"""
-        if not self.parent_window:
-            return
-        try:
-            current_radius, current_slider = self._get_current_ui_values()
-            current_cell_type = self._get_current_cell_type()
-            current_curve_type = self._get_current_curve_type()
-
-            # 检查 Cell type 是否变化 - 需要重新加载数据
-            if current_cell_type != self._last_cell_type:
-                self._last_cell_type = current_cell_type
-                self._reload_data_for_cell_type(current_cell_type)
-                return
-
-            # 检查 Curve type 是否变化 - 需要更新特征列表和图表
-            if current_curve_type and current_curve_type != self._last_curve_type:
-                self._last_curve_type = current_curve_type
-                self._reload_for_curve_type(current_curve_type)
-                return
-
-            # 检查 radius 或 slider 是否变化 - 只需更新红点位置
-            if current_radius != self._last_radius or current_slider != self._last_slider:
-                self._last_radius = current_radius
-                self._last_slider = current_slider
-                # 重新绘制以更新红色点
-                self.update_surface(self.feature_combo.currentText())
-        except Exception as e:
-            print(f"[3D Plot] UI change check error: {e}")
-
-    def _reload_data_for_cell_type(self, cell_type):
-        """重新加载指定 Cell type 的数据"""
-        import os
-        import json
-
-        if not cell_type:
-            return
-
-        try:
-            # 加载 feature_data.json
-            feature_data_path = os.path.join(BASE_DIR, "work", "feature_data.json")
-            if not os.path.exists(feature_data_path):
-                return
-
-            with open(feature_data_path, 'r', encoding='utf-8') as f:
-                all_data = json.load(f)
-
-            # 过滤出当前 Cell type 的数据
-            filtered_data = {k: v for k, v in all_data.items() if k.startswith(cell_type + "_")}
-
-            if filtered_data:
-                self.data = filtered_data
-                self._parse_data()
-                self.update_surface(self.feature_combo.currentText())
-                # 更新窗口标题
-                self.setWindowTitle(f"Statistics - {cell_type} (Cell Size: {self.cell_size}mm)")
-                print(f"[3D Plot] Reloaded data for {cell_type}: {len(self.points)} points")
-        except Exception as e:
-            print(f"[3D Plot] Failed to reload data: {e}")
-
-    def _reload_for_curve_type(self, curve_type):
-        """切换曲线类型时更新特征列表和图表"""
-        if not curve_type:
-            return
-
-        try:
-            # 更新曲线类型
-            self.curve_type = curve_type
-            self.is_compression = ('Compre' in curve_type)
-
-            # 更新特征列表
-            self.FEATURES = self.FEATURES_COMPRESSION if self.is_compression else self.FEATURES_SHEAR
-
-            # 更新下拉框选项
-            if hasattr(self, 'feature_combo'):
-                current_idx = self.feature_combo.currentIndex()
-                self.feature_combo.blockSignals(True)
-                self.feature_combo.clear()
-                self.feature_combo.addItems(self.FEATURES)
-                # 尽量保持相同索引，否则回到第一个
-                new_idx = min(current_idx, len(self.FEATURES) - 1)
-                self.feature_combo.setCurrentIndex(max(0, new_idx))
-                self.feature_combo.blockSignals(False)
-
-            # 重新解析数据并更新图表
-            self._parse_data()
-            self.update_surface(self.feature_combo.currentText())
-
-            print(f"[3D Plot] Switched to curve type: {curve_type} (is_compression={self.is_compression})")
-        except Exception as e:
-            print(f"[3D Plot] Failed to switch curve type: {e}")
-
-    def _get_current_ui_values(self):
-        """从父窗口获取当前 radius 和 slider 值
-
-        注意: slider_val 需要根据 Limit Range 模式转换
-        - Limit Range ON: slider 内部值 0-8，直接使用
-        - Limit Range OFF: slider 内部值 0-80，需要除以10
-        """
-        radius = 0.3
-        slider_val = 0
-        if self.parent_window:
-            # 获取 radius (Page 2 优先)
-            if hasattr(self.parent_window, 'strut_radius_slider_page2'):
-                radius = self.parent_window.strut_radius_slider_page2.value() / 100.0
-            elif hasattr(self.parent_window, 'strut_radius_slider'):
-                radius = self.parent_window.strut_radius_slider.value() / 100.0
-
-            # 获取 transform slider 值 (Page 2 优先)
-            # 需要根据 Limit Range 模式转换
-            is_limited = (hasattr(self.parent_window, 'is_limit_range_mode') and
-                         self.parent_window.is_limit_range_mode())
-
-            if hasattr(self.parent_window, 'transform_slider_page2'):
-                raw_val = self.parent_window.transform_slider_page2.value()
-            elif hasattr(self.parent_window, 'slider'):
-                raw_val = self.parent_window.slider.value()
-            else:
-                raw_val = 0
-
-            # 转换为实际显示值
-            if is_limited:
-                slider_val = raw_val  # 0-8 整数
-            else:
-                slider_val = raw_val / 10.0  # 0-80 -> 0-8.0
-
-        return radius, slider_val
-
-    def _setup_ui(self):
-        """设置 UI"""
-        from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QComboBox
-        from PyQt5.QtCore import QPoint
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)  # 无边距让标题栏贴边
-        layout.setSpacing(0)
-
-        # 深色主题样式 - 最小字体20px
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #1e2330;
-                color: #c5d1de;
-                font-size: 20px;
-            }
-            QLabel {
-                color: #c5d1de;
-                font-size: 20px;
-            }
-            QComboBox {
-                background-color: #262b3d;
-                color: #c5d1de;
-                border: 1px solid #3d5a80;
-                border-radius: 5px;
-                padding: 8px 15px;
-                min-width: 200px;
-                font-size: 20px;
-            }
-            QComboBox:hover {
-                border-color: #4a6fa5;
-            }
-            QComboBox::drop-down {
-                border: none;
-                width: 30px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #262b3d;
-                color: #c5d1de;
-                selection-background-color: #3d5a80;
-                font-size: 20px;
-            }
-            /* 自定义标题栏样式 - 无分割线无色差 */
-            #dialog_title_bar {
-                background-color: #1e2330;
-                border: none;
-            }
-            #dialog_title_label {
-                color: #e1e8f0;
-                font-size: 22px;
-                font-weight: 600;
-                padding-left: 10px;
-                background: transparent;
-            }
-            #dialog_title_button {
-                background: transparent;
-                color: #c5d1de;
-                border: none;
-                font-size: 26px;
-                font-weight: 400;
-            }
-            #dialog_title_button:hover {
-                background: #3d5a80;
-                color: #ffffff;
-            }
-            #dialog_close_button {
-                background: transparent;
-                color: #c5d1de;
-                border: none;
-                font-size: 22px;
-                font-weight: 400;
-            }
-            #dialog_close_button:hover {
-                background: #e74c3c;
-                color: #ffffff;
-            }
-        """)
-
-        # ===== 自定义标题栏 =====
-        title_bar = QWidget()
-        title_bar.setObjectName("dialog_title_bar")
-        title_bar.setFixedHeight(45)
-        title_bar_layout = QHBoxLayout(title_bar)
-        title_bar_layout.setContentsMargins(15, 0, 0, 0)
-        title_bar_layout.setSpacing(0)
-
-        # 标题文本
-        title_label = QLabel(self._window_title)
-        title_label.setObjectName("dialog_title_label")
-        title_bar_layout.addWidget(title_label)
-        title_bar_layout.addStretch()
-
-        # 最小化按钮
-        min_btn = QPushButton("−")
-        min_btn.setObjectName("dialog_title_button")
-        min_btn.setFixedSize(55, 40)
-        min_btn.clicked.connect(self.showMinimized)
-        min_btn.setToolTip("最小化")
-        title_bar_layout.addWidget(min_btn)
-
-        # 关闭按钮
-        close_btn = QPushButton("✕")
-        close_btn.setObjectName("dialog_close_button")
-        close_btn.setFixedSize(55, 40)
-        close_btn.clicked.connect(self.close)
-        close_btn.setToolTip("关闭")
-        title_bar_layout.addWidget(close_btn)
-
-        layout.addWidget(title_bar)
-
-        # 为标题栏添加拖动功能
-        self._title_bar = title_bar
-        self._drag_position = QPoint()
-        title_bar.mousePressEvent = self._title_bar_mouse_press
-        title_bar.mouseMoveEvent = self._title_bar_mouse_move
-
-        # ===== 内容区域 =====
-        content_widget = QWidget()
-        content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(5, 5, 5, 5)
-        content_layout.setSpacing(5)
-
-        # 顶部控制栏 - 紧凑布局
-        top_layout = QHBoxLayout()
-        top_layout.setContentsMargins(10, 5, 10, 0)
-        feature_label = QLabel("Feature:")
-        feature_label.setStyleSheet("font-size: 18px; font-weight: bold;")
-        top_layout.addWidget(feature_label)
-        self.feature_combo = QComboBox()
-        self.feature_combo.addItems(self.FEATURES)
-        self.feature_combo.currentTextChanged.connect(self.update_surface)
-        top_layout.addWidget(self.feature_combo)
-
-        # 显示数据点数量
-        self.info_label = QLabel(f"Data points: {len(self.points)}")
-        self.info_label.setStyleSheet("font-size: 16px; margin-left: 20px;")
-        top_layout.addWidget(self.info_label)
-
-        # 异常值过滤复选框
-        from PyQt5.QtWidgets import QCheckBox
-        self.cb_filter_outliers = QCheckBox("过滤异常值")
-        self.cb_filter_outliers.setChecked(self.filter_outliers)
-        self.cb_filter_outliers.setStyleSheet("""
-            QCheckBox {
-                font-size: 16px;
-                margin-left: 20px;
-                color: #c5d1de;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-            }
-            QCheckBox::indicator:unchecked {
-                border: 2px solid #3d5a80;
-                background: #262b3d;
-                border-radius: 3px;
-            }
-            QCheckBox::indicator:checked {
-                border: 2px solid #4a6fa5;
-                background: #3d5a80;
-                border-radius: 3px;
-            }
-        """)
-        self.cb_filter_outliers.stateChanged.connect(self._on_filter_changed)
-        top_layout.addWidget(self.cb_filter_outliers)
-
-        # 平滑曲面复选框
-        self.cb_smooth = QCheckBox("平滑曲面")
-        self.cb_smooth.setChecked(self.use_smooth)
-        self.cb_smooth.setStyleSheet("""
-            QCheckBox {
-                font-size: 16px;
-                margin-left: 15px;
-                color: #c5d1de;
-            }
-            QCheckBox::indicator {
-                width: 18px;
-                height: 18px;
-            }
-            QCheckBox::indicator:unchecked {
-                border: 2px solid #3d5a80;
-                background: #262b3d;
-                border-radius: 3px;
-            }
-            QCheckBox::indicator:checked {
-                border: 2px solid #4a6fa5;
-                background: #3d5a80;
-                border-radius: 3px;
-            }
-        """)
-        self.cb_smooth.stateChanged.connect(self._on_smooth_changed)
-        top_layout.addWidget(self.cb_smooth)
-
-        top_layout.addStretch()
-        content_layout.addLayout(top_layout)
-
-        # Matplotlib 3D 视图 - 填满窗口
-        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-        from matplotlib.figure import Figure
-        from PyQt5.QtWidgets import QSizePolicy
-
-        self.figure = Figure(facecolor='#1e2330')
-        self.figure.subplots_adjust(left=0.02, right=0.98, top=0.98, bottom=0.02)  # 图表占满
-        self.canvas = FigureCanvas(self.figure)
-        self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.ax = self.figure.add_subplot(111, projection='3d')
-        self.ax.set_facecolor('#1e2330')
-        content_layout.addWidget(self.canvas, 1)  # stretch=1 让 canvas 占用所有剩余空间
-
-        layout.addWidget(content_widget, 1)
-
-    def _title_bar_mouse_press(self, event):
-        """标题栏鼠标按下事件 - 开始拖动"""
-        if event.button() == Qt.LeftButton:
-            self._drag_position = event.globalPos() - self.frameGeometry().topLeft()
-            event.accept()
-
-    def _title_bar_mouse_move(self, event):
-        """标题栏鼠标移动事件 - 拖动窗口"""
-        if event.buttons() == Qt.LeftButton and self._drag_position:
-            self.move(event.globalPos() - self._drag_position)
-            event.accept()
-
-    def _parse_data(self):
-        """解析数据，提取 radius, slider, features, sample_name"""
-        import numpy as np
-        from scipy.signal import find_peaks
-
-        self.all_points = []  # [(radius, slider, features_dict, sample_name), ...]
-
-        for key, value in self.data.items():
-            parts = key.split('_')
-            if len(parts) < 4:
-                continue
-
-            # 从后往前解析：最后是slider，倒数第二是ratio，倒数第三是size
-            # 格式: {结构名}_{size}_{ratio}_{slider}
-            # 例如: Octet_truss_5_0p35_0 -> slider=0, ratio=0.35, size=5
-            try:
-                slider = int(parts[-1])
-                radius = float(parts[-2].replace('p', '.'))
-            except (ValueError, IndexError):
-                continue
-
-            # 获取曲线数据
-            curve_key = None
-            if self.curve_type in value:
-                curve_key = self.curve_type
-            elif 'StaCompre_curve' in value:
-                curve_key = 'StaCompre_curve'
-            elif 'StaShare_curve' in value:
-                curve_key = 'StaShare_curve'
-
-            if curve_key and curve_key in value:
-                curve = value[curve_key]
-                if curve is not None and 'displacement' in curve and 'force' in curve:
-                    features = self._extract_features(
-                        curve['displacement'],
-                        curve['force'],
-                        value.get('density', 1.0),
-                        curve_key,
-                        sample_name=key  # 传递样本名称用于特殊处理
-                    )
-                    self.all_points.append((radius, slider, features, key))
-
-        # 检测EA异常值
-        self.outlier_samples = self._detect_ea_outliers()
-
-        # 应用过滤
-        self._apply_outlier_filter()
-
-    def _detect_ea_outliers(self):
-        """检测 EA 异常值 - 基于局部变化剧烈程度（曲面尖刺检测）"""
-        import numpy as np
-
-        if len(self.all_points) < 4:
-            return set()
-
-        # 提取所有点的信息: (radius, slider, EA, sample_name)
-        points_data = []
-        for p in self.all_points:
-            ea = p[2].get('EA', None)
-            if ea is not None and not np.isnan(ea):
-                points_data.append((p[0], p[1], ea, p[3]))  # radius, slider, EA, sample_name
-
-        if len(points_data) < 4:
-            return set()
-
-        outliers = set()
-
-        # 对每个点，检查与邻近点的变化是否过于剧烈
-        for i, (r1, s1, ea1, name1) in enumerate(points_data):
-            # 找到邻近点（radius 差 < 0.1, slider 差 < 3）
-            neighbors_ea = []
-            for j, (r2, s2, ea2, name2) in enumerate(points_data):
-                if i != j:
-                    r_diff = abs(r1 - r2)
-                    s_diff = abs(s1 - s2)
-                    # 邻近点条件
-                    if r_diff < 0.1 and s_diff < 3:
-                        neighbors_ea.append(ea2)
-
-            # 如果有邻近点，检查变化是否剧烈
-            if len(neighbors_ea) >= 2:
-                neighbor_mean = np.mean(neighbors_ea)
-                neighbor_std = np.std(neighbors_ea)
-
-                # 异常条件：使用比率检测（可检测高于或低于邻居的异常）
-                if neighbor_mean > 0 and ea1 > 0:
-                    # 计算比率（始终 >= 1）
-                    ratio = max(ea1, neighbor_mean) / min(ea1, neighbor_mean)
-                    abs_diff = abs(ea1 - neighbor_mean)
-                    # 异常条件：
-                    # 1. 比率超过 10 倍 - 极端异常，直接标记
-                    # 2. 比率超过 2 倍，且绝对差异超过 1.5 倍标准差
-                    threshold = max(1.5 * neighbor_std, 20)
-                    is_extreme = ratio > 10
-                    is_significant = ratio > 2.0 and abs_diff > threshold
-                    if is_extreme or is_significant:
-                        outliers.add(name1)
-
-        return outliers
-
-    def _apply_outlier_filter(self):
-        """根据过滤开关应用异常值过滤"""
-        if self.filter_outliers and self.outlier_samples:
-            self.points = [p for p in self.all_points if p[3] not in self.outlier_samples]
-        else:
-            self.points = self.all_points.copy()
-
-    def _on_filter_changed(self, state):
-        """过滤复选框状态变化回调"""
-        from PyQt5.QtCore import Qt
-        self.filter_outliers = (state == Qt.Checked)
-        self._apply_outlier_filter()
-        # 刷新曲面显示
-        if hasattr(self, 'feature_combo'):
-            self.update_surface(self.feature_combo.currentText())
-
-    def _on_smooth_changed(self, state):
-        """平滑复选框状态变化回调"""
-        from PyQt5.QtCore import Qt
-        self.use_smooth = (state == Qt.Checked)
-        # 刷新曲面显示
-        if hasattr(self, 'feature_combo'):
-            self.update_surface(self.feature_combo.currentText())
-
-    def _extract_features(self, displacement, force, density, curve_type='StaCompre_curve', sample_name=None):
-        """从曲线提取特征
-
-        Args:
-            sample_name: 样本名称，用于特殊样本的位置override
-        """
-        import numpy as np
-        from scipy.signal import find_peaks
-
-        # 特殊样本直接指定densified strain位置
-        SPECIAL_OVERRIDES = {
-            'Octet_truss_5_0p5_2': 0.37,  # 特殊设置：算法检测为0.55，实际应为0.37
-            # 'WeairePhelan_5_0p45_0': 0.4,
-            # 'WeairePhelan_5_0p45_1': 0.35,
-            # 'WeairePhelan_5_0p5_3': 0.48,
-            # 'WeairePhelan_5_0p5_4': 0.44,
-            # 'Octet_truss_5_0p5_6': 0.58,
-            # 'FBCCXYZ_5_0p45_1': 0.58,
-            # 'FBCCXYZ_5_0p45_2': 0.52,
-            # 'FBCCXYZ_5_0p45_4': 0.45,
-            # 'BCC_5_0p45_3': 0.61,
-            # 'BCC_5_0p35_6': 0.66,
-            # 'BCCZ_5_0p45_2': 0.62,
-            # 'Octet_truss_5_0p5_3': 0.6,
-            # 'Octet_truss_5_0p5_4': 0.58,
-            # 'Octet_truss_5_0p5_5': 0.58,
-            # 'Auxetic_5_0p5_2': 0.55,
-            # 'Auxetic_5_0p5_3': 0.55,
-        }
-
-        displacement = np.array(displacement)
-        force = np.array(force)
-
-        # 转换为应变和应力
-        strain = displacement / self.cell_size
-        stress = force / (self.cell_size ** 2)
-
-        is_compression = ('Compre' in curve_type)
-        is_dynamic = ('Dyna' in curve_type)
-
-        if len(strain) < 5:
-            return {
-                'stiffness': 0.0,
-                'yield_strain': 0.0,
-                'yield_stress': 0.0,
-                'densified_strain': 0.0,
-                'densified_stress': 0.0,
-                'peak_strain': 0.0,
-                'peak_stress': 0.0,
-                'EA': 0.0
-            }
-
-        # 线性区拟合
-        lin_idx = min(10, len(strain) // 4)
-        lin_idx = max(lin_idx, 2)
-        x = strain[:lin_idx+1]
-        y = stress[:lin_idx+1]
-        K = (x @ y) / max(x @ x, 1e-12)  # 刚度/剪切模量
-
-        # 屈服点 (0.5% 偏移法)
-        offset_strain = 0.005
-        stress_off = K * (strain - offset_strain)
-        diff = stress - stress_off
-        start = np.searchsorted(strain, max(offset_strain, 0.005))
-        cross = np.where((diff[1:] <= 0) & (diff[:-1] > 0))[0]
-        cross = cross[cross >= start-1] if cross.size else cross
-        yield_idx = (cross[0] + 1) if cross.size else len(strain) - 1
-        yield_stress = float(stress[yield_idx])
-        yield_strain = float(strain[yield_idx])
-
-        if is_compression:
-            # 压缩曲线：找 Densified 点（密实化起点）
-            n = len(strain)
-
-            # 检查是否为特殊样本，直接使用override位置并提前返回
-            if sample_name and sample_name in SPECIAL_OVERRIDES:
-                target_strain = SPECIAL_OVERRIDES[sample_name]
-                key_idx = int(np.argmin(np.abs(strain - target_strain)))
-                # 直接计算EA并返回
-                V0 = self.cell_size ** 3
-                E_total = np.trapz(stress[:key_idx+1], strain[:key_idx+1])
-                EA = E_total * V0
-                return {
-                    'stiffness': K,
-                    'yield_strain': yield_strain,
-                    'yield_stress': yield_stress,
-                    'densified_strain': float(strain[key_idx]),
-                    'densified_stress': float(stress[key_idx]),
-                    'peak_strain': 0.0,
-                    'peak_stress': 0.0,
-                    'EA': EA
-                }
-
-            # 非特殊样本
-            if is_dynamic:
-                # 动态压缩：首先检查是否有回弹
-                max_strain_idx = int(np.argmax(strain))
-                max_strain_val = float(strain[max_strain_idx])
-
-                # 检查是否有回弹：max_strain在前90%的数据中
-                has_rebound = max_strain_idx < n * 0.9
-
-                if has_rebound:
-                    # 有回弹：积分到max_strain
-                    key_idx = max_strain_idx
-                    densified_strain = max_strain_val
-                else:
-                    # 无回弹（可能有尾部spike）：检测尖峰并找到切断点
-                    # 计算前80%数据的中位应力作为平台应力
-                    cut_80 = int(n * 0.8)
-                    plateau_stress = float(np.median(stress[:cut_80])) if cut_80 > 0 else float(stress[0])
-                    max_stress = float(np.max(stress))
-
-                    # 判断是否有尖峰：最大应力超过平台应力3倍
-                    has_spike = max_stress > 3 * plateau_stress and plateau_stress > 0
-
-                    if has_spike:
-                        # 有尖峰：找应力首次超过2倍平台应力的位置作为切断点
-                        spike_threshold = 2 * plateau_stress
-                        spike_onset_indices = np.where(stress > spike_threshold)[0]
-                        if len(spike_onset_indices) > 0:
-                            key_idx = spike_onset_indices[0]
-                            densified_strain = float(strain[key_idx])
-                        else:
-                            densified_strain = 0.8 * max_strain_val
-                            key_idx = int(np.argmin(np.abs(strain - densified_strain)))
-                    else:
-                        # 无明显尖峰：使用密实化点检测
-                        try:
-                            detected_strain = detect_densification_point(strain, stress)
-                            if 0.2 * max_strain_val <= detected_strain <= 0.95 * max_strain_val:
-                                densified_strain = detected_strain
-                                key_idx = int(np.argmin(np.abs(strain - densified_strain)))
-                            else:
-                                densified_strain = 0.8 * max_strain_val
-                                key_idx = int(np.argmin(np.abs(strain - densified_strain)))
-                        except:
-                            densified_strain = 0.8 * max_strain_val
-                            key_idx = int(np.argmin(np.abs(strain - densified_strain)))
-            else:
-                # 静态压缩：使用新算法检测
-                # 在 strain 0.5 到 0.7 范围内，找二阶导数的最后一个峰值作为压实点
-                densified_strain = detect_densification_point(strain, stress)
-                key_idx = int(np.argmin(np.abs(strain - densified_strain)))
-            densified_stress = float(stress[key_idx])
-            peak_stress = 0.0
-            peak_strain = 0.0
-        else:
-            # 剪切曲线：积分到最后一点（与 extract_curve_features_inline 保持一致）
-            key_idx = len(strain) - 1
-            # Peak 点信息仍然保留用于显示
-            peak_idx = int(np.argmax(stress))
-            peak_stress = float(stress[peak_idx])
-            peak_strain = float(strain[peak_idx])
-            densified_stress = 0.0
-            densified_strain = 0.0
-
-        # EA (从起点到关键点的积分面积)
-        V0 = self.cell_size ** 3
-        E_total = np.trapz(stress[:key_idx+1], strain[:key_idx+1])
-        EA = E_total * V0
-
-        return {
-            'stiffness': K,
-            'yield_strain': yield_strain,
-            'yield_stress': yield_stress,
-            'densified_strain': densified_strain,
-            'densified_stress': densified_stress,
-            'peak_strain': peak_strain,
-            'peak_stress': peak_stress,
-            'EA': EA
-        }
-
-    def update_surface(self, feature_name):
-        """更新 3D 散点图和拟合曲面"""
-        import numpy as np
-        from scipy.interpolate import griddata
-
-        if len(self.points) < 1:
-            return
-
-        # 提取数据点
-        radius = np.array([p[0] for p in self.points])
-        slider = np.array([p[1] for p in self.points])
-
-        feature_map = {
-            # 压缩曲线特征
-            "Young's Modulus": 'stiffness',
-            'Densified Stress': 'densified_stress',
-            'Densified Strain': 'densified_strain',
-            # 剪切曲线特征
-            'Shear Modulus': 'stiffness',  # 剪切模量使用同一个 stiffness 字段
-            'Last Stress': 'peak_stress',   # Last 使用同一个 peak_stress 字段
-            'Last Strain': 'peak_strain',   # Last 使用同一个 peak_strain 字段
-            # 通用特征
-            'Yield Stress': 'yield_stress',
-            'Yield Strain': 'yield_strain',
-            'Energy Absorb': 'EA'
-        }
-        feature_key = feature_map.get(feature_name, 'stiffness')
-        values = np.array([p[2][feature_key] for p in self.points])
-
-        # 获取当前 UI 值
-        current_radius, current_slider = self._get_current_ui_values()
-
-        # 保存用于后续更新信息标签
-        self._current_feature_name = feature_name
-        self._current_values = values
-        self._current_slider = current_slider
-        self._current_radius = current_radius
-
-        # 清空图形
-        self.ax.clear()
-
-        # X=slider, Y=radius, Z=feature
-        # 绘制所有已有结果的数据点 - 浅灰色小点（比红点小一半以便区分）
-        self.ax.scatter(slider, radius, values, c='#aaaaaa', s=40, zorder=10,
-                       label='Data Points', alpha=0.5, edgecolors='#888888', linewidths=0.5)
-
-        # 拟合曲面
-        zi_interp = None
-        try:
-            # 检查数据维度
-            slider_unique = np.unique(slider)
-            radius_unique = np.unique(radius)
-
-            if len(slider_unique) > 1 and len(radius_unique) > 1:
-                # 两个维度都有变化，进行2D插值
-                grid_size = 50 if self.use_smooth else 30
-                xi = np.linspace(slider.min(), slider.max(), grid_size)
-                yi = np.linspace(radius.min(), radius.max(), grid_size)
-                xi_grid, yi_grid = np.meshgrid(xi, yi)
-
-                if self.use_smooth:
-                    # 平滑模式：RBF + 高斯平滑
-                    try:
-                        from scipy.interpolate import RBFInterpolator
-                        from scipy.ndimage import gaussian_filter
-                        points = np.column_stack([slider, radius])
-                        rbf = RBFInterpolator(points, values, kernel='thin_plate_spline', smoothing=1.0)
-                        grid_points = np.column_stack([xi_grid.ravel(), yi_grid.ravel()])
-                        zi = rbf(grid_points).reshape(xi_grid.shape)
-                        # 高斯平滑
-                        nan_mask = np.isnan(zi)
-                        if not np.all(nan_mask):
-                            zi_filled = np.where(nan_mask, np.nanmean(zi), zi)
-                            zi_smooth = gaussian_filter(zi_filled, sigma=1.5)
-                            zi = np.where(nan_mask, np.nan, zi_smooth)
-                    except Exception:
-                        zi = griddata((slider, radius), values, (xi_grid, yi_grid), method='cubic')
-                else:
-                    # 原始模式：cubic griddata（不平滑）
-                    try:
-                        zi = griddata((slider, radius), values, (xi_grid, yi_grid), method='cubic')
-                    except:
-                        zi = griddata((slider, radius), values, (xi_grid, yi_grid), method='linear')
-
-                # 绘制曲面
-                if zi is not None and not np.all(np.isnan(zi)):
-                    surf = self.ax.plot_surface(xi_grid, yi_grid, zi,
-                                               alpha=0.6, cmap='viridis',
-                                               edgecolor='none', antialiased=True)
-                    # 保存曲面网格数据，用于直接从曲面取点
-                    self._surface_grid = (xi_grid, yi_grid, zi, xi, yi)
-
-            elif len(slider_unique) > 1:
-                # 只有 slider 变化，绘制2D线在3D空间
-                sort_idx = np.argsort(slider)
-                self.ax.plot(slider[sort_idx], radius[sort_idx], values[sort_idx],
-                           'b-', linewidth=3, alpha=0.7, label='Fitted Line')
-
-            elif len(radius_unique) > 1:
-                # 只有 radius 变化，绘制2D线在3D空间
-                sort_idx = np.argsort(radius)
-                self.ax.plot(slider[sort_idx], radius[sort_idx], values[sort_idx],
-                           'b-', linewidth=3, alpha=0.7, label='Fitted Line')
-
-        except Exception as e:
-            print(f"Surface fitting error: {e}")
-
-        # 绘制红色目标点 - 显示当前 UI 选择的位置
-        target_z = None
-        is_interpolated = False
-        # 用于绘制的实际坐标（可能被调整到曲面网格上）
-        plot_slider = current_slider
-        plot_radius = current_radius
-        try:
-            # 优先查找精确匹配的数据点（比插值更准确）
-            for p in self.points:
-                if abs(p[0] - current_radius) < 0.01 and abs(p[1] - current_slider) < 0.5:
-                    target_z = p[2][feature_key]
-                    plot_slider = p[1]
-                    plot_radius = p[0]
-                    is_interpolated = False
-                    break
-
-            # 如果没有精确匹配，从曲面网格取插值
-            if target_z is None:
-                if hasattr(self, '_surface_grid') and self._surface_grid is not None:
-                    xi_grid, yi_grid, zi, xi, yi = self._surface_grid
-                    # 找到最近的网格点索引
-                    i_slider = np.argmin(np.abs(xi - current_slider))
-                    i_radius = np.argmin(np.abs(yi - current_radius))
-                    # 使用网格上的精确坐标和Z值
-                    plot_slider = xi[i_slider]
-                    plot_radius = yi[i_radius]
-                    target_z = zi[i_radius, i_slider]
-                    is_interpolated = True
-
-            # 如果还是没有，用平均值
-            if target_z is None or np.isnan(target_z):
-                target_z = values.mean()
-                is_interpolated = True
-
-            # 获取 Z 轴底部位置 (XY 平面)
-            z_min = values.min() if len(values) > 0 else 0
-
-            # 绘制红色虚线 - 从目标点垂直投影到 XY 平面
-            self.ax.plot([plot_slider, plot_slider],
-                        [plot_radius, plot_radius],
-                        [target_z, z_min],
-                        'r--', linewidth=2, alpha=0.8, zorder=15)
-
-            # 在 XY 平面上绘制投影点
-            self.ax.scatter([plot_slider], [plot_radius], [z_min],
-                          c='red', s=80, zorder=15, marker='o', alpha=0.5)
-
-            # 绘制红色目标点 - 大尺寸、高亮显示
-            self.ax.scatter([plot_slider], [plot_radius], [target_z],
-                          c='red', s=150, zorder=20, marker='o',
-                          edgecolors='darkred', linewidths=2,
-                          label=f'Current (R={current_radius:.2f}, S={current_slider})')
-
-        except Exception as e:
-            print(f"Target point error: {e}")
-
-        # 更新信息标签 - 显示当前位置的插值特征值
-        interp_mark = "~" if is_interpolated else ""
-        # 过滤信息
-        outlier_info = f" | 已过滤: {len(self.outlier_samples)}" if self.filter_outliers and self.outlier_samples else ""
-        if target_z is not None and not np.isnan(target_z):
-            self.info_label.setText(
-                f"Data points: {len(self.points)} | "
-                f"Range: [{values.min():.4f}, {values.max():.4f}] | "
-                f"Current: R={current_radius:.2f}, S={current_slider} | "
-                f"{feature_name}: {interp_mark}{target_z:.4f}{outlier_info}"
-            )
-        else:
-            self.info_label.setText(
-                f"Data points: {len(self.points)} | "
-                f"Range: [{values.min():.4f}, {values.max():.4f}] | "
-                f"Current: R={current_radius:.2f}, S={current_slider}{outlier_info}"
-            )
-
-        # 设置坐标轴标签 - 增大字体
-        self.ax.set_xlabel('Slider', color='#c5d1de', fontsize=14, fontweight='bold')
-        self.ax.set_ylabel('Radius (mm)', color='#c5d1de', fontsize=14, fontweight='bold')
-        self.ax.set_zlabel(feature_name, color='#c5d1de', fontsize=14, fontweight='bold')
-
-        # 设置刻度颜色和大小
-        self.ax.tick_params(colors='#c5d1de', labelsize=12)
-
-        # 添加图例
-        self.ax.legend(loc='upper left', fontsize=11, facecolor='#262b3d',
-                      edgecolor='#3d5a80', labelcolor='#c5d1de')
-
-        self.canvas.draw()
-
-    def exec_(self):
-        """显示对话框"""
-        self.show()
-
-    def closeEvent(self, event):
-        """关闭事件"""
-        # 停止定时器
-        if hasattr(self, 'update_timer'):
-            self.update_timer.stop()
-        event.accept()
-
-
-class FeatureSearchDialog(QDialog):
-    """Dialog for dual-feature search visualization with 4 plots"""
-
-    def __init__(self, parent, df, feature1, value1, feature2, value2):
-        super().__init__(parent)
-        # 无边框窗口（去掉标题栏的 - □ × 按钮，因为已有 Close 按钮）
-        from PyQt5.QtCore import Qt
-        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
-        self.resize(1400, 900)
-        self.setStyleSheet("""
-            QDialog {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #1a1d29, stop:1 #0f1419);
-                border: 2px solid #3d5a80;
-                border-radius: 12px;
-            }
-            QTabWidget::pane {
-                border: 2px solid #3d5a80;
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #262b3d, stop:1 #1e2330);
-                border-radius: 8px;
-            }
-            QTabBar::tab {
-                background-color: #262b3d;
-                color: #c5d1de;
-                padding: 12px 24px;
-                margin-right: 2px;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                font-size: 14px;
-                font-weight: 500;
-            }
-            QTabBar::tab:selected {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #4a7ba7, stop:1 #3d5a80);
-                color: #ffffff;
-            }
-            QTabBar::tab:hover:!selected {
-                background-color: #2d3548;
-            }
-            QLabel {
-                color: #c5d1de;
-                font-size: 13px;
-            }
-            QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #4a7ba7, stop:1 #3d5a80);
-                color: #ffffff;
-                border: none;
-                padding: 8px 16px;
-                font-size: 13px;
-                font-weight: 600;
-                border-radius: 6px;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #5a8bc0, stop:1 #4a7ba7);
-            }
-            QPushButton:pressed {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #3d5a80, stop:1 #2d4660);
-            }
-        """)
-
-        self.df = df
-        self.f1 = feature1
-        self.v1 = value1
-        self.f2 = feature2
-        self.v2 = value2
-        self.best_samples = []
-
-        # Find nearest family
-        self.nearest_family = self._find_nearest_family()
-        self.nearest_families_3 = self._find_nearest_families_k(3)
-
-        self._setup_ui()
-        self._generate_plots()
-
-    def _find_nearest_family(self):
-        """Find the single nearest cell_type family"""
-        df = self.df.copy()
-
-        # Normalize features
-        f1_min, f1_max = df[self.f1].min(), df[self.f1].max()
-        f2_min, f2_max = df[self.f2].min(), df[self.f2].max()
-
-        if f1_max - f1_min > 0:
-            df['norm_f1'] = (df[self.f1] - f1_min) / (f1_max - f1_min)
-            target_norm1 = (self.v1 - f1_min) / (f1_max - f1_min)
-        else:
-            df['norm_f1'] = 0
-            target_norm1 = 0
-
-        if f2_max - f2_min > 0:
-            df['norm_f2'] = (df[self.f2] - f2_min) / (f2_max - f2_min)
-            target_norm2 = (self.v2 - f2_min) / (f2_max - f2_min)
-        else:
-            df['norm_f2'] = 0
-            target_norm2 = 0
-
-        df['distance'] = np.sqrt(
-            (df['norm_f1'] - target_norm1)**2 +
-            (df['norm_f2'] - target_norm2)**2
-        )
-
-        closest = df.nsmallest(1, 'distance').iloc[0]
-        return closest['cell_type']
-
-    def _find_nearest_families_k(self, k=3):
-        """Find k nearest cell_type families"""
-        df = self.df.copy()
-
-        f1_min, f1_max = df[self.f1].min(), df[self.f1].max()
-        f2_min, f2_max = df[self.f2].min(), df[self.f2].max()
-
-        if f1_max - f1_min > 0:
-            df['norm_f1'] = (df[self.f1] - f1_min) / (f1_max - f1_min)
-            target_norm1 = (self.v1 - f1_min) / (f1_max - f1_min)
-        else:
-            df['norm_f1'] = 0
-            target_norm1 = 0
-
-        if f2_max - f2_min > 0:
-            df['norm_f2'] = (df[self.f2] - f2_min) / (f2_max - f2_min)
-            target_norm2 = (self.v2 - f2_min) / (f2_max - f2_min)
-        else:
-            df['norm_f2'] = 0
-            target_norm2 = 0
-
-        df['distance'] = np.sqrt(
-            (df['norm_f1'] - target_norm1)**2 +
-            (df['norm_f2'] - target_norm2)**2
-        )
-
-        selected = {}
-        excluded = set()
-        for _ in range(k):
-            remaining = df[~df['cell_type'].isin(excluded)]
-            if len(remaining) == 0:
-                break
-            closest = remaining.nsmallest(1, 'distance').iloc[0]
-            cell_type = closest['cell_type']
-            selected[cell_type] = df[df['cell_type'] == cell_type].copy()
-            excluded.add(cell_type)
-
-        return selected
-
-    def _setup_ui(self):
-        """Setup the dialog UI with tabs for each plot"""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-
-        # Info label
-        f1_display = self.f1.replace('static_comp_', '').replace('static_shear_', '').replace('_', ' ').title()
-        f2_display = self.f2.replace('static_comp_', '').replace('static_shear_', '').replace('_', ' ').title()
-        info_label = QLabel(f"Searching: {f1_display} = {self.v1:.4g}, {f2_display} = {self.v2:.4g}  |  Nearest Family: {self.nearest_family}")
-        info_label.setStyleSheet("font-size: 14px; color: #e1e8f0; padding: 10px;")
-        layout.addWidget(info_label)
-
-        # Tab widget for plots
-        self.tab_widget = QTabWidget()
-        layout.addWidget(self.tab_widget)
-
-        # Create tabs for each plot
-        self.tab1 = QWidget()
-        self.tab2 = QWidget()
-        self.tab3 = QWidget()
-        self.tab4 = QWidget()
-
-        self.tab_widget.addTab(self.tab1, "2D Feature Space")
-        self.tab_widget.addTab(self.tab2, f"{f1_display} 3D Surface")
-        self.tab_widget.addTab(self.tab3, f"{f2_display} 3D Surface")
-        self.tab_widget.addTab(self.tab4, "2D Intersection")
-
-        # Setup matplotlib canvas for each tab
-        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-        from matplotlib.figure import Figure
-
-        # Tab 1: 2D Feature Space
-        layout1 = QVBoxLayout(self.tab1)
-        self.fig1 = Figure(figsize=(12, 8), facecolor='#1e2330')
-        self.canvas1 = FigureCanvas(self.fig1)
-        layout1.addWidget(self.canvas1)
-
-        # Tab 2: 3D Surface for Feature 1
-        layout2 = QVBoxLayout(self.tab2)
-        self.fig2 = Figure(figsize=(10, 8), facecolor='#1e2330')
-        self.canvas2 = FigureCanvas(self.fig2)
-        layout2.addWidget(self.canvas2)
-
-        # Tab 3: 3D Surface for Feature 2
-        layout3 = QVBoxLayout(self.tab3)
-        self.fig3 = Figure(figsize=(10, 8), facecolor='#1e2330')
-        self.canvas3 = FigureCanvas(self.fig3)
-        layout3.addWidget(self.canvas3)
-
-        # Tab 4: 2D Intersection
-        layout4 = QVBoxLayout(self.tab4)
-        self.fig4 = Figure(figsize=(10, 8), facecolor='#1e2330')
-        self.canvas4 = FigureCanvas(self.fig4)
-        layout4.addWidget(self.canvas4)
-
-        # Close button
-        close_btn = QPushButton("Close")
-        close_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #3d5a80;
-                color: #e1e8f0;
-                border: none;
-                border-radius: 6px;
-                padding: 10px 30px;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background-color: #4a6fa5;
-            }
-        """)
-        close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn)
-
-    def _generate_plots(self):
-        """Generate all 4 plots"""
-        self._plot_2d_feature_space()
-        self._plot_3d_surface(self.fig2, self.f1, self.v1)
-        self._plot_3d_surface(self.fig3, self.f2, self.v2)
-        self._plot_2d_intersection()
-
-        # Refresh all canvases
-        self.canvas1.draw()
-        self.canvas2.draw()
-        self.canvas3.draw()
-        self.canvas4.draw()
-
-    def _plot_2d_feature_space(self):
-        """Plot 1: 2D Feature Space with all samples and nearest families"""
-        ax = self.fig1.add_subplot(111)
-        ax.set_facecolor('#1e2330')
-
-        # Plot all samples (gray)
-        ax.scatter(self.df[self.f1], self.df[self.f2], c='gray', alpha=0.3, s=30, label='Other materials')
-
-        # Plot nearest 3 families (colored)
-        colors = ['#4a90d9', '#50c878', '#9370db']  # Blue, Green, Purple
-        for i, (cell_type, df_family) in enumerate(self.nearest_families_3.items()):
-            ax.scatter(df_family[self.f1], df_family[self.f2], c=colors[i % len(colors)],
-                      s=60, alpha=0.8, label=f'{cell_type} ({len(df_family)} samples)')
-
-        # Plot target point (red X)
-        ax.scatter([self.v1], [self.v2], marker='X', c='red', s=300, linewidths=3,
-                  edgecolors='white', label='Target', zorder=10)
-
-        # Style
-        f1_display = self.f1.replace('static_comp_', '').replace('static_shear_', '').replace('_', ' ').title()
-        f2_display = self.f2.replace('static_comp_', '').replace('static_shear_', '').replace('_', ' ').title()
-
-        ax.set_xlabel(f1_display, color='#c5d1de', fontsize=12)
-        ax.set_ylabel(f2_display, color='#c5d1de', fontsize=12)
-        ax.set_title(f'2D Feature Space: {f1_display} vs {f2_display}', color='#e1e8f0', fontsize=14, fontweight='bold')
-        ax.tick_params(colors='#c5d1de')
-        ax.spines['bottom'].set_color('#3d5a80')
-        ax.spines['top'].set_color('#3d5a80')
-        ax.spines['left'].set_color('#3d5a80')
-        ax.spines['right'].set_color('#3d5a80')
-        ax.legend(facecolor='#262b3d', edgecolor='#3d5a80', labelcolor='#c5d1de', fontsize=10)
-        ax.grid(True, alpha=0.2, color='#3d5a80')
-
-        self.fig1.tight_layout()
-
-    def _is_1d_structure(self, cell_type):
-        """Check if cell type only has radius dimension (no transform)"""
-        return cell_type in ['Cubic', 'Octahedron']
-
-    def _plot_3d_surface(self, fig, feature, target_value):
-        """Plot 3D surface for a single feature with target plane intersection"""
-        from mpl_toolkits.mplot3d import Axes3D
-        from matplotlib.patches import Patch
-        from matplotlib.lines import Line2D
-
-        # Check if this is a 1D structure (only radius dimension)
-        if self._is_1d_structure(self.nearest_family):
-            self._plot_2d_curve(fig, feature, target_value)
-            return
-
-        ax = fig.add_subplot(111, projection='3d')
-        ax.set_facecolor('#1e2330')
-
-        # Get family data
-        df_family = self.df[self.df['cell_type'] == self.nearest_family].copy()
-
-        if len(df_family) < 3:
-            ax.text(0.5, 0.5, 0.5, 'Insufficient data', ha='center', va='center',
-                   transform=ax.transAxes, color='#c5d1de', fontsize=14)
-            return
-
-        # Create grid
-        radius_min, radius_max = df_family['strut_radius'].min(), df_family['strut_radius'].max()
-        slider_min, slider_max = df_family['transform'].min(), df_family['transform'].max()
-
-        radius_range = np.linspace(radius_min, radius_max, 50)
-        slider_range = np.linspace(slider_min, slider_max, 50)
-        R, S = np.meshgrid(radius_range, slider_range)
-
-        # Interpolate - 使用 RBF + 高斯平滑获得更平滑的曲面
-        points = df_family[['transform', 'strut_radius']].values
-        values = df_family[feature].values
-
-        try:
-            from scipy.interpolate import RBFInterpolator
-            from scipy.ndimage import gaussian_filter
-
-            # 使用 RBF 插值 - thin_plate_spline 产生平滑曲面
-            rbf = RBFInterpolator(points, values, kernel='thin_plate_spline', smoothing=1.0)
-            grid_points = np.column_stack([S.ravel(), R.ravel()])
-            Z = rbf(grid_points).reshape(R.shape)
-
-            # 高斯平滑
-            nan_mask = np.isnan(Z)
-            if not np.all(nan_mask):
-                Z_filled = np.where(nan_mask, np.nanmean(Z), Z)
-                Z_smooth = gaussian_filter(Z_filled, sigma=1.5)
-                Z = np.where(nan_mask, np.nan, Z_smooth)
-        except Exception:
-            # 回退到 LinearNDInterpolator
-            try:
-                interpolator = LinearNDInterpolator(points, values, rescale=True)
-                Z = np.zeros_like(R)
-                for i in range(R.shape[0]):
-                    for j in range(R.shape[1]):
-                        Z[i, j] = interpolator(S[i, j], R[i, j])
-            except Exception as e:
-                ax.text(0.5, 0.5, 0.5, f'Interpolation error: {e}', ha='center', va='center',
-                       transform=ax.transAxes, color='#c5d1de', fontsize=10)
-                return
-
-        # Plot surface
-        ax.plot_surface(R, S, Z, cmap='viridis', alpha=0.6, linewidth=0, antialiased=True)
-
-        # Plot data points
-        ax.scatter(df_family['strut_radius'], df_family['transform'], df_family[feature],
-                  c='black', s=15, alpha=0.5)
-
-        # Plot target plane
-        R_plane, S_plane = np.meshgrid([radius_min, radius_max], [slider_min, slider_max])
-        Z_target = np.full_like(R_plane, target_value)
-        ax.plot_surface(R_plane, S_plane, Z_target, color='darkred', alpha=0.2)
-
-        # Extract and plot intersection contour
-        try:
-            import matplotlib.pyplot as plt
-            temp_fig, temp_ax = plt.subplots()
-            contour_set = temp_ax.contour(R, S, Z, levels=[target_value])
-
-            z_min = np.nanmin(Z[~np.isnan(Z)]) if np.any(~np.isnan(Z)) else 0
-
-            for seg in contour_set.allsegs[0]:
-                if len(seg) > 0:
-                    # Draw contour on surface
-                    z_contour = np.full(len(seg), target_value)
-                    ax.plot(seg[:, 0], seg[:, 1], z_contour, 'r-', linewidth=3, alpha=0.8)
-                    # Project to XY plane
-                    z_bottom = np.full(len(seg), z_min)
-                    ax.plot(seg[:, 0], seg[:, 1], z_bottom, 'r--', linewidth=2, alpha=0.6)
-
-            plt.close(temp_fig)
-        except Exception as e:
-            print(f"Contour extraction error: {e}")
-
-        # Labels
-        feat_display = feature.replace('comp_', 'Comp ').replace('shear_', 'Shear ').replace('_', ' ').title()
-        ax.set_xlabel('Strut Radius (mm)', color='#c5d1de', fontsize=10, labelpad=10)
-        ax.set_ylabel('Transform', color='#c5d1de', fontsize=10, labelpad=10)
-        ax.set_zlabel(feat_display, color='#c5d1de', fontsize=10, labelpad=10)
-        ax.set_title(f'{self.nearest_family} - {feat_display} Surface', color='#e1e8f0', fontsize=12)
-
-        # Legend
-        legend_elements = [
-            Patch(facecolor='purple', alpha=0.6, label='Complete surface'),
-            Patch(facecolor='darkred', alpha=0.2, label=f'Target: {target_value:.4g}'),
-            Line2D([0], [0], color='red', linewidth=3, label='Surface-Target intersection'),
-            Line2D([0], [0], color='red', linewidth=2, linestyle='--', label='Intersection projection'),
-            Line2D([0], [0], marker='o', color='w', markerfacecolor='black', markersize=5, alpha=0.5, label='Data points')
-        ]
-        ax.legend(handles=legend_elements, fontsize=8, loc='upper left',
-                 facecolor='#262b3d', edgecolor='#3d5a80', labelcolor='#c5d1de')
-
-        ax.view_init(elev=25, azim=45)
-        ax.tick_params(colors='#c5d1de')
-
-        fig.tight_layout()
-
-    def _plot_2d_curve(self, fig, feature, target_value):
-        """Plot 2D curve for 1D structures (Cubic, Octahedron) - only radius dimension"""
-        from scipy.interpolate import interp1d
-        from matplotlib.lines import Line2D
-
-        ax = fig.add_subplot(111)
-        ax.set_facecolor('#1e2330')
-
-        # Get family data
-        df_family = self.df[self.df['cell_type'] == self.nearest_family].copy()
-
-        if len(df_family) < 2:
-            ax.text(0.5, 0.5, 'Insufficient data', ha='center', va='center',
-                   transform=ax.transAxes, color='#c5d1de', fontsize=14)
-            return
-
-        # Sort by radius
-        df_family = df_family.sort_values('strut_radius')
-        radius = df_family['strut_radius'].values
-        values = df_family[feature].values
-
-        # Interpolate 1D curve - 使用更多点和平滑处理
-        from scipy.ndimage import gaussian_filter1d
-        radius_fine = np.linspace(radius.min(), radius.max(), 200)
-        try:
-            interp_func = interp1d(radius, values, kind='cubic', fill_value='extrapolate')
-            values_fine = interp_func(radius_fine)
-            # 高斯平滑
-            values_fine = gaussian_filter1d(values_fine, sigma=2)
-        except:
-            interp_func = interp1d(radius, values, kind='linear', fill_value='extrapolate')
-            values_fine = interp_func(radius_fine)
-
-        # Plot curve
-        ax.plot(radius_fine, values_fine, 'b-', linewidth=2, label=f'{feature} curve')
-        ax.scatter(radius, values, c='black', s=50, zorder=5, label='Data points')
-
-        # Plot target line and find intersection
-        ax.axhline(y=target_value, color='red', linestyle='--', linewidth=2, label=f'Target: {target_value:.4g}')
-
-        # Find intersection point
-        intersections = []
-        for i in range(len(values_fine) - 1):
-            if (values_fine[i] - target_value) * (values_fine[i+1] - target_value) <= 0:
-                # Linear interpolation to find exact crossing
-                t = (target_value - values_fine[i]) / (values_fine[i+1] - values_fine[i])
-                r_intersect = radius_fine[i] + t * (radius_fine[i+1] - radius_fine[i])
-                intersections.append(r_intersect)
-
-        for r_int in intersections:
-            ax.scatter([r_int], [target_value], marker='o', s=200, c='red',
-                      edgecolors='white', linewidths=2, zorder=10)
-            ax.annotate(f'R={r_int:.3f}', (r_int, target_value),
-                       textcoords='offset points', xytext=(10, 10),
-                       color='#e1e8f0', fontsize=10,
-                       arrowprops=dict(arrowstyle='->', color='#c5d1de'))
-
-        # Store intersection for later use
-        if intersections:
-            self._1d_intersections = {feature: intersections}
-
-        # Labels
-        feat_display = feature.replace('comp_', 'Comp ').replace('shear_', 'Shear ').replace('_', ' ').title()
-        ax.set_xlabel('Strut Radius (mm)', color='#c5d1de', fontsize=12)
-        ax.set_ylabel(feat_display, color='#c5d1de', fontsize=12)
-        ax.set_title(f'{self.nearest_family} - {feat_display} vs Radius (1D Structure)', color='#e1e8f0', fontsize=12)
-        ax.tick_params(colors='#c5d1de')
-        ax.legend(facecolor='#262b3d', edgecolor='#3d5a80', labelcolor='#c5d1de', fontsize=10)
-        ax.grid(True, alpha=0.2, color='#3d5a80')
-        ax.spines['bottom'].set_color('#3d5a80')
-        ax.spines['top'].set_color('#3d5a80')
-        ax.spines['left'].set_color('#3d5a80')
-        ax.spines['right'].set_color('#3d5a80')
-
-        fig.tight_layout()
-
-    def _plot_2d_intersection(self):
-        """Plot 4: 2D Feature Intersection Analysis"""
-        # Check if this is a 1D structure
-        if self._is_1d_structure(self.nearest_family):
-            self._plot_1d_intersection()
-            return
-
-        ax = self.fig4.add_subplot(111)
-        ax.set_facecolor('#1e2330')
-
-        # Get family data
-        df_family = self.df[self.df['cell_type'] == self.nearest_family].copy()
-
-        if len(df_family) < 3:
-            ax.text(0.5, 0.5, 'Insufficient data', ha='center', va='center',
-                   transform=ax.transAxes, color='#c5d1de', fontsize=14)
-            return
-
-        # Create grid
-        radius_min, radius_max = df_family['strut_radius'].min(), df_family['strut_radius'].max()
-        slider_min, slider_max = df_family['transform'].min(), df_family['transform'].max()
-
-        # Expand by 10%
-        r_range = radius_max - radius_min
-        s_range = slider_max - slider_min
-        radius_min -= r_range * 0.1
-        radius_max += r_range * 0.1
-        slider_min -= s_range * 0.1
-        slider_max += s_range * 0.1
-
-        radius_grid = np.linspace(radius_min, radius_max, 50)
-        slider_grid = np.linspace(slider_min, slider_max, 50)
-        R, S = np.meshgrid(radius_grid, slider_grid)
-
-        points = df_family[['transform', 'strut_radius']].values
-
-        # Interpolate both features - 使用 RBF + 高斯平滑
-        try:
-            from scipy.interpolate import RBFInterpolator
-            from scipy.ndimage import gaussian_filter
-
-            # RBF 插值
-            rbf1 = RBFInterpolator(points, df_family[self.f1].values, kernel='thin_plate_spline', smoothing=1.0)
-            rbf2 = RBFInterpolator(points, df_family[self.f2].values, kernel='thin_plate_spline', smoothing=1.0)
-
-            grid_points = np.column_stack([S.ravel(), R.ravel()])
-            Z1 = rbf1(grid_points).reshape(R.shape)
-            Z2 = rbf2(grid_points).reshape(R.shape)
-
-            # 高斯平滑
-            for Z in [Z1, Z2]:
-                nan_mask = np.isnan(Z)
-                if not np.all(nan_mask):
-                    Z_filled = np.where(nan_mask, np.nanmean(Z), Z)
-                    Z_smooth = gaussian_filter(Z_filled, sigma=1.5)
-                    Z[:] = np.where(nan_mask, np.nan, Z_smooth)
-
-            # 保存插值器供后续使用（标记为RBF类型）
-            interp1 = rbf1
-            interp2 = rbf2
-            use_rbf = True
-        except Exception:
-            use_rbf = False
-            # 回退到 LinearNDInterpolator
-            try:
-                interp1 = LinearNDInterpolator(points, df_family[self.f1].values, rescale=True)
-                interp2 = LinearNDInterpolator(points, df_family[self.f2].values, rescale=True)
-                Z1 = np.zeros_like(R)
-                Z2 = np.zeros_like(R)
-                for i in range(R.shape[0]):
-                    for j in range(R.shape[1]):
-                        Z1[i, j] = interp1(S[i, j], R[i, j])
-                        Z2[i, j] = interp2(S[i, j], R[i, j])
-            except Exception as e:
-                ax.text(0.5, 0.5, f'Interpolation error: {e}', ha='center', va='center',
-                       transform=ax.transAxes, color='#c5d1de', fontsize=10)
-                return
-
-        # Plot contours
-        f1_display = self.f1.replace('comp_', 'Comp ').replace('shear_', 'Shear ').replace('_', ' ').title()
-        f2_display = self.f2.replace('comp_', 'Comp ').replace('shear_', 'Shear ').replace('_', ' ').title()
-
-        contour1 = ax.contour(R, S, Z1, levels=[self.v1], colors=['blue'], linewidths=2.5)
-        contour2 = ax.contour(R, S, Z2, levels=[self.v2], colors=['red'], linewidths=2.5)
-
-        # Add labels for legend
-        ax.plot([], [], color='blue', linewidth=2.5, label=f1_display)
-        ax.plot([], [], color='red', linewidth=2.5, label=f2_display)
-
-        # Find intersection point
-        optimal_radius, optimal_slider = self._find_contour_intersection(contour1, contour2)
-        is_approximation = False
-
-        if optimal_radius is not None:
-            ax.scatter([optimal_radius], [optimal_slider], marker='o', s=200, c='black',
-                      edgecolors='white', linewidths=2, zorder=10,
-                      label=f'Intersection: R={optimal_radius:.3f}, S={optimal_slider:.1f}')
-        else:
-            # 没有找到交点，寻找最接近目标值的点
-            is_approximation = True
-            # 计算每个网格点到两个目标值的归一化距离
-            f1_range = np.nanmax(Z1) - np.nanmin(Z1)
-            f2_range = np.nanmax(Z2) - np.nanmin(Z2)
-            if f1_range > 0 and f2_range > 0:
-                norm_dist1 = (Z1 - self.v1) / f1_range
-                norm_dist2 = (Z2 - self.v2) / f2_range
-                combined_dist = np.sqrt(norm_dist1**2 + norm_dist2**2)
-                # 找最小距离点
-                valid_mask = ~np.isnan(combined_dist)
-                if np.any(valid_mask):
-                    min_idx = np.unravel_index(np.nanargmin(combined_dist), combined_dist.shape)
-                    optimal_slider = S[min_idx]
-                    optimal_radius = R[min_idx]
-                    ax.scatter([optimal_radius], [optimal_slider], marker='s', s=200, c='orange',
-                              edgecolors='white', linewidths=2, zorder=10,
-                              label=f'Closest: R={optimal_radius:.3f}, S={optimal_slider:.1f}')
-
-        if optimal_radius is not None:
-            # Store best sample info - 根据插值器类型调用
-            if use_rbf:
-                pred_f1 = interp1([[optimal_slider, optimal_radius]])[0]
-                pred_f2 = interp2([[optimal_slider, optimal_radius]])[0]
-            else:
-                pred_f1 = interp1(optimal_slider, optimal_radius)
-                pred_f2 = interp2(optimal_slider, optimal_radius)
-
-            self.best_samples = [{
-                'sample_name': f'{self.nearest_family}_5_{optimal_radius:.3f}_{optimal_slider:.1f}'.replace('.', 'p'),
-                'cell_type': self.nearest_family,
-                'radius': optimal_radius,
-                'slider': optimal_slider,
-                'predicted_f1': pred_f1,
-                'predicted_f2': pred_f2,
-                'is_approximation': is_approximation
-            }]
-
-        # Plot data points
-        ax.scatter(df_family['strut_radius'], df_family['transform'], c='gray', s=30, alpha=0.3, zorder=1)
-
-        # Style
-        ax.set_xlabel('Strut Radius (mm)', color='#c5d1de', fontsize=12, fontweight='bold')
-        ax.set_ylabel('Transform', color='#c5d1de', fontsize=12, fontweight='bold')
-        ax.set_title(f'{self.nearest_family} - 2D Feature Intersection Analysis', color='#e1e8f0', fontsize=14, fontweight='bold')
-        ax.tick_params(colors='#c5d1de')
-        ax.spines['bottom'].set_color('#3d5a80')
-        ax.spines['top'].set_color('#3d5a80')
-        ax.spines['left'].set_color('#3d5a80')
-        ax.spines['right'].set_color('#3d5a80')
-        ax.legend(facecolor='#262b3d', edgecolor='#3d5a80', labelcolor='#c5d1de', fontsize=10)
-        ax.grid(True, alpha=0.3, color='#3d5a80')
-
-        self.fig4.tight_layout()
-
-    def _plot_1d_intersection(self):
-        """Plot intersection for 1D structures (Cubic, Octahedron) - find closest radius from two feature curves"""
-        from scipy.interpolate import interp1d
-
-        ax = self.fig4.add_subplot(111)
-        ax.set_facecolor('#1e2330')
-
-        # Get family data
-        df_family = self.df[self.df['cell_type'] == self.nearest_family].copy()
-
-        if len(df_family) < 2:
-            ax.text(0.5, 0.5, 'Insufficient data', ha='center', va='center',
-                   transform=ax.transAxes, color='#c5d1de', fontsize=14)
-            return
-
-        # Sort by radius
-        df_family = df_family.sort_values('strut_radius')
-        radius = df_family['strut_radius'].values
-        values1 = df_family[self.f1].values
-        values2 = df_family[self.f2].values
-
-        # Create fine radius grid
-        radius_fine = np.linspace(radius.min(), radius.max(), 200)
-
-        # Interpolate both features - 使用高斯平滑
-        from scipy.ndimage import gaussian_filter1d
-        try:
-            interp_f1 = interp1d(radius, values1, kind='cubic', fill_value='extrapolate')
-            interp_f2 = interp1d(radius, values2, kind='cubic', fill_value='extrapolate')
-            values1_fine = gaussian_filter1d(interp_f1(radius_fine), sigma=2)
-            values2_fine = gaussian_filter1d(interp_f2(radius_fine), sigma=2)
-        except:
-            interp_f1 = interp1d(radius, values1, kind='linear', fill_value='extrapolate')
-            interp_f2 = interp1d(radius, values2, kind='linear', fill_value='extrapolate')
-            values1_fine = interp_f1(radius_fine)
-            values2_fine = interp_f2(radius_fine)
-
-        # Find intersections with target values
-        intersections_f1 = []
-        intersections_f2 = []
-
-        for i in range(len(values1_fine) - 1):
-            if (values1_fine[i] - self.v1) * (values1_fine[i+1] - self.v1) <= 0:
-                t = (self.v1 - values1_fine[i]) / (values1_fine[i+1] - values1_fine[i] + 1e-10)
-                r_intersect = radius_fine[i] + t * (radius_fine[i+1] - radius_fine[i])
-                intersections_f1.append(r_intersect)
-
-        for i in range(len(values2_fine) - 1):
-            if (values2_fine[i] - self.v2) * (values2_fine[i+1] - self.v2) <= 0:
-                t = (self.v2 - values2_fine[i]) / (values2_fine[i+1] - values2_fine[i] + 1e-10)
-                r_intersect = radius_fine[i] + t * (radius_fine[i+1] - radius_fine[i])
-                intersections_f2.append(r_intersect)
-
-        # Plot curves (normalized for comparison)
-        # Normalize to 0-1 range for visualization
-        v1_min, v1_max = values1_fine.min(), values1_fine.max()
-        v2_min, v2_max = values2_fine.min(), values2_fine.max()
-
-        norm1 = (values1_fine - v1_min) / (v1_max - v1_min + 1e-10)
-        norm2 = (values2_fine - v2_min) / (v2_max - v2_min + 1e-10)
-        target1_norm = (self.v1 - v1_min) / (v1_max - v1_min + 1e-10)
-        target2_norm = (self.v2 - v2_min) / (v2_max - v2_min + 1e-10)
-
-        f1_display = self.f1.replace('comp_', 'Comp ').replace('shear_', 'Shear ').replace('_', ' ').title()
-        f2_display = self.f2.replace('comp_', 'Comp ').replace('shear_', 'Shear ').replace('_', ' ').title()
-
-        ax.plot(radius_fine, norm1, 'b-', linewidth=2, label=f'{f1_display} (normalized)')
-        ax.plot(radius_fine, norm2, 'r-', linewidth=2, label=f'{f2_display} (normalized)')
-
-        # Plot target lines
-        ax.axhline(y=target1_norm, color='blue', linestyle='--', linewidth=1.5, alpha=0.7)
-        ax.axhline(y=target2_norm, color='red', linestyle='--', linewidth=1.5, alpha=0.7)
-
-        # Plot intersection points
-        for r in intersections_f1:
-            ax.axvline(x=r, color='blue', linestyle=':', linewidth=1.5, alpha=0.5)
-            ax.scatter([r], [target1_norm], marker='s', s=100, c='blue', edgecolors='white', linewidths=1.5, zorder=5)
-
-        for r in intersections_f2:
-            ax.axvline(x=r, color='red', linestyle=':', linewidth=1.5, alpha=0.5)
-            ax.scatter([r], [target2_norm], marker='s', s=100, c='red', edgecolors='white', linewidths=1.5, zorder=5)
-
-        # Find optimal radius (closest intersection from both curves)
-        optimal_radius = None
-        is_approximation = False
-
-        if intersections_f1 and intersections_f2:
-            # Find the closest pair of intersections
-            min_dist = float('inf')
-            for r1 in intersections_f1:
-                for r2 in intersections_f2:
-                    dist = abs(r1 - r2)
-                    if dist < min_dist:
-                        min_dist = dist
-                        optimal_radius = (r1 + r2) / 2
-        else:
-            # 没有找到交点，寻找最接近目标值的点
-            is_approximation = True
-            # 计算每个点到两个目标值的归一化距离
-            combined_dist = np.sqrt((norm1 - target1_norm)**2 + (norm2 - target2_norm)**2)
-            min_idx = np.argmin(combined_dist)
-            optimal_radius = radius_fine[min_idx]
-
-        if optimal_radius is not None:
-            if is_approximation:
-                ax.axvline(x=optimal_radius, color='orange', linestyle='-', linewidth=3, alpha=0.8)
-                ax.scatter([optimal_radius], [0.5], marker='s', s=300, c='orange',
-                          edgecolors='white', linewidths=2, zorder=10,
-                          label=f'Closest R={optimal_radius:.3f}')
-            else:
-                ax.axvline(x=optimal_radius, color='green', linestyle='-', linewidth=3, alpha=0.8)
-                ax.scatter([optimal_radius], [0.5], marker='*', s=400, c='green',
-                          edgecolors='white', linewidths=2, zorder=10,
-                          label=f'Optimal R={optimal_radius:.3f}')
-
-            # Store best sample info (transform=8 for these structures)
-            self.best_samples = [{
-                'sample_name': f'{self.nearest_family}_5_{optimal_radius:.3f}_8'.replace('.', 'p'),
-                'cell_type': self.nearest_family,
-                'radius': optimal_radius,
-                'slider': 8,  # Fixed transform for 1D structures
-                'predicted_f1': float(interp_f1(optimal_radius)),
-                'predicted_f2': float(interp_f2(optimal_radius)),
-                'is_approximation': is_approximation
-            }]
-
-        # Style
-        ax.set_xlabel('Strut Radius (mm)', color='#c5d1de', fontsize=12, fontweight='bold')
-        ax.set_ylabel('Normalized Feature Value', color='#c5d1de', fontsize=12, fontweight='bold')
-        ax.set_title(f'{self.nearest_family} - 1D Feature Intersection (Radius Only)', color='#e1e8f0', fontsize=14, fontweight='bold')
-        ax.tick_params(colors='#c5d1de')
-        ax.spines['bottom'].set_color('#3d5a80')
-        ax.spines['top'].set_color('#3d5a80')
-        ax.spines['left'].set_color('#3d5a80')
-        ax.spines['right'].set_color('#3d5a80')
-        ax.legend(facecolor='#262b3d', edgecolor='#3d5a80', labelcolor='#c5d1de', fontsize=9, loc='best')
-        ax.grid(True, alpha=0.3, color='#3d5a80')
-
-        self.fig4.tight_layout()
-
-    def _find_contour_intersection(self, contour1, contour2):
-        """Find the intersection point of two contour sets"""
-        try:
-            if not hasattr(contour1, 'allsegs') or not hasattr(contour2, 'allsegs'):
-                return None, None
-
-            if len(contour1.allsegs) == 0 or len(contour2.allsegs) == 0:
-                return None, None
-
-            if len(contour1.allsegs[0]) == 0 or len(contour2.allsegs[0]) == 0:
-                return None, None
-
-            # Merge all segments
-            points1 = np.vstack(contour1.allsegs[0]) if contour1.allsegs[0] else np.array([])
-            points2 = np.vstack(contour2.allsegs[0]) if contour2.allsegs[0] else np.array([])
-
-            if len(points1) == 0 or len(points2) == 0:
-                return None, None
-
-            # Find closest pair
-            distances = cdist(points1, points2)
-            min_idx = np.unravel_index(distances.argmin(), distances.shape)
-
-            closest1 = points1[min_idx[0]]
-            closest2 = points2[min_idx[1]]
-            best_point = (closest1 + closest2) / 2
-
-            return best_point[0], best_point[1]
-
-        except Exception as e:
-            print(f"Error finding intersection: {e}")
-            return None, None
 
 
 class ModernInterface(QMainWindow):
@@ -1891,11 +96,17 @@ class ModernInterface(QMainWindow):
         # 启用鼠标追踪以便更新光标
         self.setMouseTracking(True)
 
-        # 检测操作系统并设置适当的窗口大小
+        # 检测操作系统并设置适当的窗口大小（按屏幕可用区域自适应）
         import platform
         if platform.system() != "Linux":
-            # Windows和其他系统设置初始尺寸和位置
-            self.setGeometry(100, 100, 1950, 1040)  # 1500*1.3=1950, 800*1.3=1040
+            from PyQt5.QtWidgets import QDesktopWidget
+            screen = QDesktopWidget().availableGeometry()
+            # 取屏幕 85% 宽高，但不超过 1950×1040（避免 4K 屏过大），不低于 1280×800
+            w = max(1280, min(1950, int(screen.width() * 0.85)))
+            h = max(800,  min(1040, int(screen.height() * 0.85)))
+            x = screen.x() + (screen.width()  - w) // 2
+            y = screen.y() + (screen.height() - h) // 2
+            self.setGeometry(x, y, w, h)
         # Linux: 不设置窗口几何，让窗口管理器决定位置和尺寸
         # 设置窗口图标
         self.set_window_icon()
@@ -2253,15 +464,13 @@ class ModernInterface(QMainWindow):
             lattice_layout.setContentsMargins(0, 0, 0, 0)
             lattice_layout.setSpacing(5)
 
-            # Lattice复选框
-            self.lattice_checkbox = QCheckBox("Lattice:")
-            self.lattice_checkbox.setObjectName("viz_checkbox")
-            self.lattice_checkbox.setChecked(False)
-            self.lattice_checkbox.toggled.connect(self.on_lattice_toggle)
+            # "Lattice:" 标签（左侧标识）
+            lattice_label = QLabel("Lattice:")
+            lattice_label.setStyleSheet("color: #c5d1de; font-size: 13px; font-weight: bold;")
             icon_path = get_icon_path("icon_lattice.svg")
             if icon_path:
-                self.lattice_checkbox.setIcon(QIcon(icon_path))
-            lattice_layout.addWidget(self.lattice_checkbox)
+                lattice_label.setPixmap(QIcon(icon_path).pixmap(16, 16))
+            lattice_layout.addWidget(lattice_label)
 
             # Lattice尺寸输入框样式
             lattice_input_style = """
@@ -2287,41 +496,88 @@ class ModernInterface(QMainWindow):
             from PyQt5.QtGui import QIntValidator
             int_validator = QIntValidator(1, 99)
 
-            # Lattice尺寸输入框: a×b×c
-            self.lattice_a_input = QLineEdit("3")
-            self.lattice_a_input.setFixedWidth(32)
-            self.lattice_a_input.setAlignment(Qt.AlignCenter)
-            self.lattice_a_input.setValidator(int_validator)
-            self.lattice_a_input.setToolTip("X方向晶胞数量 (a)")
-            self.lattice_a_input.setStyleSheet(lattice_input_style)
-            self.lattice_a_input.editingFinished.connect(self.on_lattice_size_changed)
-            lattice_layout.addWidget(self.lattice_a_input)
+            # +/- 按钮样式
+            spin_btn_style = """
+                QPushButton {
+                    background-color: #2a3040;
+                    color: #c5d1de;
+                    border: 1px solid #3d5a80;
+                    border-radius: 3px;
+                    font-size: 14px;
+                    font-weight: bold;
+                    padding: 0px;
+                }
+                QPushButton:hover { background-color: #3d5a80; }
+                QPushButton:pressed { background-color: #6c5ce7; }
+            """
+
+            def _make_lattice_spinner(default_val, tooltip, layout):
+                """创建一个带 -/数字/+ 的微调控件"""
+                btn_minus = QPushButton("-")
+                btn_minus.setFixedSize(20, 22)
+                btn_minus.setStyleSheet(spin_btn_style)
+                layout.addWidget(btn_minus)
+
+                line_edit = QLineEdit(str(default_val))
+                line_edit.setFixedWidth(28)
+                line_edit.setAlignment(Qt.AlignCenter)
+                line_edit.setValidator(int_validator)
+                line_edit.setToolTip(tooltip)
+                line_edit.setStyleSheet(lattice_input_style)
+                line_edit.editingFinished.connect(self.on_lattice_size_changed)
+                layout.addWidget(line_edit)
+
+                btn_plus = QPushButton("+")
+                btn_plus.setFixedSize(20, 22)
+                btn_plus.setStyleSheet(spin_btn_style)
+                layout.addWidget(btn_plus)
+
+                def _make_inc(le):
+                    def _inc(_checked=False):
+                        try:
+                            v = max(1, int(le.text() or "1")) + 1
+                        except ValueError:
+                            v = 2
+                        le.setText(str(min(v, 99)))
+                        self.on_lattice_size_changed()
+                    return _inc
+
+                def _make_dec(le):
+                    def _dec(_checked=False):
+                        try:
+                            v = max(1, int(le.text() or "1")) - 1
+                        except ValueError:
+                            v = 1
+                        le.setText(str(max(v, 1)))
+                        self.on_lattice_size_changed()
+                    return _dec
+
+                btn_plus.clicked.connect(_make_inc(line_edit))
+                btn_minus.clicked.connect(_make_dec(line_edit))
+                return line_edit
+
+            # Lattice尺寸: a×b×c (默认1×1×1)
+            self.lattice_a_input = _make_lattice_spinner(1, "X方向晶胞数量 (a)", lattice_layout)
 
             label_x1 = QLabel("×")
             label_x1.setStyleSheet(lattice_label_style)
             lattice_layout.addWidget(label_x1)
 
-            self.lattice_b_input = QLineEdit("3")
-            self.lattice_b_input.setFixedWidth(32)
-            self.lattice_b_input.setAlignment(Qt.AlignCenter)
-            self.lattice_b_input.setValidator(int_validator)
-            self.lattice_b_input.setToolTip("Y方向晶胞数量 (b)")
-            self.lattice_b_input.setStyleSheet(lattice_input_style)
-            self.lattice_b_input.editingFinished.connect(self.on_lattice_size_changed)
-            lattice_layout.addWidget(self.lattice_b_input)
+            self.lattice_b_input = _make_lattice_spinner(1, "Y方向晶胞数量 (b)", lattice_layout)
 
             label_x2 = QLabel("×")
             label_x2.setStyleSheet(lattice_label_style)
             lattice_layout.addWidget(label_x2)
 
-            self.lattice_c_input = QLineEdit("2")
-            self.lattice_c_input.setFixedWidth(32)
-            self.lattice_c_input.setAlignment(Qt.AlignCenter)
-            self.lattice_c_input.setValidator(int_validator)
-            self.lattice_c_input.setToolTip("Z方向晶胞数量 (c)")
-            self.lattice_c_input.setStyleSheet(lattice_input_style)
-            self.lattice_c_input.editingFinished.connect(self.on_lattice_size_changed)
-            lattice_layout.addWidget(self.lattice_c_input)
+            self.lattice_c_input = _make_lattice_spinner(1, "Z方向晶胞数量 (c)", lattice_layout)
+
+            # Render复选框（放在a×b×c右边）
+            self.lattice_checkbox = QCheckBox("Render")
+            self.lattice_checkbox.setObjectName("viz_checkbox")
+            self.lattice_checkbox.setChecked(False)
+            self.lattice_checkbox.toggled.connect(self.on_lattice_toggle)
+            self.lattice_checkbox.setToolTip("勾选后渲染实体mesh（较慢），未勾选显示网格线（快速）")
+            lattice_layout.addWidget(self.lattice_checkbox)
 
             checkbox_layout.addWidget(lattice_container)
 
@@ -2359,7 +615,7 @@ class ModernInterface(QMainWindow):
             self.save_view_btn.setObjectName("save_view_btn")
             self.save_view_btn.setFixedSize(44, 44)
             self.save_view_btn.clicked.connect(self.on_save_view_clicked)
-            self.save_view_btn.setToolTip("Save View as SVG")
+            self.save_view_btn.setToolTip("Save as STL")
             self.save_view_btn.setAttribute(Qt.WA_TranslucentBackground)
             icon_path = get_icon_path("icon_dataset.svg")
             if icon_path:
@@ -2409,7 +665,9 @@ class ModernInterface(QMainWindow):
             # Add panels to splitter
             splitter.addWidget(left_panel)
             splitter.addWidget(right_panel)
-            splitter.setSizes([650, 1040])  # 500*1.3=650, 800*1.3=1040
+            # 左右面板按窗口宽度 38:62 分割，保证缩放后比例不变
+            win_w = self.width() if self.width() > 0 else 1690
+            splitter.setSizes([int(win_w * 0.38), int(win_w * 0.62)])
         else:
             # 不显示可视化，只添加左侧控制面板
             self.visualization_widget = None
@@ -3394,8 +1652,16 @@ class ModernInterface(QMainWindow):
                     self.checkbox_labels[label_text].setStyleSheet("color: #6b7785; font-size: 29px; font-weight: 600; padding: 10px 0;")
 
     def closeEvent(self, event):
-        """窗口关闭时保存设置"""
+        """窗口关闭时保存设置并清理 plotter"""
         self.save_settings()
+        # 显式关闭 pyvistaqt plotter，避免 GC 时 _Iren 递归崩溃
+        if hasattr(self, 'visualization_widget') and self.visualization_widget is not None:
+            plotter = getattr(self.visualization_widget, 'plotter', None)
+            if plotter is not None:
+                try:
+                    plotter.close()
+                except Exception:
+                    pass
         event.accept()
 
     def switch_to_page(self, page_index):
@@ -3539,25 +1805,12 @@ class ModernInterface(QMainWindow):
             # 每次启动都使用默认视角
             self.visualization_widget.update_visualization(cell_type, slider_value, radius, cell_size, reset_view_angle=True)
 
-            # 如果是Lattice模式，调整相机视角
+            # 如果是Lattice模式，自动适配相机
             if hasattr(self, 'lattice_checkbox') and self.lattice_checkbox.isChecked():
-                from PyQt5.QtWidgets import QApplication
-                QApplication.processEvents()
-
-                from visualization_widget import VISUALIZATION_AVAILABLE
-                if VISUALIZATION_AVAILABLE and self.visualization_widget.plotter is not None:
-                    camera = self.visualization_widget.plotter.camera
-                    # Lattice选中: 调整焦点到3×3×2阵列中心
-                    lattice_center = (cell_size * 1.0, cell_size * 1.0, cell_size * 0.5)
-                    camera.SetFocalPoint(lattice_center)
-
-                    # 调整相机位置
-                    current_pos = camera.GetPosition()
-                    current_focal = camera.GetFocalPoint()
-                    direction = [current_pos[i] - current_focal[i] for i in range(3)]
-                    new_position = [lattice_center[i] + direction[i] * 3.0 for i in range(3)]
-                    camera.SetPosition(new_position)
-                    print(f"[Camera] Lattice view - Center: {lattice_center}, New position: {new_position}")
+                lattice_a = self.get_lattice_value(self.lattice_a_input, 1)
+                lattice_b = self.get_lattice_value(self.lattice_b_input, 1)
+                lattice_c = self.get_lattice_value(self.lattice_c_input, 1)
+                self._adjust_camera_for_lattice(lattice_a, lattice_b, lattice_c, cell_size)
 
     def generate_config(self):
         # 直接生成单个配置
@@ -3643,6 +1896,9 @@ class ModernInterface(QMainWindow):
                 shear_setting = config.get('Shear', 'StaShear')
                 analysis_type = shear_setting
 
+            # 检查阵列模式
+            lattice_array = self._get_lattice_array()
+
             # 生成脚本（批量模式）
             success, message, filename = generate_abaqus_script(
                 cell_type=cell_type,
@@ -3652,7 +1908,8 @@ class ModernInterface(QMainWindow):
                 mode_type=mode_type,
                 analysis_type=analysis_type,
                 batch_mode=True,
-                batch_parent_dir=self.batch_parent_dir
+                batch_parent_dir=self.batch_parent_dir,
+                lattice_array=lattice_array
             )
 
             if success:
@@ -3724,6 +1981,9 @@ class ModernInterface(QMainWindow):
                 # shear_setting可能是 "StaShear" 或 "DynaShear_500" 等
                 analysis_type = shear_setting
 
+            # 检查阵列模式
+            lattice_array = self._get_lattice_array()
+
             # 生成脚本
             success, message, filename = generate_abaqus_script(
                 cell_type=cell_type,
@@ -3731,7 +1991,8 @@ class ModernInterface(QMainWindow):
                 cell_radius=float(cell_radius),
                 slider=slider_value,
                 mode_type=mode_type,
-                analysis_type=analysis_type
+                analysis_type=analysis_type,
+                lattice_array=lattice_array
             )
 
             if success:
@@ -4231,13 +2492,24 @@ class ModernInterface(QMainWindow):
         except (ValueError, AttributeError):
             return default
 
+    def _get_lattice_array(self):
+        """Read lattice array (a, b, c) from the UI spinners.
+
+        Always reads the current spinner values regardless of Render checkbox
+        state — Render only controls visualization, not script generation.
+        """
+        a = self.get_lattice_value(self.lattice_a_input, 1) if hasattr(self, 'lattice_a_input') else 1
+        b = self.get_lattice_value(self.lattice_b_input, 1) if hasattr(self, 'lattice_b_input') else 1
+        c = self.get_lattice_value(self.lattice_c_input, 1) if hasattr(self, 'lattice_c_input') else 1
+        return (a, b, c)
+
     def on_lattice_toggle(self, checked):
         """Toggle lattice array display (a×b×c cells)"""
         if hasattr(self, 'visualization_widget') and self.visualization_widget is not None:
             # 获取当前lattice尺寸
-            lattice_a = self.get_lattice_value(self.lattice_a_input, 3)
-            lattice_b = self.get_lattice_value(self.lattice_b_input, 3)
-            lattice_c = self.get_lattice_value(self.lattice_c_input, 2)
+            lattice_a = self.get_lattice_value(self.lattice_a_input, 1)
+            lattice_b = self.get_lattice_value(self.lattice_b_input, 1)
+            lattice_c = self.get_lattice_value(self.lattice_c_input, 1)
 
             self.visualization_widget.toggle_lattice(checked, lattice_a, lattice_b, lattice_c)
 
@@ -4253,74 +2525,46 @@ class ModernInterface(QMainWindow):
 
                 self.visualization_widget.update_visualization(cell_type, slider_value, radius, cell_size, reset_view_angle=False)
 
-                # 强制处理事件，确保可视化已经渲染
-                from PyQt5.QtWidgets import QApplication
-                QApplication.processEvents()
+                # 无论勾选/取消，都让 reset_camera 自动适配
+                self._adjust_camera_for_lattice(lattice_a, lattice_b, lattice_c, cell_size)
 
-                # 调整相机视角距离和焦点
-                from visualization_widget import VISUALIZATION_AVAILABLE
-                if VISUALIZATION_AVAILABLE and self.visualization_widget.plotter is not None:
-                    camera = self.visualization_widget.plotter.camera
-                    if checked:
-                        # Lattice选中: 调整焦点到a×b×c阵列中心,并扩大视角
-                        lattice_center = (
-                            cell_size * (lattice_a - 1) / 2.0,
-                            cell_size * (lattice_b - 1) / 2.0,
-                            cell_size * (lattice_c - 1) / 2.0
-                        )
-                        camera.SetFocalPoint(lattice_center)
+    def _adjust_camera_for_lattice(self, lattice_a, lattice_b, lattice_c, cell_size):
+        """Adjust camera to fit the full lattice array in the viewport."""
+        from visualization_widget import VISUALIZATION_AVAILABLE
+        if not (VISUALIZATION_AVAILABLE and self.visualization_widget.plotter is not None):
+            return
 
-                        # 调整相机位置以保持视角方向,但距离更远
-                        # 获取当前的视角方向
-                        current_pos = camera.GetPosition()
-                        current_focal = camera.GetFocalPoint()
-
-                        # 计算从焦点到相机的方向向量
-                        direction = [current_pos[i] - current_focal[i] for i in range(3)]
-
-                        # 根据lattice大小调整相机距离
-                        max_dim = max(lattice_a, lattice_b, lattice_c)
-                        distance_factor = max(1.5, max_dim / 2.0)
-                        new_position = [lattice_center[i] + direction[i] * distance_factor for i in range(3)]
-                        camera.SetPosition(new_position)
-
-                        print(f"[Camera] Lattice view ({lattice_a}×{lattice_b}×{lattice_c}) - Center: {lattice_center}, New position: {new_position}")
-                    else:
-                        # Lattice取消: 恢复默认焦点(原点)和视角
-                        camera.SetFocalPoint(0, 0, 0)
-
-                        # 重置相机到默认视角
-                        self.visualization_widget.plotter.reset_camera()
-                        camera.elevation = 20
-                        camera.azimuth = 135
-
-                        print("[Camera] Restored to default view (origin)")
-
-                    # 重置相机裁剪范围以适应新的场景大小
-                    camera.Modified()
-                    self.visualization_widget.plotter.reset_camera_clipping_range()
-
-                    # 强制重新渲染以立即显示新视角
-                    self.visualization_widget.plotter.render()
-
-                    # 强制刷新渲染窗口
-                    render_window = self.visualization_widget.plotter.render_window
-                    if render_window:
-                        render_window.Modified()
-                        render_window.Render()
-
-                    # 强制更新Qt interactor
-                    if hasattr(self.visualization_widget, 'interactor'):
-                        self.visualization_widget.interactor.update()
-                        self.visualization_widget.interactor.repaint()
-
-                    QApplication.processEvents()
+        try:
+            plotter = self.visualization_widget.plotter
+            # reset_camera 自动根据场景中所有 mesh 的 bounds 调整焦点和距离
+            plotter.reset_camera()
+            plotter.render()
+        except Exception as e:
+            print(f"[Camera] adjust failed: {e}")
 
     def on_lattice_size_changed(self):
-        """Handle lattice size input changes"""
-        # 只在Lattice模式启用时更新可视化
-        if hasattr(self, 'lattice_checkbox') and self.lattice_checkbox.isChecked():
-            self.on_lattice_toggle(True)
+        """Handle lattice size input changes — 始终刷新可视化（无论Lattice是否勾选）"""
+        if hasattr(self, 'visualization_widget') and self.visualization_widget is not None:
+            a = self.get_lattice_value(self.lattice_a_input, 1)
+            b = self.get_lattice_value(self.lattice_b_input, 1)
+            c = self.get_lattice_value(self.lattice_c_input, 1)
+            # Skip if values unchanged
+            if (a == self.visualization_widget.lattice_a and
+                b == self.visualization_widget.lattice_b and
+                c == self.visualization_widget.lattice_c):
+                return
+            # 更新widget内部lattice尺寸
+            self.visualization_widget.lattice_a = a
+            self.visualization_widget.lattice_b = b
+            self.visualization_widget.lattice_c = c
+            # 触发重新渲染（使用当前UI参数）
+            cell_type = self.dropdowns["Cell type :"].currentText() if "Cell type :" in self.dropdowns else "Cubic"
+            slider_value = self.get_transform_value()
+            radius = self.get_strut_radius_value()
+            cell_size = self.cell_size_slider.value() / 10.0 if hasattr(self, 'cell_size_slider') else 5.0
+            self.visualization_widget.update_visualization(cell_type, slider_value, radius, cell_size, reset_view_angle=False)
+            # 调整相机视角和Grid自适应
+            self._adjust_camera_for_lattice(a, b, c, cell_size)
 
     def on_grid_toggle(self, checked):
         """Toggle grid coordinate display"""
@@ -4328,76 +2572,67 @@ class ModernInterface(QMainWindow):
             self.visualization_widget.toggle_grid(checked)
 
     def on_save_view_clicked(self):
-        """Save current 3D view as SVG and Blend files"""
+        """Save current 3D structure as watertight STL"""
         if not hasattr(self, 'visualization_widget') or self.visualization_widget is None:
             return
 
         from PyQt5.QtWidgets import QFileDialog
         import os
 
-        # 获取当前cell type作为默认文件名
+        # 构建文件名: celltype_size_radius_transform_AxBxC
         cell_type = "structure"
-        if hasattr(self, 'cell_type_combo'):
-            cell_type = self.cell_type_combo.currentText()
+        if hasattr(self, 'dropdowns') and "Cell type :" in self.dropdowns:
+            cell_type = self.dropdowns["Cell type :"].currentText()
+        elif hasattr(self, 'dropdowns_page2') and "Cell type:" in self.dropdowns_page2:
+            cell_type = self.dropdowns_page2["Cell type:"].currentText()
 
-        # 获取lattice尺寸信息
-        lattice_suffix = ""
+        parts = [cell_type]
+        try:
+            if hasattr(self, 'cell_size_slider'):
+                parts.append(str(self.cell_size_slider.value() / 10.0))
+        except Exception:
+            pass
+        try:
+            parts.append(str(self.get_strut_radius_value()))
+        except Exception:
+            pass
+        try:
+            parts.append(str(int(self.get_transform_value())))
+        except Exception:
+            pass
+
         if hasattr(self, 'lattice_checkbox') and self.lattice_checkbox.isChecked():
-            a = self.get_lattice_value(self.lattice_a_input, 3)
-            b = self.get_lattice_value(self.lattice_b_input, 3)
-            c = self.get_lattice_value(self.lattice_c_input, 2)
-            lattice_suffix = f"_{a}x{b}x{c}"
+            a = self.get_lattice_value(self.lattice_a_input, 1)
+            b = self.get_lattice_value(self.lattice_b_input, 1)
+            c = self.get_lattice_value(self.lattice_c_input, 1)
+            parts.append(f"{a}{b}{c}")
 
-        # 默认保存路径
+        default_filename = "_".join(str(p) for p in parts)
+
         default_dir = os.path.join(os.path.dirname(__file__), "work")
         if not os.path.exists(default_dir):
             default_dir = os.path.dirname(__file__)
 
-        default_filename = f"{cell_type}{lattice_suffix}"
-        default_path = os.path.join(default_dir, default_filename)
+        default_path = os.path.join(default_dir, default_filename + ".stl")
 
-        # 打开文件保存对话框
         filepath, _ = QFileDialog.getSaveFileName(
             self,
-            "Save 3D View (SVG + Blend)",
+            "Save Watertight STL",
             default_path,
-            "All Files (*)"
+            "STL Files (*.stl)"
         )
 
         if filepath:
-            # 移除扩展名（如果用户输入了的话）
-            base_path = os.path.splitext(filepath)[0]
-
-            svg_path = base_path + ".svg"
-            blend_path = base_path + ".blend"
-            stl_path = base_path + ".stl"
-
-            # 保存SVG
-            svg_success = self.visualization_widget.save_screenshot_svg(svg_path)
-
-            # 保存Blend
-            blend_success = self.visualization_widget.save_blend(blend_path)
-
-            # 保存STL
-            stl_success = self.visualization_widget.save_stl(stl_path)
-
-            # 显示结果
-            results = []
-            if svg_success:
-                results.append(f"SVG: {svg_path}")
-            if blend_success:
-                results.append(f"Blend: {blend_path}")
+            from PyQt5.QtWidgets import QMessageBox
+            if not filepath.lower().endswith('.stl'):
+                filepath += '.stl'
+            stl_success = self.visualization_widget.save_stl(filepath)
             if stl_success:
-                results.append(f"STL: {stl_path}")
-
-            if results:
-                print(f"已保存: {', '.join(results)}")
-                try:
-                    os.startfile(svg_path)
-                except Exception:
-                    pass
+                QMessageBox.information(self, "Export Success",
+                    f"Watertight STL saved:\n{filepath}")
             else:
-                print("保存失败")
+                QMessageBox.warning(self, "Export Failed",
+                    "STL export failed. Check console for details.")
 
     def on_limit_range_toggle(self, checked, update_visualization=True):
         """

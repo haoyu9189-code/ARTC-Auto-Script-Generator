@@ -29,7 +29,9 @@ class Config:
     PBS_NODES = int(os.getenv('PBS_NODES', 1))  # 节点数
     PBS_NCPUS = int(os.getenv('PBS_NCPUS', 8))  # CPU核心数
     PBS_MEMORY = os.getenv('PBS_MEM', "16gb")  # 内存大小 (优化: 从64gb降至16gb，基于实际使用2-2.5GB)
-    PBS_WALLTIME = os.getenv('PBS_WALLTIME', "168:00:00")  # 作业时间限制
+    PBS_WALLTIME = os.getenv('PBS_WALLTIME', "168:00:00")  # 作业时间限制（批量）
+    PBS_PER_JOB_WALLTIME = os.getenv('PBS_PER_JOB_WALLTIME', "24:00:00")  # 单任务时间限制
+    PBS_PER_JOB_MEMORY = os.getenv('PBS_PER_JOB_MEM', "8gb")  # 单任务内存
     PBS_JOIN_OE = os.getenv('PBS_JOIN_OE', "oe")  # 合并输出和错误日志 (oe=合并, n=分离)
 
     # ========== SLURM 集群配置 ==========
@@ -41,13 +43,21 @@ class Config:
     SLURM_MEMORY = os.getenv('SLURM_MEM', "64G")  # 内存大小
 
     # ========== Abaqus 配置 ==========
-    ABAQUS_MODULE = os.getenv('ABAQUS_MODULE', "abaqus")  # Abaqus模块名
+    ABAQUS_MODULE = os.getenv('ABAQUS_MODULE', "abaqus/2023u4")  # Abaqus模块名（含版本号）
     ABAQUS_COMMAND = os.getenv('ABAQUS_CMD', "abaqus cae noGUI")  # Abaqus执行命令
 
     # ========== 脚本生成配置 ==========
     BASE_CELL_SIZE = float(os.getenv('BASE_CELL_SIZE', 5.0))  # 基础晶胞尺寸
     DEFAULT_SLIDER_VALUE = int(os.getenv('DEFAULT_SLIDER', 4))  # 默认滑块值
     SLIDER_RANGE = (0, 9)  # 滑块范围
+
+    # ========== 球径比配置（节点球半径 = 杆半径 × ratio） ==========
+    # 预览和 STL 导出: 1.0 → 球与杆等径，外观干净
+    # Abaqus 脚本生成: 1.0 → 节点不再过厚，保留塑性铰/旋转机制
+    #   注：1.2 会过度刚化节点，废掉 Auxetic / Re-entrant 等铰链主导拓扑
+    #   的负泊松机制，使仿真曲线变成"持续硬化"而非"yield-plateau"。
+    SPHERE_RADIUS_RATIO_PREVIEW = float(os.getenv('SPHERE_RATIO_PREVIEW', 1.0))
+    SPHERE_RADIUS_RATIO_SCRIPT = float(os.getenv('SPHERE_RATIO_SCRIPT', 1.0))
 
     # ========== 数据处理配置 ==========
     INTERPOLATION_POINTS = int(os.getenv('INTERP_POINTS', 100))  # 插值点数

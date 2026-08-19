@@ -17,6 +17,7 @@ import subprocess
 import tempfile
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 from structure_set import get_crystal_structure
+from config import Config
 
 # 根据操作系统选择性导入可视化库
 # 默认不显示可视化，只有系统为 "Windows" 时才显示
@@ -44,6 +45,13 @@ if VISUALIZATION_AVAILABLE:
         pv.vtk.vtkObject.GlobalWarningDisplayOff()
     except Exception:
         pass
+
+# Manifold3D for watertight boolean union
+try:
+    import manifold3d
+    MANIFOLD3D_AVAILABLE = True
+except ImportError:
+    MANIFOLD3D_AVAILABLE = False
 
 
 class CellVisualizationWidget(QWidget):
@@ -132,9 +140,9 @@ class CellVisualizationWidget(QWidget):
         self.grid_actor = None  # 存储网格actor引用
 
         # Lattice dimensions (a×b×c)
-        self.lattice_a = 3  # X方向晶胞数量
-        self.lattice_b = 3  # Y方向晶胞数量
-        self.lattice_c = 2  # Z方向晶胞数量
+        self.lattice_a = 1  # X方向晶胞数量
+        self.lattice_b = 1  # Y方向晶胞数量
+        self.lattice_c = 1  # Z方向晶胞数量
 
         # Stats text actor
         self.stats_text_actor = None  # 存储统计信息文字actor
@@ -308,6 +316,92 @@ class CellVisualizationWidget(QWidget):
 
         return points, connections
 
+    def _build_manifold_mesh(self, display_points, connections, radius, cell_size, segments=12):
+        """用 manifold3d 原语构建水密 mesh (单 cell 或 lattice)，返回 PyVista PolyData。"""
+        print(f"[Solid.build] ENTER: la={self.lattice_a} lb={self.lattice_b} lc={self.lattice_c}, cs={cell_size}")
+        sphere_r = radius * Config.SPHERE_RADIUS_RATIO_PREVIEW
+
+        # 构建单个 unit cell 的 manifold3d parts
+        base_parts = []
+        for conn in connections:
+            strut = self._build_manifold_strut(
+                display_points[conn[0]], display_points[conn[1]], radius, segments)
+            if strut is not None:
+                base_parts.append(strut)
+        # 坐标去重：Auxetic 等存在同位置异名点，避免重合球产生 union 伪影
+        unique_pts = np.unique(np.round(np.asarray(display_points), 6), axis=0)
+        for pt in unique_pts:
+            sph = manifold3d.Manifold.sphere(float(sphere_r), segments)
+            sph = sph.translate([float(pt[0]), float(pt[1]), float(pt[2])])
+            base_parts.append(sph)
+
+        if not base_parts:
+            return None
+
+        # Lattice 阵列: 复制 + 平移 (display 坐标系 Y/Z 已交换)
+        la, lb, lc = self.lattice_a, self.lattice_b, self.lattice_c
+        if la > 1 or lb > 1 or lc > 1:
+            parts = []
+            for k in range(lc):
+                for i in range(la):
+                    for j in range(lb):
+                        off = [float(i * cell_size), float(k * cell_size), float(j * cell_size)]
+                        for bp in base_parts:
+                            parts.append(bp.translate(off))
+        else:
+            parts = base_parts
+
+        result = self._batch_union(parts)
+        if result is None or result.num_tri() == 0:
+            return None
+
+        return self._manifold_to_pv(result)
+
+    @staticmethod
+    def _build_manifold_strut(p0, p1, radius, segments=12):
+        """用 manifold3d 原语创建一根从 p0 到 p1 的圆柱 (水密)。"""
+        d = p1 - p0
+        L = float(np.linalg.norm(d))
+        if L < 1e-6:
+            return None
+        d_unit = d / L
+
+        cyl = manifold3d.Manifold.cylinder(L, float(radius), float(radius), segments)
+
+        # 旋转: Z轴 -> d_unit
+        z = np.array([0.0, 0.0, 1.0])
+        cross_v = np.cross(z, d_unit)
+        dot_v = float(np.dot(z, d_unit))
+
+        if np.linalg.norm(cross_v) < 1e-8:
+            rot = np.eye(3) if dot_v > 0 else np.diag([1.0, -1.0, -1.0])
+        else:
+            cross_n = cross_v / np.linalg.norm(cross_v)
+            angle = np.arccos(np.clip(dot_v, -1, 1))
+            K = np.array([
+                [0, -cross_n[2], cross_n[1]],
+                [cross_n[2], 0, -cross_n[0]],
+                [-cross_n[1], cross_n[0], 0]
+            ])
+            rot = np.eye(3) + np.sin(angle) * K + (1 - np.cos(angle)) * K @ K
+
+        # manifold3d transform: 3x4 矩阵 [R | t]
+        mat = [[rot[0][0], rot[0][1], rot[0][2], float(p0[0])],
+               [rot[1][0], rot[1][1], rot[1][2], float(p0[1])],
+               [rot[2][0], rot[2][1], rot[2][2], float(p0[2])]]
+        return cyl.transform(mat)
+
+    @staticmethod
+    def _manifold_to_pv(manifold_obj):
+        """manifold3d Manifold -> PyVista PolyData"""
+        out = manifold_obj.to_mesh()
+        verts = np.array(out.vert_properties[:, :3])
+        faces = np.array(out.tri_verts, dtype=np.int32)
+        n = len(faces)
+        pv_faces = np.column_stack([np.full(n, 3, dtype=np.int32), faces]).ravel()
+        return pv.PolyData(verts, pv_faces)
+
+
     def update_visualization(self, cell_type, slider_value=4, radius=0.3, cell_size=5.0, reset_view_angle=True, resolution=12, enable_clipping=True):
         """Update the 3D visualization based on cell type, slider value and strut radius
 
@@ -325,7 +419,7 @@ class CellVisualizationWidget(QWidget):
         if not VISUALIZATION_AVAILABLE or self.plotter is None:
             return
 
-        # Lattice模式下降低精度以提升性能
+        # Lattice模式(solid)下降低精度以提升性能
         if self.show_lattice:
             resolution = 8  # 降低精度: 12 -> 8
 
@@ -344,214 +438,110 @@ class CellVisualizationWidget(QWidget):
             # 只清空actor，不重置整个plotter
             self.plotter.clear_actors()
 
-        # 🚀 优先尝试从缓存加载mesh
-        combined_mesh = None
-        default_cell_size = 5.0  # 缓存mesh默认的cell size
+        # Always get structure data (needed for both wireframe and solid modes)
+        points, connections = self.get_cell_structure(cell_type, slider_value)
 
-        # 只在cell_size等于默认值时使用缓存，否则实时生成以确保切割和封盖正确
-        use_cache = abs(cell_size - default_cell_size) < 0.001
+        # 保存节点数和杆件数用于统计显示
+        self.current_nodes_count = len(points)
+        self.current_struts_count = len(connections)
 
-        if use_cache and self.mesh_loader and self.mesh_loader.is_full_loaded:
-            combined_mesh = self.mesh_loader.get_mesh(cell_type, slider_value, radius)
-            if combined_mesh:
-                # print(f"[OK] 使用缓存mesh: {cell_type}_{slider_value}_{radius}")
-                # 使用缓存时，需要获取节点数和杆件数用于统计显示
-                points, connections = self.get_cell_structure(cell_type, slider_value)
-                self.current_nodes_count = len(points)
-                self.current_struts_count = len(connections)
+        # 根据cell_size缩放坐标点
+        default_cell_size = 5.0
+        scale_factor = cell_size / default_cell_size
+        scaled_points = points * scale_factor
 
-        # 如果缓存中没有，则实时生成
-        if combined_mesh is None:
-            # Get structure data
-            points, connections = self.get_cell_structure(cell_type, slider_value)
+        # Swap Y and Z coordinates for display (to match previous behavior)
+        display_points = scaled_points.copy()
+        display_points[:, [1, 2]] = display_points[:, [2, 1]]  # Swap Y and Z columns
 
-            # 保存节点数和杆件数用于统计显示
-            self.current_nodes_count = len(points)
-            self.current_struts_count = len(connections)
+        combined_mesh = None  # Solid mode sets this; wireframe adds directly to plotter
 
-            # 根据cell_size缩放坐标点
-            # get_cell_structure返回的坐标基于默认cell_size=5.0
-            default_cell_size = 5.0
-            scale_factor = cell_size / default_cell_size
-            points = points * scale_factor
+        # ========== Wireframe mode (show_lattice = False): 点+线段，极快 ==========
+        if not self.show_lattice:
+            all_pts = []   # flat list of [x,y,z]
+            all_lines = [] # VTK line connectivity: [2, i0, i1, 2, i2, i3, ...]
+            pt_idx = 0
 
-            # Swap Y and Z coordinates for display (to match previous behavior)
-            display_points = points.copy()
-            display_points[:, [1, 2]] = display_points[:, [2, 1]]  # Swap Y and Z columns
+            for ix in range(self.lattice_a):
+                for iy in range(self.lattice_b):
+                    for iz in range(self.lattice_c):
+                        offset = np.array([ix * cell_size, iz * cell_size, iy * cell_size])
 
-            # 性能优化：合并所有圆柱为一个mesh
-            all_cylinders = []
+                        for conn in connections:
+                            start = display_points[conn[0]] + offset
+                            end = display_points[conn[1]] + offset
+                            all_pts.append(start)
+                            all_pts.append(end)
+                            all_lines.extend([2, pt_idx, pt_idx + 1])
+                            pt_idx += 2
 
-            # Calculate clipping limits
-            limit = cell_size / 2.0
+            if all_pts:
+                pts_array = np.array(all_pts)
+                lines_array = np.array(all_lines)
+                wire_mesh = pv.PolyData(pts_array, lines=lines_array)
 
-            # 准备裁剪平面 (如果启用)
-            planes = None
-            if enable_clipping:
-                try:
-                    import vtk
-                    planes = vtk.vtkPlaneCollection()
-
-                    # Define 6 planes with outward normals (pointing away from the box center)
-                    # This tells vtkClipClosedSurface to remove everything on the "positive" side of the plane
-
-                    # x = limit, n = (1,0,0) -> removes x > limit
-                    p = vtk.vtkPlane(); p.SetOrigin(limit, 0, 0); p.SetNormal(1, 0, 0); planes.AddItem(p)
-                    # x = -limit, n = (-1,0,0) -> removes x < -limit
-                    p = vtk.vtkPlane(); p.SetOrigin(-limit, 0, 0); p.SetNormal(-1, 0, 0); planes.AddItem(p)
-
-                    # y = limit, n = (0,1,0)
-                    p = vtk.vtkPlane(); p.SetOrigin(0, limit, 0); p.SetNormal(0, 1, 0); planes.AddItem(p)
-                    # y = -limit, n = (0,-1,0)
-                    p = vtk.vtkPlane(); p.SetOrigin(0, -limit, 0); p.SetNormal(0, -1, 0); planes.AddItem(p)
-
-                    # z = limit, n = (0,0,1)
-                    p = vtk.vtkPlane(); p.SetOrigin(0, 0, limit); p.SetNormal(0, 0, 1); planes.AddItem(p)
-                    # z = -limit, n = (0,0,-1)
-                    p = vtk.vtkPlane(); p.SetOrigin(0, 0, -limit); p.SetNormal(0, 0, -1); planes.AddItem(p)
-                except ImportError:
-                    print("Warning: VTK not available, falling back to simple clipping")
-                    planes = None
-
-            # Create cylinders for each connection
-            for connection in connections:
-                start_point = display_points[connection[0]]
-                end_point = display_points[connection[1]]
-
-                # Create PyVista cylinder
-                direction = end_point - start_point
-                length = np.linalg.norm(direction)
-
-                if length > 1e-6:
-                    center = (start_point + end_point) / 2
-                    direction_normalized = direction / length
-
-                    # Create cylinder mesh
-                    cylinder = pv.Cylinder(
-                        center=center,
-                        direction=direction_normalized,
-                        radius=radius,
-                        height=length,
-                        resolution=resolution
-                    )
-
-                    # 如果启用切割且不是lattice模式，对圆柱体进行切割和封盖
-                    # Lattice模式下，先不切割单个cell，而是复制后对整体切割
-                    if enable_clipping and planes and not self.show_lattice:
-                        cylinder = self._clip_and_cap_mesh(cylinder, limit)
-                        if cylinder is None:
-                            continue
-
-                    if cylinder.n_cells > 0 and cylinder.n_points > 0:
-                        all_cylinders.append(cylinder)
-
-            # 创建球体（在每个关键点处）
-            all_spheres = []
-            for point in display_points:
-                # 创建球体
-                sphere = pv.Sphere(
-                    radius=radius,
-                    center=point,
-                    theta_resolution=resolution,
-                    phi_resolution=resolution
+                self.plotter.add_mesh(
+                    wire_mesh,
+                    color='#d0d0e0',
+                    line_width=4,
+                    opacity=0.9,
+                    render_lines_as_tubes=True,
                 )
+                # 节点球
+                # 去重节点坐标后画点
+                unique_pts = np.unique(pts_array, axis=0)
+                node_cloud = pv.PolyData(unique_pts)
+                self.plotter.add_mesh(
+                    node_cloud,
+                    color='#8ecae6',
+                    point_size=10,
+                    render_points_as_spheres=True,
+                )
+                print(f"[Wire] {self.lattice_a}x{self.lattice_b}x{self.lattice_c}: {pt_idx // 2} lines, {len(unique_pts)} nodes")
 
-                # 如果启用切割且不是lattice模式，对球体进行切割和封盖
-                # Lattice模式下，先不切割单个cell，而是复制后对整体切割
-                if enable_clipping and planes and not self.show_lattice:
-                    sphere = self._clip_and_cap_mesh(sphere, limit)
-                    if sphere is None:
-                        continue
+        # ========== Solid mode: manifold3d primitives → union → render ==========
+        else:
+            combined_mesh = None
 
-                if sphere.n_cells > 0 and sphere.n_points > 0:
-                    all_spheres.append(sphere)
+            if MANIFOLD3D_AVAILABLE:
+                try:
+                    combined_mesh = self._build_manifold_mesh(
+                        display_points, connections, radius, cell_size, resolution)
+                except Exception as e:
+                    import traceback
+                    print(f"[Solid] manifold3d failed: {e}")
+                    traceback.print_exc()
+                    combined_mesh = None
 
-            # 合并所有圆柱和球体为一个大的mesh
-            all_meshes = all_cylinders + all_spheres
-            if all_meshes:
-                # 使用 merge 合并所有 mesh
-                combined_mesh = all_meshes[0].merge(all_meshes[1:])
+            # fallback: PyVista merge (非水密，仅预览) —— 必须遵守 lattice
+            if combined_mesh is None:
+                sphere_radius = radius * Config.SPHERE_RADIUS_RATIO_PREVIEW
+                all_meshes = []
+                for ix in range(self.lattice_a):
+                    for iy in range(self.lattice_b):
+                        for iz in range(self.lattice_c):
+                            # 与 wireframe/manifold3d 一致: display-X=a(ix), display-Y=c(iz), display-Z=b(iy)
+                            offset = np.array([ix * cell_size, iz * cell_size, iy * cell_size])
+                            for connection in connections:
+                                start = display_points[connection[0]] + offset
+                                end = display_points[connection[1]] + offset
+                                d = end - start
+                                L = np.linalg.norm(d)
+                                if L > 1e-6:
+                                    all_meshes.append(pv.Cylinder(
+                                        center=(start + end) / 2,
+                                        direction=d / L, radius=radius, height=L, resolution=resolution))
+                            for pt in display_points:
+                                all_meshes.append(pv.Sphere(
+                                    radius=sphere_radius, center=pt + offset,
+                                    theta_resolution=resolution, phi_resolution=resolution))
+                if all_meshes:
+                    combined_mesh = all_meshes[0].merge(all_meshes[1:])
 
-                # 一次性计算所有法线
+            if combined_mesh is not None and combined_mesh.n_points > 0:
                 combined_mesh = combined_mesh.compute_normals(cell_normals=False, point_normals=True)
 
-        # 创建晶格阵列: a×b×c (可配置的晶胞数量)
-        # Lattice模式：对每个圆柱/球体单独进行切割和封盖（与单个cell逻辑一致）
-        if self.show_lattice and combined_mesh and combined_mesh.n_points > 0:
-            # 获取 lattice 尺寸
-            lattice_a = self.lattice_a  # X方向晶胞数量
-            lattice_b = self.lattice_b  # Y方向晶胞数量
-            lattice_c = self.lattice_c  # Z方向晶胞数量
-
-            # 计算Lattice的切割边界
-            lattice_limit_x = cell_size * lattice_a / 2.0  # X方向半宽 (a个cell / 2)
-            lattice_limit_y = cell_size * lattice_b / 2.0  # Y方向半宽 (b个cell / 2)
-            lattice_limit_z = cell_size * lattice_c / 2.0  # Z方向半宽 (c个cell / 2)
-
-            # 计算中心点
-            center_x = cell_size * (lattice_a - 1) / 2.0
-            center_y = cell_size * (lattice_b - 1) / 2.0
-            center_z = cell_size * (lattice_c - 1) / 2.0
-
-            # 定义切割边界 (相对于原点)
-            x_min = center_x - lattice_limit_x  # = -cell_size/2
-            x_max = center_x + lattice_limit_x  # = cell_size * 2.5
-            y_min = center_y - lattice_limit_y  # = -cell_size/2
-            y_max = center_y + lattice_limit_y  # = cell_size * 2.5
-            z_min = center_z - lattice_limit_z  # = -cell_size/2
-            z_max = center_z + lattice_limit_z  # = cell_size * 1.5
-
-            # 定义晶胞位置 (i, j, k): i=X方向, j=Y方向, k=Z方向
-            positions = []
-
-            # 生成 a×b×c 的晶胞阵列
-            for k in range(lattice_c):  # Z: 0 to c-1
-                for i in range(lattice_a):  # X: 0 to a-1
-                    for j in range(lattice_b):  # Y: 0 to b-1
-                        positions.append((i, j, k))
-
-            # 收集所有圆柱和球体（每个单独处理）
-            all_lattice_meshes = []
-
-            print(f"[Lattice] Clipping bounds: X=[{x_min:.2f}, {x_max:.2f}], Y=[{y_min:.2f}, {y_max:.2f}], Z=[{z_min:.2f}, {z_max:.2f}]")
-
-            # 对每个晶胞位置，复制圆柱和球体并单独切割封盖
-            for i, j, k in positions:
-                offset = np.array([i * cell_size, j * cell_size, k * cell_size])
-
-                # 处理圆柱
-                for cyl in all_cylinders:
-                    cyl_copy = cyl.copy()
-                    cyl_copy.translate(offset, inplace=True)
-
-                    if enable_clipping:
-                        cyl_copy = self._clip_and_cap_mesh_lattice(cyl_copy, x_min, x_max, y_min, y_max, z_min, z_max)
-                        if cyl_copy is None:
-                            continue
-
-                    if cyl_copy.n_cells > 0 and cyl_copy.n_points > 0:
-                        all_lattice_meshes.append(cyl_copy)
-
-                # 处理球体
-                for sph in all_spheres:
-                    sph_copy = sph.copy()
-                    sph_copy.translate(offset, inplace=True)
-
-                    if enable_clipping:
-                        sph_copy = self._clip_and_cap_mesh_lattice(sph_copy, x_min, x_max, y_min, y_max, z_min, z_max)
-                        if sph_copy is None:
-                            continue
-
-                    if sph_copy.n_cells > 0 and sph_copy.n_points > 0:
-                        all_lattice_meshes.append(sph_copy)
-
-            # 合并所有mesh
-            if all_lattice_meshes:
-                combined_mesh = all_lattice_meshes[0].merge(all_lattice_meshes[1:])
-                combined_mesh = combined_mesh.compute_normals(cell_normals=False, point_normals=True)
-                print(f"[Lattice] Generated {len(positions)} cells ({lattice_a}×{lattice_b}×{lattice_c} array) with {len(all_lattice_meshes)} meshes")
-
-        # 渲染mesh（无论是从缓存加载还是实时生成）
+        # 渲染solid mesh（仅在solid模式下）
         if combined_mesh and combined_mesh.n_points > 0:
             # 一次性添加整个mesh（而不是逐个添加）
             # Enable Eye Dome Lighting (EDL) for enhanced depth and shadow definition
@@ -580,17 +570,11 @@ class CellVisualizationWidget(QWidget):
                     pass
                 self.grid_actor = None
 
-            # 计算网格位置和大小
-            if self.show_lattice:
-                # Lattice模式: Grid居中于a×b阵列
-                grid_center_x = cell_size * (self.lattice_a - 1) / 2.0  # a×b阵列X方向中心
-                grid_center_y = cell_size * (self.lattice_b - 1) / 2.0  # a×b阵列Y方向中心
-                grid_size = cell_size * max(self.lattice_a, self.lattice_b)  # 网格覆盖整个阵列
-            else:
-                # 单晶胞模式: Grid居中于原点
-                grid_center_x = 0
-                grid_center_y = 0
-                grid_size = cell_size
+            # 计算网格位置和大小 - display坐标Y/Z已交换
+            # display-X = a, display-Y = c, display-Z = b
+            grid_center_x = cell_size * (self.lattice_a - 1) / 2.0
+            grid_center_y = cell_size * (self.lattice_c - 1) / 2.0  # display-Y = c方向
+            grid_size = cell_size * max(self.lattice_a, self.lattice_c)  # XY平面覆盖
 
             # 创建Grid平面 (XY平面,Z=底部)
             limit = cell_size / 2.0
@@ -651,17 +635,13 @@ class CellVisualizationWidget(QWidget):
                 current_position = camera.GetPosition()
                 current_focal_point = camera.GetFocalPoint()
 
-                # 计算晶胞中心位置（根据是否显示lattice）
-                if self.show_lattice:
-                    # Lattice模式: 中心在 (a-1)/2, (b-1)/2, (c-1)/2
-                    new_focal_point = [
-                        cell_size * (self.lattice_a - 1) / 2.0,
-                        cell_size * (self.lattice_b - 1) / 2.0,
-                        cell_size * (self.lattice_c - 1) / 2.0
-                    ]
-                else:
-                    # 单晶胞模式: 中心在原点
-                    new_focal_point = [0, 0, 0]
+                # 计算晶胞中心位置 - display坐标Y/Z已交换
+                # display-X = a, display-Y = c, display-Z = b
+                new_focal_point = [
+                    cell_size * (self.lattice_a - 1) / 2.0,
+                    cell_size * (self.lattice_c - 1) / 2.0,  # display-Y = c
+                    cell_size * (self.lattice_b - 1) / 2.0   # display-Z = b
+                ]
 
                 # 计算相机位置相对于当前焦点的向量
                 camera_vector = [
@@ -1092,138 +1072,22 @@ class CellVisualizationWidget(QWidget):
             return False
 
         try:
-            print(f"[Blend Export] 正在以高分辨率 (resolution={export_resolution}) 生成mesh...")
-
-            # 获取当前结构的参数
-            cell_type = self.current_cell_type
             cell_size = self.current_cell_size
             radius = getattr(self, 'current_radius', 0.3)
             slider_value = getattr(self, 'current_slider_value', 0)
 
-            # 获取结构数据（使用与可视化相同的方法）
-            points, connections = self.get_cell_structure(cell_type, slider_value)
-
-            # 根据cell_size缩放坐标点
-            # get_cell_structure返回的坐标基于默认cell_size=5.0
-            default_cell_size = 5.0
-            scale_factor = cell_size / default_cell_size
-            points = points * scale_factor
-
-            # Swap Y and Z coordinates for display (to match visualization)
+            points, connections = self.get_cell_structure(self.current_cell_type, slider_value)
+            points = points * (cell_size / 5.0)
             display_points = points.copy()
-            display_points[:, [1, 2]] = display_points[:, [2, 1]]  # Swap Y and Z columns
+            display_points[:, [1, 2]] = display_points[:, [2, 1]]
 
-            # 生成高分辨率的圆柱体和球体
-            all_cylinders = []
-            all_spheres = []
-
-            # 创建圆柱
-            for connection in connections:
-                start_point = display_points[connection[0]]
-                end_point = display_points[connection[1]]
-                direction = end_point - start_point
-                length = np.linalg.norm(direction)
-
-                if length > 1e-6:
-                    center = (start_point + end_point) / 2
-                    direction_normalized = direction / length
-
-                    cylinder = pv.Cylinder(
-                        center=center,
-                        direction=direction_normalized,
-                        radius=radius,
-                        height=length,
-                        resolution=export_resolution,
-                        capping=False  # 不需要端盖，球体会覆盖端点
-                    )
-                    all_cylinders.append(cylinder)
-
-            # 创建球体
-            for point in display_points:
-                sphere = pv.Sphere(
-                    radius=radius,
-                    center=point,
-                    theta_resolution=export_resolution,
-                    phi_resolution=export_resolution
-                )
-                all_spheres.append(sphere)
-
-            # 如果是Lattice模式
-            if self.show_lattice:
-                lattice_a = self.lattice_a
-                lattice_b = self.lattice_b
-                lattice_c = self.lattice_c
-
-                # 计算切割边界（与可视化渲染使用相同的逻辑）
-                lattice_limit_x = cell_size * lattice_a / 2.0
-                lattice_limit_y = cell_size * lattice_b / 2.0
-                lattice_limit_z = cell_size * lattice_c / 2.0
-                center_x = cell_size * (lattice_a - 1) / 2.0
-                center_y = cell_size * (lattice_b - 1) / 2.0
-                center_z = cell_size * (lattice_c - 1) / 2.0
-
-                x_min = center_x - lattice_limit_x
-                x_max = center_x + lattice_limit_x
-                y_min = center_y - lattice_limit_y
-                y_max = center_y + lattice_limit_y
-                z_min = center_z - lattice_limit_z
-                z_max = center_z + lattice_limit_z
-
-                # 生成所有位置
-                positions = []
-                for k in range(lattice_c):
-                    for i in range(lattice_a):
-                        for j in range(lattice_b):
-                            positions.append((i, j, k))
-
-                print(f"[Blend Export] 生成 {lattice_a}×{lattice_b}×{lattice_c} = {len(positions)} 个晶胞...")
-                print(f"[Blend Export] 切割边界: X=[{x_min:.2f}, {x_max:.2f}], Y=[{y_min:.2f}, {y_max:.2f}], Z=[{z_min:.2f}, {z_max:.2f}]")
-
-                # 复制mesh到每个位置（不切割，在Blender中切割）
-                all_lattice_meshes = []
-                for i, j, k in positions:
-                    offset = np.array([i * cell_size, j * cell_size, k * cell_size])
-
-                    # 复制并移动每个圆柱
-                    for cyl in all_cylinders:
-                        cyl_copy = cyl.copy()
-                        cyl_copy.translate(offset, inplace=True)
-                        all_lattice_meshes.append(cyl_copy)
-
-                    # 复制并移动每个球体
-                    for sph in all_spheres:
-                        sph_copy = sph.copy()
-                        sph_copy.translate(offset, inplace=True)
-                        all_lattice_meshes.append(sph_copy)
-
-                if not all_lattice_meshes:
-                    print("没有生成任何mesh")
-                    return False
-
-                combined_mesh = all_lattice_meshes[0].merge(all_lattice_meshes[1:])
-                print(f"[Blend Export] Lattice模式: 生成了 {len(all_lattice_meshes)} 个mesh")
-
-            else:
-                # 单Cell模式
-                all_meshes = []
-
-                # 添加圆柱
-                for cyl in all_cylinders:
-                    all_meshes.append(cyl)
-
-                # 添加球体
-                for sph in all_spheres:
-                    all_meshes.append(sph)
-
-                if not all_meshes:
-                    print("没有生成任何mesh")
-                    return False
-
-                combined_mesh = all_meshes[0].merge(all_meshes[1:])
-                print(f"[Blend Export] 单Cell模式: 生成了 {len(all_meshes)} 个mesh")
-
-            # 计算法线并保存为OBJ中间格式
+            combined_mesh = self._build_manifold_mesh(
+                display_points, connections, radius, cell_size, export_resolution)
+            if combined_mesh is None:
+                print("Blend export: mesh generation failed")
+                return False
             combined_mesh = combined_mesh.compute_normals(cell_normals=False, point_normals=True)
+            print(f"[Blend Export] watertight mesh: {combined_mesh.n_points} verts, {combined_mesh.n_cells} faces")
 
             # 创建临时OBJ文件路径
             import tempfile
@@ -1335,52 +1199,89 @@ print("Blend文件已保存: {filepath}")
             traceback.print_exc()
             return False
 
-    def save_stl(self, filepath, export_resolution=32):
-        """保存当前晶格结构为STL格式（无需外部依赖）"""
-        if not VISUALIZATION_AVAILABLE or self.plotter is None:
-            return False
+    @staticmethod
+    def _batch_union(parts):
+        """二叉树分治 union — O(n log n)，比顺序 union O(n^2) 快得多。"""
+        if not parts:
+            return None
+        while len(parts) > 1:
+            merged = []
+            for i in range(0, len(parts), 2):
+                if i + 1 < len(parts):
+                    merged.append(parts[i] + parts[i + 1])
+                else:
+                    merged.append(parts[i])
+            parts = merged
+        return parts[0]
+
+    def save_stl(self, filepath, export_resolution=48):
+        """保存当前晶格结构为水密 STL (manifold3d 原语直接构建，不经过 PyVista)"""
         if self.current_cell_type is None:
             return False
 
         try:
+            if not MANIFOLD3D_AVAILABLE:
+                raise RuntimeError("manifold3d 未安装，无法生成水密 STL")
+
+            import time
+            t0 = time.time()
+
             cell_size = self.current_cell_size
             radius = getattr(self, 'current_radius', 0.3)
             slider_value = getattr(self, 'current_slider_value', 0)
+            sphere_r = radius * Config.SPHERE_RADIUS_RATIO_PREVIEW
+            seg = export_resolution
+
             points, connections = self.get_cell_structure(self.current_cell_type, slider_value)
             points = points * (cell_size / 5.0)
-            points[:, [1, 2]] = points[:, [2, 1]]
+            points[:, [1, 2]] = points[:, [2, 1]]  # Y/Z swap
 
-            meshes = []
-            for c in connections:
-                d = points[c[1]] - points[c[0]]
-                L = np.linalg.norm(d)
-                if L > 1e-6:
-                    meshes.append(pv.Cylinder(center=(points[c[0]]+points[c[1]])/2, direction=d/L,
-                        radius=radius, height=L, resolution=export_resolution, capping=False))
-            for p in points:
-                meshes.append(pv.Sphere(radius=radius, center=p,
-                    theta_resolution=export_resolution, phi_resolution=export_resolution))
+            # 用 manifold3d 原语构建
+            parts = []
+            for conn in connections:
+                strut = self._build_manifold_strut(points[conn[0]], points[conn[1]], radius, seg)
+                if strut is not None:
+                    parts.append(strut)
+            # 坐标去重：Auxetic 等结构存在命名不同但坐标相同的点
+            # (T_TL/F_TL 等 8 对)，若不去重会产生重合球导致 union 退化伪影
+            unique_pts = np.unique(np.round(points, 6), axis=0)
+            for pt in unique_pts:
+                sph = manifold3d.Manifold.sphere(float(sphere_r), seg)
+                sph = sph.translate([float(pt[0]), float(pt[1]), float(pt[2])])
+                parts.append(sph)
 
-            if self.show_lattice:
-                base = meshes
-                meshes = []
+            # Lattice 阵列：spinners (a/b/c) 决定是否展开，与 Render（show_lattice）无关
+            if self.lattice_a > 1 or self.lattice_b > 1 or self.lattice_c > 1:
+                base = parts
+                parts = []
                 for k in range(self.lattice_c):
                     for i in range(self.lattice_a):
                         for j in range(self.lattice_b):
-                            off = np.array([i*cell_size, j*cell_size, k*cell_size])
-                            for m in base:
-                                mc = m.copy()
-                                mc.translate(off, inplace=True)
-                                meshes.append(mc)
+                            off = [float(i * cell_size), float(k * cell_size), float(j * cell_size)]
+                            for bp in base:
+                                parts.append(bp.translate(off))
 
-            if not meshes:
+            if not parts:
                 return False
-            combined = meshes[0].merge(meshes[1:]) if len(meshes) > 1 else meshes[0]
+
+            # 二叉树 union（比顺序快）
+            result = self._batch_union(parts)
+
+            if result is None or result.num_tri() == 0:
+                raise RuntimeError("manifold3d union 结果为空")
+
+            # 保存
             if not filepath.lower().endswith('.stl'):
                 filepath += '.stl'
-            combined.save(filepath)
-            print(f"STL已保存: {filepath}")
+
+            pv_mesh = self._manifold_to_pv(result)
+            pv_mesh.save(filepath)
+
+            dt = time.time() - t0
+            print(f"STL saved (watertight): {filepath} | {result.num_vert()} verts, {result.num_tri()} faces, {dt:.2f}s")
             return True
+
         except Exception as e:
-            print(f"保存STL失败: {e}")
+            print(f"STL export failed: {e}")
+            import traceback; traceback.print_exc()
             return False

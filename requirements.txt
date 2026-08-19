@@ -19,5 +19,8 @@ pyvista>=0.38.0
 pyvistaqt>=0.9.0
 vtk>=9.0.0
 
+# === Watertight Mesh (boolean union for 3D-printable export) ===
+manifold3d>=3.0.0
+
 # === Packaging (Development) ===
 # pyinstaller>=5.0.0

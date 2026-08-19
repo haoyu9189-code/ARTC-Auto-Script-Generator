@@ -112,16 +112,18 @@ for var_name in dir():
         except:
             pass
 
+sphere_radius = radius * 1.2  # 由 script_generator._generate_script_content 按 Config.SPHERE_RADIUS_RATIO_SCRIPT 重写
+
 for j, (node_name, node_coord) in enumerate(all_node_coords):
     # 创建球体草图 - 使用旋转生成球体
     sketch_name = 'sphereSketch-%02d' % (j+1)
     s_sphere = model.ConstrainedSketch(name=sketch_name, sheetSize=20.0)
 
     # 绘制半圆（用于旋转生成球体）
-    s_sphere.ConstructionLine(point1=(0.0, -radius*2), point2=(0.0, radius*2))
-    s_sphere.ArcByCenterEnds(center=(0.0, 0.0), point1=(0.0, radius),
-                             point2=(0.0, -radius), direction=CLOCKWISE)
-    s_sphere.Line(point1=(0.0, radius), point2=(0.0, -radius))
+    s_sphere.ConstructionLine(point1=(0.0, -sphere_radius*2), point2=(0.0, sphere_radius*2))
+    s_sphere.ArcByCenterEnds(center=(0.0, 0.0), point1=(0.0, sphere_radius),
+                             point2=(0.0, -sphere_radius), direction=CLOCKWISE)
+    s_sphere.Line(point1=(0.0, sphere_radius), point2=(0.0, -sphere_radius))
 
     # 创建球体零件
     sphere_part_name = 'Sphere-%02d' % (j+1)
@@ -243,10 +245,18 @@ assembly.translate(instanceList=('RigidPlate-1',), vector=(0.0, -2.5, -4.0))
 assembly.Instance(name='RigidPlate-2', part=rigid_part, dependent=ON)
 assembly.translate(instanceList=('RigidPlate-2',), vector=(0.0, 2.5, -4.0))
 
-# 创建材料
+# ----------------------------------------------------------------
+# MATERIAL CARD — NS3 plastic + 校准 E
+#   E = 1010 (NS3 ×0.65 — 校准实验 compliance / 延长弹性段)
+#   σ_y0=33.97, σ_ult=56.80 (NS3 unchanged)
+#   Magnitude 修正在后处理：×0.6 (Auxetic) / ×0.4 (BCC) at lattice frame
+# Keep IN SYNC with:
+#   model/Dynamic_model.py
+#   script_generator.py  (_array_script_material)
+# ----------------------------------------------------------------
 material = model.Material(name='Material-1')
 material.Density(table=((1.01e-09,),))
-material.Elastic(table=((1554.5, 0.3),))
+material.Elastic(table=((1010, 0.3),))
 material.Plastic(table=(
     (33.97, 0.0),
     (36.71, 0.0014),
@@ -268,25 +278,15 @@ material.Plastic(table=(
     (56.80, 0.1633),
 ))
 
-# ===== 新增:延性损伤 (SLS PA12材料 - 准静态) =====
-# 材料: SLS打印PA12 (聚酰胺12)
-# 准静态加载: 应变率~0.033 s⁻¹ (30秒压缩100%)
-# 拉伸断裂伸长率: 14-27% (文献上限值，准静态更韧性)
-# 压缩断裂应变: >60% (文献值，准静态更韧性)
-# 参考文献: 同动态模板，见 task_log/documentation/DAMAGE_PARAMETERS_GUIDE.md
-
-# 损伤起始准则(考虑应力三轴度)
-# IMPORTANT: triaxiality 必须按升序排列!
+# 损伤起始 — 恢复 NS3 原值
+# Auxetic 峰后的下降只来自负泊松机制（物理），不需要 damage 额外软化
 material.DuctileDamageInitiation(table=(
-    (0.60, -0.333,0.033),  # 压缩：准静态取文献接近值60%
-    (0.40, 0.0, 0.033),      # 剪切：中等韧性，插值估算
-    (0.25, 0.333, 0.033),    # 拉伸：准静态取文献中值25% (14-27%)
+    (0.60, -0.333, 0.033),   # 压缩
+    (0.40,  0.0,   0.033),   # 剪切
+    (0.25,  0.333, 0.033),   # 拉伸
 ))
 
-# 损伤演化 - 失效位移 (准静态允许更大位移)
-# 准静态加载: 应变率~0.033 s⁻¹
-# 失效位移0.5mm: 增大以避免复杂结构(如WeairePhelan)在高应变时单元过度变形
-# 计算依据: 网格尺寸0.3mm × 1.67 ≈ 0.5mm
+# 损伤演化 — NS3 原值
 material.ductileDamageInitiation.DamageEvolution(type=DISPLACEMENT, table=((0.5,),))
 # ============================================
 
@@ -384,11 +384,10 @@ def Macro1():
         name='Step-1',
         previous='Initial',
         timePeriod=0.3,              # 准静态：0.3秒（增加加载时间减少震荡）
-        massScaling=((SEMI_AUTOMATIC, MODEL, THROUGHOUT_STEP, 0.0, 1e-06, BELOW_MIN, 1, 0, 0.0, 0.0, 0, None), ),
+        massScaling=((SEMI_AUTOMATIC, MODEL, THROUGHOUT_STEP, 0.0, 5e-06, BELOW_MIN, 1, 0, 0.0, 0.0, 0, None), ),
         improvedDtMethod=ON,
         nlgeom=ON,
-        linearBulkViscosity=0.25,    # 抑制低频振动
-        quadBulkViscosity=2.0        # 抑制高频振动
+        linearBulkViscosity=0.25, quadBulkViscosity=2.0
     )
 
     # === 场变量输出设置 ===
@@ -436,14 +435,14 @@ def Macro1():
     # === 接触属性 ===
     mdb.models['Model-1'].ContactProperty('IntProp-1')
     mdb.models['Model-1'].interactionProperties['IntProp-1'].TangentialBehavior(
-        formulation=PENALTY, directionality=ISOTROPIC, slipRateDependency=OFF, 
-        pressureDependency=OFF, temperatureDependency=OFF, dependencies=0, 
-        table=((0.15, ), ), shearStressLimit=None, maximumElasticSlip=FRACTION, 
+        formulation=PENALTY, directionality=ISOTROPIC, slipRateDependency=OFF,
+        pressureDependency=OFF, temperatureDependency=OFF, dependencies=0,
+        table=((0.15, ), ), shearStressLimit=None, maximumElasticSlip=FRACTION,
         fraction=0.005, elasticSlipStiffness=None)
-    # Explicit 使用 HARD 接触（罚函数自动处理）
+    # NormalBehavior: HARD contact, scale=5.0 (locked across all N for cross-N trend consistency).
     mdb.models['Model-1'].interactionProperties['IntProp-1'].NormalBehavior(
-        pressureOverclosure=HARD,
-        allowSeparation=ON)
+        pressureOverclosure=HARD, allowSeparation=ON,
+        contactStiffnessScaleFactor=5.0)
 
     # === 接触对（Explicit 版本）===
     s1 = a.instances['RigidPlate-2'].faces
@@ -487,7 +486,7 @@ def Macro1():
     mdb.models['Model-1'].EncastreBC(name='BC-1', createStepName='Initial',
         region=region, localCsys=None)
 
-    u2=-0.8*cell_size  # 80%应变
+    u2=-0.6*cell_size  # 60%应变
     region = a.sets['TopReflection']
     mdb.models['Model-1'].DisplacementBC(name='BC-2', createStepName='Step-1',
         region=region, u1=0.0, u2=u2, u3=0.0, ur1=0.0, ur2=0.0, ur3=0.0,
@@ -529,10 +528,13 @@ def Macro1():
     c = p.cells
     pickedRegions = c.getSequenceFromMask(mask=('[#1 ]', ), )
     p.setMeshControls(regions=pickedRegions, elemShape=TET, technique=FREE)
-    # Explicit 单元类型：C3D10M（修改四面体，适合大变形）
-    elemType1 = mesh.ElemType(elemCode=C3D10M, elemLibrary=EXPLICIT)
-    elemType2 = mesh.ElemType(elemCode=C3D10M, elemLibrary=EXPLICIT)
-    elemType3 = mesh.ElemType(elemCode=C3D10M, elemLibrary=EXPLICIT)
+    # distortionControl=ON with lengthRatio=0.1: prevent element inversion
+    elemType1 = mesh.ElemType(elemCode=C3D10M, elemLibrary=EXPLICIT,
+        secondOrderAccuracy=OFF, distortionControl=ON, lengthRatio=0.1)
+    elemType2 = mesh.ElemType(elemCode=C3D10M, elemLibrary=EXPLICIT,
+        secondOrderAccuracy=OFF, distortionControl=ON, lengthRatio=0.1)
+    elemType3 = mesh.ElemType(elemCode=C3D10M, elemLibrary=EXPLICIT,
+        secondOrderAccuracy=OFF, distortionControl=ON, lengthRatio=0.1)
     cells = c.getSequenceFromMask(mask=('[#1 ]', ), )
     pickedRegions = (cells, )
     p.setElementType(regions=pickedRegions, elemTypes=(elemType1, elemType2, elemType3))
@@ -540,7 +542,7 @@ def Macro1():
     # 平方根关系：细杆网格不过密，粗杆网格不过稀
     # radius=0.3→0.17, 0.35→0.18, 0.4→0.20, 0.45→0.21, 0.5→0.2
     import math
-    mesh_size_structure = 0.2 * math.sqrt(radius / 0.5) * (cell_size / 5.0)  # 结构网格
+    mesh_size_structure = 0.3 * math.sqrt(radius / 0.5) * (cell_size / 5.0)  # 结构网格
     mesh_size_plate = 0.5 * (radius / 0.5) * (cell_size / 5.0)      # 刚板网格
     p.seedPart(size=mesh_size_structure, deviationFactor=0.1, minSizeFactor=0.1)
 

@@ -73,3 +73,28 @@ atlas/data/cell_db.sqlite
 atlas/data/external/
 atlas/data/retriever_log.jsonl
 atlas/data/catalog.sqlite
+
+# ABAQUS 求解器产物(补全;GB 级,不入库)
+*.abq
+*.pac
+*.res
+*.sel
+*.fil
+*.ipm
+*.par
+*.pes
+*.pmg
+*.SMABulk
+*.SMAFocus
+*.023
+*.inp
+*.xtak
+explicit*.env
+abaqus_acis.log
+
+# 仿真运行产物树(本地生成;分析脚本与图另行放行)
+generate_script/*/
+!generate_script/consolidated/
+generate_script/consolidated/experiment/
+generate_script/consolidated/simulation/
+atlas/reports/tier_d_jobs/

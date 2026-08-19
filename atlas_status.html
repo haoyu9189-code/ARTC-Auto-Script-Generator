@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>ATLAS · 项目进展(大白话版)</title>
+<style>
+:root{
+  --bg:#0c0f14; --panel:#141922; --panel2:#1a212c; --line:#26303d;
+  --ink:#e8edf3; --dim:#97a3b2; --faint:#5b6675;
+  --amber:#e0a020; --amber2:#ffc34d; --green:#3ecf8e; --red:#e5634d;
+  --blue:#5aa0e0; --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --sans:-apple-system,'Segoe UI',Roboto,'Microsoft YaHei',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1200px 600px at 70% -10%,#16202c 0%,var(--bg) 55%);
+  color:var(--ink);font-family:var(--sans);line-height:1.62;
+  padding:38px clamp(16px,5vw,70px) 60px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;
+  border-bottom:1px solid var(--line);padding-bottom:18px;flex-wrap:wrap}
+.logo{font-family:var(--mono);font-weight:700;font-size:34px;color:var(--amber);line-height:1}
+.logo b{color:var(--ink)}
+.logo small{display:block;font-size:11px;letter-spacing:.32em;color:var(--faint);font-weight:400;margin-top:8px}
+.meta{text-align:right;font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.9}
+.meta .tag{display:inline-block;border:1px solid var(--green);color:var(--green);border-radius:3px;padding:1px 8px;font-size:10px}
+/* 大白话一句话介绍 */
+.intro{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:20px 22px;margin-top:22px}
+.intro h1{font-size:18px;margin-bottom:8px;color:var(--amber2)}
+.intro p{font-size:14.5px;color:var(--ink)}
+.intro p span{color:var(--dim)}
+/* 名词卡 */
+.gloss{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.g{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px 14px}
+.g .w{font-family:var(--mono);font-size:12.5px;color:var(--amber2);font-weight:600}
+.g .x{font-size:12.5px;color:var(--dim);margin-top:3px}
+section{margin-top:32px}
+h2{font-family:var(--mono);font-size:13px;letter-spacing:.12em;color:var(--amber);
+  text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+h2::after{content:'';flex:1;height:1px;background:var(--line)}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.metric{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
+.metric::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--amber)}
+.metric.g::before{background:var(--green)}.metric.b::before{background:var(--blue)}
+.metric .top{display:flex;align-items:baseline;gap:12px}
+.metric .n{font-family:var(--mono);font-size:28px;font-weight:600;color:var(--amber2);line-height:1}
+.metric.g .n{color:var(--green)}.metric.b .n{color:var(--blue)}
+.metric .l{font-size:13px;color:var(--ink);font-weight:600}
+.metric .say{font-size:12.5px;color:var(--dim);margin-top:7px}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tier{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.tier .lab{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+.tier .score{font-family:var(--mono);font-size:30px;font-weight:600;margin:5px 0}
+.tier .who{font-size:12.5px;color:var(--dim)}
+.tier:nth-child(1) .score{color:var(--faint)}.tier:nth-child(2) .score{color:var(--blue)}.tier:nth-child(3) .score{color:var(--green)}
+.tier .say{font-size:12px;color:var(--dim);margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+.tier .say b{color:var(--amber2)}
+/* 时间线 */
+.tl{position:relative;padding-left:24px}
+.tl::before{content:'';position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.ev{position:relative;padding:12px 0}
+.ev::before{content:'';position:absolute;left:-22px;top:17px;width:11px;height:11px;border-radius:50%;background:var(--bg);border:2px solid var(--amber)}
+.ev.done::before{background:var(--green);border-color:var(--green)}
+.ev.kill::before{background:var(--red);border-color:var(--red)}
+.ev .row{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.ev .id{font-family:var(--mono);font-size:11.5px;color:var(--amber2);font-weight:600}
+.ev .t{font-weight:600;font-size:14.5px}
+.ev .chip{font-family:var(--mono);font-size:10px;padding:1px 7px;border-radius:3px;border:1px solid}
+.chip.ok{color:var(--green);border-color:var(--green)}
+.chip.kl{color:var(--red);border-color:var(--red)}
+.chip.ref{color:var(--blue);border-color:var(--blue)}
+.ev .tech{font-size:12.5px;color:var(--faint);margin-top:5px;font-style:italic}
+.ev .say{font-size:13.5px;color:var(--ink);margin-top:6px;padding-left:12px;border-left:2px solid var(--amber);max-width:850px}
+.ev .say b{color:var(--amber2);font-weight:600}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:10px;padding:15px 17px}
+.card .h{font-weight:600;font-size:14px;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+.card .h .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none}
+.card.warn .h .dot{background:var(--red)}
+.card p{font-size:13px;color:var(--dim)}.card p b{color:var(--ink)}
+.verdict{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:10px;padding:18px 20px}
+.verdict p{font-size:14px;margin-bottom:9px}.verdict p:last-child{margin-bottom:0}
+.verdict .next{font-size:13px;color:var(--dim)}.verdict .next b{color:var(--amber2)}
+footer{margin-top:34px;border-top:1px solid var(--line);padding-top:14px;font-family:var(--mono);font-size:11px;color:var(--faint);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+@media(max-width:760px){.metrics,.cards{grid-template-columns:1fr}.tiers,.gloss{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">ATLAS<b>·</b><small>点阵选型 AI · 大白话版</small></div>
+    <div class="meta">NTU × A*STAR ARTC<br>进展快照 · 2026-06-11<br>
+      <span class="tag">第 1–4 阶段完成 · 吸能终审已补齐</span></div>
+  </header>
+
+  <!-- 这是什么项目:一句大白话 -->
+  <div class="intro">
+    <h1>这个项目在做什么?</h1>
+    <p>做一个 AI 助手:你用大白话说"我要一个<b>又轻、又能扛/吸能</b>的结构"(比如汽车防撞盒、头盔内衬),
+    它就帮你<b>推荐或现场设计</b>一种"<b>点阵</b>"结构,并且<b>逐项用物理计算验证靠不靠谱</b>,最后给一份带数据、可追溯的报告。
+    <br><span>核心理念叫"先生成后验证"——AI 负责出主意,但能不能用,一律由物理计算说了算,不让 AI 自己拍脑袋。</span></p>
+
+    <div class="gloss">
+      <div class="g"><div class="w">点阵 / lattice</div><div class="x">像埃菲尔铁塔那样用很多细杆搭成的镂空结构,又轻又能承力。</div></div>
+      <div class="g"><div class="w">拓扑 / topology</div><div class="x">杆子"怎么连"的方式(连法),不是尺寸粗细。换连法 = 换拓扑。</div></div>
+      <div class="g"><div class="w">新拓扑 / "外星拓扑"</div><div class="x">以前没人设计过的全新连法,由 AI 生成。</div></div>
+      <div class="g"><div class="w">裕度 / margin</div><div class="x">算出来的性能 ÷ 要求的性能。≥1 才算够用(像"实际能扛是要求的几倍")。</div></div>
+      <div class="g"><div class="w">可打印性</div><div class="x">这结构 3D 打印机能不能真打出来(会不会塌、粉末清不清得掉)。</div></div>
+      <div class="g"><div class="w">吸能 / SEA</div><div class="x">撞击时能吸收多少能量。汽车防撞、头盔最看重这个。</div></div>
+      <div class="g"><div class="w">验证四档 A/B/C/D</div><div class="x">由快到准的四级"体检":A 纸笔公式(秒)→ B 梁估算(毫秒)→ C 体素模拟 → D 全仿真(最准最慢)。</div></div>
+      <div class="g"><div class="w">ABAQUS(D 档)</div><div class="x">工业级仿真软件,工程界公认的"金标准",但一次要算几小时。</div></div>
+      <div class="g"><div class="w">智能体 / agent</div><div class="x">分工的 AI 小助手,各管一摊:出方案、查可打印、算力学、做判决。</div></div>
+    </div>
+  </div>
+
+  <!-- 4 个关键数字 -->
+  <section>
+    <h2>四个关键数字 · 每个都配人话</h2>
+    <div class="metrics">
+      <div class="metric g"><div class="top"><span class="n">350</span><span class="l">自动化测试全部通过</span></div>
+        <div class="say">💬 代码里有 350 个自动检查项,全绿。意思是:改了东西不会偷偷弄坏别处,质量有保障。</div></div>
+      <div class="metric b"><div class="top"><span class="n">1.6%</span><span class="l">吸能仿真"算得稳"(快/慢两速结果几乎一样)</span></div>
+        <div class="say">💬 阶段4 新做的"撞击吸能"仿真:同一结构用快、用慢两种速度各算一遍,吸能值<b>只差 1.6%</b>——证明算出来的是结构真本事,不是速度凑出来的假象。</div></div>
+      <div class="metric b"><div class="top"><span class="n">22/22</span><span class="l">AI 智能体的判决,和直接用程序算的完全一致</span></div>
+        <div class="say">💬 担心"AI 自己乱判"?让 AI 智能体跑一遍,再让确定性程序跑一遍,22 个结论<b>逐字一模一样</b>——证明 AI 只是搬运证据,真正下判决的是死规则,不掺主观。</div></div>
+      <div class="metric"><div class="top"><span class="n">44 / 0</span><span class="l">查了 44 篇最新论文,0 篇是编造的</span></div>
+        <div class="say">💬 让 AI 找最新文献最怕它<b>瞎编参考文献</b>。我们逐篇上网核对了 DOI 编号:44 篇全部真实存在,0 篇造假。</div></div>
+    </div>
+  </section>
+
+  <!-- 三层叙事 -->
+  <section>
+    <h2>核心成果 · 一层比一层强(数字=性能分,越高越好)</h2>
+    <div class="tiers">
+      <div class="tier"><div class="lab">第一招:查现成的</div><div class="score">591</div>
+        <div class="who">从 24 种已知结构里挑最好的(Cubic)</div>
+        <div class="say">💬 在<b>现有数据库</b>里翻,最好也就这个分。</div></div>
+      <div class="tier"><div class="lab">第二招:大目录枚举</div><div class="score">907</div>
+        <div class="who">从 17,262 种晶体网里筛冠军</div>
+        <div class="say">💬 翻一个<b>大得多的目录</b>,能找到更好的(比第一招高 53%)。</div></div>
+      <div class="tier"><div class="lab">第三招:AI 现场发明</div><div class="score">1047</div>
+        <div class="who">AI 生成的新连法 dual_column_web</div>
+        <div class="say">💬 让 <b>AI 凭物理原理造新的</b>,最强——比查现成的高 <b>77%</b>。这就是项目的真正目标。</div></div>
+    </div>
+  </section>
+
+  <!-- Phase 3 时间线 -->
+  <section>
+    <h2>做了什么 · 每条先给人话(阶段3 + 阶段4)</h2>
+    <div class="tl">
+
+      <div class="ev done"><div class="row"><span class="id">P3-A</span><span class="t">打通"最准仿真"这一关</span><span class="chip ok">完成</span></div>
+        <div class="tech">技术名:Tier-D ABAQUS 升压收口 + 能量门 + 结果回灌判决链</div>
+        <div class="say">💬 以前 AI 设计的新结构,没法送进金标准仿真软件 ABAQUS 去最终确认。现在<b>这条通道打通了</b>:本机真跑了 4 个结构,而且那个 AI 新发明的 PSCZ <b>第一次完整走完全流程并通过</b>——从 AI 提案 → 检查能不能打印 → 物理仿真 → 程序判合格,一气呵成。</div></div>
+
+      <div class="ev done"><div class="row"><span class="id">P3-B</span><span class="t">让真正的多个 AI 智能体协作跑一遍</span><span class="chip ok">完成</span></div>
+        <div class="tech">技术名:真 agent 端到端 D2 · trace 一致性 22/22</div>
+        <div class="say">💬 以前是"假装"多智能体(其实一个程序跑完)。这次<b>真的让多个 AI 分工协作</b>(一个出方案、一个做判决…)跑了三个案例。结果和程序直算<b>完全一致</b>,而且真跑还<b>抓到 2 个潜伏的 bug</b>(其中一个是"悬垂检查的判据写反了")——平时的测试根本发现不了,真跑才暴露。</div></div>
+
+      <div class="ev done"><div class="row"><span class="id">P3-C</span><span class="t">做一套"打分对比"的量尺</span><span class="chip ok">完成</span></div>
+        <div class="tech">技术名:benchmark 仪表 + 单 agent 基线对照</div>
+        <div class="say">💬 想证明"多智能体比单个 AI 强、结论可追溯"。建了量尺:统计每步耗时、<b>有多少结论能查到出处</b>(我们 100%,普通单 AI 只有 33–59%)。还发现一个有意思的案例:单 AI 凭经验"放行"的方案,被我们的死规则<b>驳回了</b>——规则 vs 拍脑袋的活例子。</div></div>
+
+      <div class="ev done"><div class="row"><span class="id">P3-D</span><span class="t">给"全新结构"补上快速力学估算</span><span class="chip ok">完成</span></div>
+        <div class="tech">技术名:新拓扑筛选估值器(beam 物理为主,文献标度为辅)</div>
+        <div class="say">💬 以前 AI 造的新结构因为"数据库里查不到",连个力学初步分都给不出,只能死等几小时的大仿真。现在用<b>快速物理估算(毫秒级)在它自己的几何上直接算</b>,先给个初筛分用来排序;但严格把关:这个快分<b>只能用来初筛,不能当最终结论</b>。</div></div>
+
+      <div class="ev done"><div class="row"><span class="id">调研</span><span class="t">查最新文献,看自己是不是落后了</span><span class="chip ref">44 篇核实</span></div>
+        <div class="tech">技术名:2024–2025 文献多路检索 + 逐篇对抗核验</div>
+        <div class="say">💬 你担心"系统太落后"。查完结论让人意外:<b>ATLAS 的思路反而更严谨</b>——2024-25 那些热门 AI 论文大多<b>直接相信自己 AI 算出来的结果</b>,而我们坚持"AI 算的只能参考,必须物理验证"。真正缺的只有一块:<b>能直接生成曲面/壳类新结构的 AI</b>(已记入下一步计划)。</div></div>
+
+      <div class="ev kill"><div class="row"><span class="id">P3-1</span><span class="t">试做"C 档"中速仿真,实测后果断放弃自研</span><span class="chip kl">否决自研</span></div>
+        <div class="tech">技术名:FFT 体素均质化 Tier-C 原型 → KILL</div>
+        <div class="say">💬 想自己写一个"中速档"仿真。我先把它<b>对着已知精确答案校验,数学是对的</b>(还顺手查出 2 个自己的 bug)。但一上真实细杆点阵就<b>要么算不收敛(9 分钟还没结果)、要么精度被污染</b>;而现有的毫秒级估算已经够用。所以<b>果断放弃自研</b>,以后真要做就直接用学术界成熟的代码——<b>"用便宜实验否掉一条死路"比硬撑成功更值钱</b>。</div></div>
+
+      <div class="ev done"><div class="row"><span class="id">阶段4</span><span class="t">让"最准仿真"能算"撞击吸能"(不只是硬不硬)</span><span class="chip ok">完成</span></div>
+        <div class="tech">技术名:非线性/吸能 Tier-D 压溃(NT-1…NT-6,自主 loop 跑完)</div>
+        <div class="say">💬 之前的物理终审只会算"压得动压不动(刚度)",不会算"撞扁时吸收多少能量"——可这正是<b>汽车防撞盒、头盔</b>最看重的。这阶段补上了:让仿真<b>把结构一路压扁到致密</b>(杆子互相接触、压实),算出<b>吸能 SEA、平台撑住的力、压实点</b>。本机真跑了一个新结构验证:<b>用快、用慢两种速度结果只差 1.6%</b>(证明算得稳),而且和原来的静态算法对得上(差 5%)。<br>💬 最关键的"老实":算出的吸能值偏高(因为只用了<b>单个小格子</b>,边界把它撑硬了),系统<b>主动判定"这个数不够可信、不给盖章"</b>,并标注"要用 3 个格子以上才算数"——没有为了好看放水。</div></div>
+
+    </div>
+  </section>
+
+  <!-- 诚实工程 -->
+  <section>
+    <h2>这个项目最让人放心的地方</h2>
+    <div class="cards">
+      <div class="card"><div class="h"><span class="dot"></span>系统会自己揪出自己的错</div>
+        <p>真跑多智能体时,<b>主动暴露了 2 个平时测试抓不到的 bug</b>。说明验证链不是摆设,真能纠错。</p></div>
+      <div class="card"><div class="h"><span class="dot"></span>"AI 造新结构"真的走通了</div>
+        <p>PSCZ 这个全新连法,<b>能打印 + 仿真合格(1.92 倍裕度)</b>——项目最初"造前所未见的好结构"的愿景,第一次有了实物级证据。</p></div>
+      <div class="card warn"><div class="h"><span class="dot"></span>不行就老实说不行</div>
+        <p>自研中速仿真即使代码写对了,实测不划算也<b>果断否决</b>,没有为了好看硬上。</p></div>
+      <div class="card warn"><div class="h"><span class="dot"></span>连自己的口径错误都自查</div>
+        <p>发现早前一句"高估 2 倍"其实是<b>单位没对齐造成的假象</b>(对齐后只差约 16%),主动更正并写进规范。</p></div>
+      <div class="card warn"><div class="h"><span class="dot"></span>吸能值偏高就不盖章</div>
+        <p>阶段4 算出的吸能比常见 PA12 高一截(单格子边界效应),系统<b>主动只给"初筛级"不给"设计级"</b>,标注须用更多格子复算——宁可不漂亮也不放水。</p></div>
+    </div>
+  </section>
+
+  <!-- 现状判断 -->
+  <section>
+    <h2>一句话现状 + 下一步</h2>
+    <div class="verdict">
+      <p>✅ <b>主体系统已经成熟、能端到端真跑</b>:出方案 → 多维验证 → 死规则判决 → 可追溯报告,四档物理体检齐全。</p>
+      <p>✅ <b>"撞击吸能"终审已补齐</b>(阶段4):汽车防撞/头盔最看重的吸能,现在有了物理终审通路并实测验证(算得稳、对得上)。</p>
+      <p>✅ <b>方向被最新文献反证为先进</b>,不是落后——严谨度高于同期热门 AI 工作。</p>
+      <p class="next">▸ 下一步可选(都是中等工程量,按需启动):<b>① 用 3 格子以上复算吸能</b>(去掉单格边界效应,让吸能值能盖"设计级"章);
+      <b>② 能直接生成曲面/壳类新结构的 AI(DiffuMeta)</b>;<b>③ spinodoid 旗舰(自然界泡沫式新材料)</b>。</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>由 Claude(Opus 4.8 / Fable 5 协作)构建 · 铁律:AI 算的只能参考、必须物理验证 · 引用全核实</span>
+    <span>详情见 atlas/PROGRESS.md</span>
+  </footer>
+
+</div>
+</body>
+</html>

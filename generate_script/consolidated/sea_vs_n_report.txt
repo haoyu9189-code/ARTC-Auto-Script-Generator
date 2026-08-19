@@ -1,0 +1,25 @@
+Primary epsilon cutoff: 0.25
+Aggregating over topologies NOT in EXCLUDED set:
+  NS4             N=1:  4.272 (n=18)  N=2:  4.249 (n=19)  N=3:  4.359 (n=18)  N=4:  4.357 (n=18)  N=5:  4.358 (n=17)
+                  N5/N1 = 1.020   N5/N2 = 1.026
+  NS3_baseline    N=1:  3.920 (n=14)  N=2:  3.988 (n=19)  N=3:  4.176 (n=18)  N=4:  4.062 (n=19)  N=5:  3.668 (n=11)
+                  N5/N1 = 0.936   N5/N2 = 0.920
+  NS2_orig6       N=1:    nan (n= 0)  N=2:  3.411 (n= 5)  N=3:  3.213 (n= 5)  N=4:  3.034 (n= 5)  N=5:  3.003 (n= 5)
+
+Per-topology N5/N1 ratio (NS4):
+  AFCC                      N1=  3.157  N5=  3.876  ratio= 1.228
+  Auxetic                   N1=  5.065  N5=  4.322  ratio= 0.853
+  BCC                       N1=  3.525  N5=  1.699  ratio= 0.482
+  BCCZ                      N1=  4.691  N5=  3.811  ratio= 0.812
+  CubicRosette              N1=  1.553  N5=  3.869  ratio= 2.492
+  Cuboctahedron_Z           N1=  6.196  N5=  5.949  ratio= 0.960
+  Diamond                   N1=  2.540  N5=  3.764  ratio= 1.481
+  FBCCXYZ                   N1=  4.849  N5=  5.154  ratio= 1.063
+  FCC                       N1=  4.544  N5=  3.228  ratio= 0.710
+  Iso_truss                 N1=  5.101  N5=  4.976  ratio= 0.975
+  Kelvin                    N1=  2.656  N5=  3.584  ratio= 1.349
+  Octahedron                N1=  4.323  N5=  4.274  ratio= 0.989
+  Octet_truss               N1=  5.163  N5=  4.954  ratio= 0.960
+  Tetrahedron_base          N1=  3.920  N5=  4.484  ratio= 1.144
+  Truncated_Octoctahedron   N1=  3.435  N5=  4.391  ratio= 1.278
+  WeairePhelan              N1=  7.375  N5=  7.679  ratio= 1.041
